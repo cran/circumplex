@@ -1,0 +1,127 @@
+## ----setup, include = FALSE----------------------------------------------
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(circumplex)
+library(ggplot2)
+library(ggforce)
+library(tibble)
+library(kableExtra)
+
+## ------------------------------------------------------------------------
+data("jz2017")
+results <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
+summary(results)
+
+## ---- echo = FALSE-------------------------------------------------------
+ssm_table(results, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results)
+
+## ------------------------------------------------------------------------
+results2 <- ssm_analyze(jz2017, PA:NO, octants(), measures = c(NARPD, ASPD))
+summary(results2)
+
+## ---- echo = FALSE-------------------------------------------------------
+ssm_table(results2, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results2)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results2)
+
+## ------------------------------------------------------------------------
+results3 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
+  measures = PARPD:SZTPD)
+summary(results3)
+
+## ---- echo = FALSE-------------------------------------------------------
+ssm_table(results3, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results3)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results3)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results3, lowfit = TRUE)
+
+## ------------------------------------------------------------------------
+results4 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
+  contrast = "model")
+summary(results4)
+
+## ---- echo = FALSE-------------------------------------------------------
+ssm_table(results4, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results4)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results4)
+
+## ------------------------------------------------------------------------
+results5 <- ssm_analyze(jz2017, PA:NO, octants(), measures = c(NARPD, ASPD),
+  contrast = "test")
+summary(results5)
+
+## ---- echo = FALSE, results = "asis"-------------------------------------
+ssm_table(results5, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results5)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results5)
+
+## ------------------------------------------------------------------------
+results6 <- ssm_analyze(jz2017, PA:NO, octants(), measures = BORPD, 
+  grouping = Gender, contrast = "test")
+summary(results6)
+
+## ---- echo = FALSE, results = "asis"-------------------------------------
+ssm_table(results6, render = FALSE) %>% 
+  kable(caption = circumplex:::dcaption(results6)) %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results6)
+
+## ---- echo = FALSE-------------------------------------------------------
+msr <- c("FALSE", "FALSE", "FALSE", "TRUE",  "TRUE",  "TRUE",  "TRUE")
+grp <- c("FALSE", "TRUE",  "TRUE",  "FALSE", "FALSE", "TRUE",  "TRUE")
+ctr <- c("FALSE", "FALSE", "TRUE",  "FALSE", "TRUE",  "FALSE", "TRUE")
+tab <- tibble(
+  `#` = c(1, 2, 3, 4, 5, 6, 7),
+  Usage = c(
+    "Examine overall mean profile",
+    "Examine groups' mean profiles",
+    "Compare groups' mean profiles",
+    "Examine variables' correlation profiles",
+    "Compare variables' correlation profiles",
+    "Examine groups' correlation profiles",
+    "Compare groups' correlation profiles"
+  ),
+  measures = cell_spec(msr, color = ifelse(msr == "TRUE", "blue", "black")),
+  grouping = cell_spec(grp, color = ifelse(grp == "TRUE", "blue", "black")),
+  contrast = cell_spec(ctr, color = ifelse(ctr == "TRUE", "blue", "black"))
+)
+knitr::kable(tab, escape = FALSE) %>% 
+  column_spec(2, width = "3in") %>% 
+  add_header_above(c("", "", "Arguments Needed" = 3))
+
+## ---- echo = FALSE-------------------------------------------------------
+res1 <- ssm_analyze(jz2017, PA:NO, octants())
+res2 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
+tab1 <- ssm_table(res1, xy = FALSE, render = FALSE)
+tab2 <- ssm_table(res2, xy = FALSE, render = FALSE)
+ssm_append(tab1, tab2, render = FALSE) %>% 
+  kable() %>% 
+  kable_styling(full_width = TRUE, font_size = 12)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results4, amax = 0.375)
+
+## ---- fig.width = 7.2, fig.height = 4------------------------------------
+ssm_plot(results6, xy = FALSE, color = "blue", linesize = 1,
+  axislabel = "BORPD: Male - Female")
+
