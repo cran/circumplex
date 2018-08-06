@@ -6,87 +6,87 @@ library(ggforce)
 library(tibble)
 library(kableExtra)
 
-## ------------------------------------------------------------------------
+## ----group---------------------------------------------------------------
 data("jz2017")
 results <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
 summary(results)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----group_table, echo = FALSE-------------------------------------------
 ssm_table(results, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----group_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"-----
 ssm_plot(results)
 
-## ------------------------------------------------------------------------
+## ----measures------------------------------------------------------------
 results2 <- ssm_analyze(jz2017, PA:NO, octants(), measures = c(NARPD, ASPD))
 summary(results2)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----measures_table, echo = FALSE----------------------------------------
 ssm_table(results2, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results2)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----measures_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 ssm_plot(results2)
 
-## ------------------------------------------------------------------------
+## ----general-------------------------------------------------------------
 results3 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
   measures = PARPD:SZTPD)
 summary(results3)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----general_table, echo = FALSE-----------------------------------------
 ssm_table(results3, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results3)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----general_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 ssm_plot(results3)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----lowfit, fig.width = 7.5, fig.height = 4, out.width = "100%"---------
 ssm_plot(results3, lowfit = TRUE)
 
-## ------------------------------------------------------------------------
+## ----model_contrast------------------------------------------------------
 results4 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
   contrast = "model")
 summary(results4)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----model_table, echo = FALSE-------------------------------------------
 ssm_table(results4, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results4)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----model_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"-----
 ssm_plot(results4)
 
-## ------------------------------------------------------------------------
+## ----measure_contrast----------------------------------------------------
 results5 <- ssm_analyze(jz2017, PA:NO, octants(), measures = c(NARPD, ASPD),
   contrast = "test")
 summary(results5)
 
-## ---- echo = FALSE, results = "asis"-------------------------------------
+## ----measure_contrast_table, echo = FALSE, results = "asis"--------------
 ssm_table(results5, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results5)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----measure_contrast_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 ssm_plot(results5)
 
-## ------------------------------------------------------------------------
+## ----group_contrast------------------------------------------------------
 results6 <- ssm_analyze(jz2017, PA:NO, octants(), measures = BORPD, 
   grouping = Gender, contrast = "test")
 summary(results6)
 
-## ---- echo = FALSE, results = "asis"-------------------------------------
+## ----group_contrast_table, echo = FALSE, results = "asis"----------------
 ssm_table(results6, render = FALSE) %>% 
   kable(caption = circumplex:::dcaption(results6)) %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----group_contrast_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 ssm_plot(results6)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----taxonomy, echo = FALSE----------------------------------------------
 msr <- c("FALSE", "FALSE", "FALSE", "TRUE",  "TRUE",  "TRUE",  "TRUE")
 grp <- c("FALSE", "TRUE",  "TRUE",  "FALSE", "FALSE", "TRUE",  "TRUE")
 ctr <- c("FALSE", "FALSE", "TRUE",  "FALSE", "TRUE",  "FALSE", "TRUE")
@@ -109,7 +109,7 @@ knitr::kable(tab, escape = FALSE) %>%
   column_spec(2, width = "3in") %>% 
   add_header_above(c("", "", "Arguments Needed" = 3))
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----append, echo = FALSE------------------------------------------------
 res1 <- ssm_analyze(jz2017, PA:NO, octants())
 res2 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
 tab1 <- ssm_table(res1, xy = FALSE, render = FALSE)
@@ -118,10 +118,10 @@ ssm_append(tab1, tab2, render = FALSE) %>%
   kable() %>% 
   kable_styling(full_width = TRUE, font_size = 12)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----amax, fig.width = 7.5, fig.height = 4, out.width = "100%"-----------
 ssm_plot(results4, amax = 0.375)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----custom, fig.width = 7.5, fig.height = 4, out.width = "100%"---------
 ssm_plot(results6, xy = FALSE, color = "blue", linesize = 1,
   axislabel = "BORPD: Male - Female")
 

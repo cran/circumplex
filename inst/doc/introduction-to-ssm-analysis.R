@@ -10,7 +10,7 @@ library(forcats)
 library(psych)
 library(knitr)
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----model, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 angles <- c(90, 135, 180, 225, 270, 315, 360, 45)
 alabel <- c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO")
 
@@ -65,7 +65,7 @@ ggplot() +
     vjust = "outward"
   )
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----column, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 requireNamespace("forcats", quietly = TRUE)
 data("jz2017")
 rci <- jz2017 %>%
@@ -100,7 +100,7 @@ ggplot(dat_r, aes(x = forcats::fct_reorder(Scale, est, .desc = TRUE), y = est)) 
     panel.grid.minor.x = element_blank()
   )
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----path, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 dat_r <- tibble(
   Scale = factor(c("LM", "PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
     levels = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO")
@@ -136,7 +136,7 @@ ggplot(data = dat_r, mapping = aes(x = Angle, y = est)) +
     panel.grid.minor.x = element_blank()
   )
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----curve, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 # Calculate SSM parameters
 sp <- circumplex:::ssm_parameters(rci$means[1:8], octants() * pi / 180)
 
@@ -169,7 +169,7 @@ ggplot(data = dat_r, mapping = aes(x = Angle, y = est)) +
     panel.grid.minor.x = element_blank()
   )
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----residuals, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 # Plot correlations as path, SSM cosine model, and differences
 ggplot(data = dat_r, mapping = aes(x = Angle, y = est)) +
   geom_hline(yintercept = 0, size = 1.25, color = "darkgray") +
@@ -199,20 +199,20 @@ ggplot(data = dat_r, mapping = aes(x = Angle, y = est)) +
     panel.grid.minor.x = element_blank()
   )
 
-## ---- echo = FALSE, out.width = "100%"-----------------------------------
+## ----elev, echo = FALSE, out.width = "100%"------------------------------
 knitr::include_graphics("VIG1-e.gif")
 
-## ---- echo = FALSE, out.width = "100%"-----------------------------------
+## ----ampl, echo = FALSE, out.width = "100%"------------------------------
 knitr::include_graphics("VIG1-a.gif")
 
-## ---- echo = FALSE, out.width = "100%"-----------------------------------
+## ----disp, echo = FALSE, out.width = "100%"------------------------------
 knitr::include_graphics("VIG1-d.gif")
 
-## ------------------------------------------------------------------------
+## ----jz2017--------------------------------------------------------------
 data("jz2017")
 print(jz2017)
 
-## ---- echo = FALSE, fig.width = 7.2, fig.height = 4----------------------
+## ----iipsc, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 angles <- c(90, 135, 180, 225, 270, 315, 360, 45)
 flabel <- c(
   "Domineering",
@@ -290,37 +290,37 @@ ggplot() +
     vjust = "outward"
   )
 
-## ------------------------------------------------------------------------
+## ----analyze-------------------------------------------------------------
 results <- ssm_analyze(
   .data = jz2017,
   scales = c(PA, BC, DE, FG, HI, JK, LM, NO),
   angles = c(90, 135, 180, 225, 270, 315, 360, 45)
 )
 
-## ------------------------------------------------------------------------
+## ----summary1a-----------------------------------------------------------
 summary(results)
 
-## ------------------------------------------------------------------------
+## ----summary1b-----------------------------------------------------------
 results2 <- ssm_analyze(jz2017, PA:NO, octants())
 summary(results2)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----table1, echo = FALSE------------------------------------------------
 ssm_table(results2, render = FALSE) %>%
   kable(caption = circumplex:::dcaption(results2)) %>%
-  kable_styling(full_width = TRUE, font_size = 12)
+  kable_styling(full_width = TRUE, font_size = 14)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----plot1, fig.width = 7.2, fig.height = 4, out.width = "100%"----------
 ssm_plot(results2)
 
-## ------------------------------------------------------------------------
+## ----summary2------------------------------------------------------------
 results3 <- ssm_analyze(jz2017, PA:NO, octants(), measures = NARPD)
 summary(results3)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ----table2, echo = FALSE------------------------------------------------
 ssm_table(results3, render = FALSE) %>%
   kable(caption = circumplex:::dcaption(results3)) %>%
-  kable_styling(full_width = TRUE, font_size = 12)
+  kable_styling(full_width = TRUE, font_size = 14)
 
-## ---- fig.width = 7.2, fig.height = 4------------------------------------
+## ----plot2, fig.width = 7.5, fig.height = 4, out.width = "100%"----------
 ssm_plot(results3)
 

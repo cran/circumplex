@@ -101,6 +101,8 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
       stop("After removing profiles, there were none left to plot.")
     }
   }
+  df_plot <- df_plot %>% 
+    dplyr::mutate(lnty = dplyr::if_else(fit >= .70, "solid", "dashed"))
   
   p <- circle_base(angles = angles, amax = amax, fontsize = fontsize) +
     ggplot2::scale_color_hue() +
@@ -111,9 +113,9 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
       data = df_plot,
       aes(
         x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
-        fill = label, color = label
+        fill = label, color = label, linetype = lnty
       ),
-      alpha = 0.5,
+      alpha = 0.4,
       size = 1
     ) +
     ggplot2::geom_point(
@@ -128,7 +130,8 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
     ) + 
     ggplot2::theme(
       legend.text = ggplot2::element_text(size = fontsize)
-    )
+    ) +
+    ggplot2::scale_linetype_identity()
 
   p
 }
@@ -278,15 +281,11 @@ circle_base <- function(angles, labels = sprintf("%d\u00B0", angles),
 #'
 #' @param .ssm_object The output of \code{ssm_profiles()} or
 #'   \code{ssm_measures()}
-#' @param filename A string determining the filename to which the table should
-#'   be saved. If set to NULL, the table will be displayed but not saved
-#'   (default = NULL).
 #' @param caption A string to be displayed above the table (default = NULL).
 #' @param xy A logical indicating whether the x-value and y-value parameters
 #'   should be included in the table as columns (default = TRUE).
 #' @param render A logical indicating whether the table should be displayed in
-#'   the RStudio viewer or web browser (default = TRUE). Note that this argument
-#'   needs to be TRUE in order for a file to be saved via \code{filename}.
+#'   the RStudio viewer or web browser (default = TRUE).
 #' @return A tibble containing the information for the HTML table. As a
 #'  side-effect, may also output the HTML table to the web viewer.
 #' @family ssm functions
@@ -308,11 +307,9 @@ circle_base <- function(angles, labels = sprintf("%d\u00B0", angles),
 #' ssm_table(res)
 #' }
 
-ssm_table <- function(.ssm_object, filename = NULL, caption = NULL, xy = TRUE,
-  render = TRUE) {
+ssm_table <- function(.ssm_object, caption = NULL, xy = TRUE, render = TRUE) {
   
   assert_that(is_provided(.ssm_object))
-  assert_that(is.null(filename) || is.string(filename))
   assert_that(is.null(caption) || is.string(caption))
   assert_that(is.flag(xy), is.flag(render))
   
@@ -352,7 +349,7 @@ ssm_table <- function(.ssm_object, filename = NULL, caption = NULL, xy = TRUE,
 
   # Format and render HTML table if requested
   if (render == TRUE) {
-    html_render(df, caption, filename)
+    html_render(df, caption)
   }
 
   df
@@ -384,11 +381,8 @@ dcaption <- function(.ssm_object) {
 #' @param ... One or more additional data frames from the \code{ssm_table()}
 #'   function to be appended to \code{.ssm_table} in the order of input.
 #' @param caption A string to be displayed above the table if rendered.
-#' @param filename A string determining the filename to which the table should
-#'   be saved. If set to NULL, the table will not be saved (default = NULL).
 #' @param render A logical indicating whether the table should be displayed in
-#'   the RStudio viewer or web browser (default = TRUE). Note that this argument
-#'   needs to be TRUE in order for a file to be saved via \code{filename}.
+#'   the RStudio viewer or web browser (default = TRUE).
 #' @return A tibble containing the information for the HTML table. As a
 #'  side-effect, may also output the HTML table to the web viewer.
 #' @family ssm functions
@@ -401,8 +395,7 @@ dcaption <- function(.ssm_object) {
 #' tab1 <- ssm_table(res1, render = FALSE)
 #' tab2 <- ssm_table(res2, render = FALSE)
 #' ssm_append(tab1, tab2)
-ssm_append <- function(.ssm_table, ..., caption = NULL, filename = NULL,
-  render = TRUE) {
+ssm_append <- function(.ssm_table, ..., caption = NULL, render = TRUE) {
   
   # TODO: Add more assertions
   assert_that(is.flag(render))
@@ -412,7 +405,7 @@ ssm_append <- function(.ssm_table, ..., caption = NULL, filename = NULL,
   
   # Format and render HTML table if requested
   if (render == TRUE) {
-    html_render(df, caption, filename)
+    html_render(df, caption)
   }
   
   df
@@ -424,16 +417,12 @@ ssm_append <- function(.ssm_table, ..., caption = NULL, filename = NULL,
 #' 
 #' @param df A data frame to be rendered as an HTML table.
 #' @param caption A string to be displayed above the table.
-#' @param filename A string determining the filename to which the table should
-#'   be saved. If set to NULL, the table will be displayed but not saved
-#'   (default = NULL).
 #' @param align A string indicating the alignment of the cells (default = "l").
 #' @param ... Other arguments to pass to \code{htmlTable}.
-#' @return HTML syntax for the \code{df} table. The table will also be displayed
-#'   in the web viewer and may be saved to an HTML file.
+#' @return HTML syntax for the \code{df} table.
 #' @family table functions
 #' @export
-html_render <- function(df, caption = NULL, filename = NULL, align = "l", ...) {
+html_render <- function(df, caption = NULL, align = "l", ...) {
   
   # TODO: Add assertions
   
@@ -445,13 +434,5 @@ html_render <- function(df, caption = NULL, filename = NULL, align = "l", ...) {
     css.cell = "padding-right: 1em; min-width: 3em; white-space: nowrap;",
     ...
   )
-  if (is.null(filename) == TRUE) {
-    print(t, type = "html")
-  } else {
-    sink(filename)
-    print(t, type = "html")
-    sink()
-  }
-  
-  t
+  print(t, type = "html")
 }
