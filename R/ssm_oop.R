@@ -1,8 +1,8 @@
 # S3 vector constructors -------------------------------------------------------
 
-# Create a new S3 class from a double
-new_s3_dbl <- function(x, ..., class) {
-  stopifnot(is.double(x))
+# Create a new S3 class from a numeric
+new_s3_num <- function(x, ..., class) {
+  stopifnot(is.numeric(x))
   stopifnot(is.character(class))
   structure(x, ..., class = class)
 }
@@ -23,7 +23,7 @@ new_s3_scalar <- function(..., class) {
 
 # Set numeric object to class 'degree'
 new_degree <- function(x) {
-  new_s3_dbl(x, class = c("degree", "numeric"))
+  new_s3_num(x, class = c("degree", "numeric"))
 }
 
 # S3 generic for class 'degree'
@@ -50,7 +50,7 @@ as_degree.radian <- function(x, ...) {
 
 # Set numeric object to class 'radian'
 new_radian <- function(x) {
-  new_s3_dbl(x, class = c("radian", "numeric"))
+  new_s3_num(x, class = c("radian", "numeric"))
 }
 
 # S3 generic for class 'radian'
@@ -92,7 +92,9 @@ print.ssm <- function(x, digits = 3, ...) {
   # Print function call
   cat("Call:\n",
     paste(deparse(x$call), sep = "\n", collapse = "\n"),
-    "\n", sep = "")
+    "\n",
+    sep = ""
+  )
   # Print each result as a block
   for (i in 1:nrow(x$results)) {
     dat <- x$results[i, ]
@@ -109,19 +111,22 @@ print.ssm <- function(x, digits = 3, ...) {
     )
     colnames(m) <- c("Estimate", "Lower CI", "Upper CI")
     cat("\n", x$details$results_type, " [", dat$label, "]:\n",
-      sep = "")
+      sep = ""
+    )
     print.default(m, print.gap = 3L, na.print = "")
   }
   cat("\n")
 }
 
 # Summary method for objects of ssm class
-#' @export 
+#' @export
 summary.ssm <- function(object, digits = 3, ...) {
   # Print function call
   cat("Call:\n",
     paste(deparse(object$call), sep = "\n", collapse = "\n"),
-    "\n", sep = "")
+    "\n",
+    sep = ""
+  )
   # Print analysis details
   cat(
     "\nStatistical Basis:\t", object$details$score_type, "Scores",
@@ -147,7 +152,8 @@ summary.ssm <- function(object, digits = 3, ...) {
     )
     colnames(m) <- c("Estimate", "Lower CI", "Upper CI")
     cat("\n", object$details$results_type, " [", dat$label, "]:\n",
-      sep = "")
+      sep = ""
+    )
     print.default(m, print.gap = 3L, na.print = "")
   }
   cat("\n")

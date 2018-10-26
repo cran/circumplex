@@ -9,6 +9,7 @@ library(dplyr)
 library(forcats)
 library(psych)
 library(knitr)
+set.seed(12345)
 
 ## ----model, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 angles <- c(90, 135, 180, 225, 270, 315, 360, 45)
@@ -290,10 +291,21 @@ ggplot() +
     vjust = "outward"
   )
 
-## ----analyze-------------------------------------------------------------
-results <- ssm_analyze(
+## ------------------------------------------------------------------------
+data("iipsc")
+jz2017s <- standardize(
   .data = jz2017,
   scales = c(PA, BC, DE, FG, HI, JK, LM, NO),
+  angles = c(90, 135, 180, 225, 270, 315, 360, 45),
+  instrument = iipsc,
+  sample = 1
+)
+print(jz2017s)
+
+## ----analyze-------------------------------------------------------------
+results <- ssm_analyze(
+  .data = jz2017s,
+  scales = c(PA_z, BC_z, DE_z, FG_z, HI_z, JK_z, LM_z, NO_z),
   angles = c(90, 135, 180, 225, 270, 315, 360, 45)
 )
 
@@ -301,7 +313,7 @@ results <- ssm_analyze(
 summary(results)
 
 ## ----summary1b-----------------------------------------------------------
-results2 <- ssm_analyze(jz2017, PA:NO, octants())
+results2 <- ssm_analyze(jz2017s, PA_z:NO_z, octants())
 summary(results2)
 
 ## ----table1, echo = FALSE------------------------------------------------

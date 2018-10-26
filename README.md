@@ -1,48 +1,36 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# circumplex <img src="man/figures/logo.png" align="right" />
+# circumplex <img src="man/figures/logo.png" align="right" alt="" />
 
-[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/circumplex)](https://cran.r-project.org/package=circumplex)
+[![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/circumplex)](https://cran.r-project.org/package=circumplex)
 [![Build
 Status](https://travis-ci.org/jmgirard/circumplex.svg?branch=master)](https://travis-ci.org/jmgirard/circumplex)
 [![Coverage
 status](https://codecov.io/gh/jmgirard/circumplex/branch/master/graph/badge.svg)](https://codecov.io/github/jmgirard/circumplex?branch=master)
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
-developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
-
-## Overview
 
 The goal of *circumplex* is to provide a powerful, flexible, and
 user-friendly way to analyze and visualize circumplex data. It was
-created and is maintained by [Jeffrey Girard](https://jmgirard.com/),
-and was inspired by work from and was developed in conjunction with
+created and is maintained by [Jeffrey Girard](https://jmgirard.com/); it
+was inspired by work from and was developed under advisement from
 [Johannes
 Zimmermann](https://psychologische-hochschule.de/prof-dr-johannes-zimmermann/)
 and [Aidan Wright](https://personalityprocesses.com/). You can learn
-more about using this package to perform the Structural Summary Method
-(SSM) in `vignette("ssm-introduction")` and
-`vignette("ssm-intermediate")`. You can purchase stickers with the
-circumplex logo at
-[redbubble.com](https://www.redbubble.com/people/jmgirard/works/32902204).
+more about using this package through the vignette articles available on
+the [package website](https://circumplex.jmgirard.com/) or through
+`?circumplex`.
 
 ## Installation
 
 ``` r
-# Install the most recent release from CRAN
+# Install release version from CRAN
 install.packages("circumplex")
-```
 
-### Development version
-
-Releasing updates to CRAN takes time. You can always install the newest
-development version, which may contain bug fixes and new features, from
-GitHub:
-
-``` r
-# install.packages("devtools")
+# Install development version from GitHub
 devtools::install_github("jmgirard/circumplex")
 ```
 
@@ -132,31 +120,31 @@ NARPD
 
 <td style="text-align:left;">
 
-0.20 [0.17, 0.24]
+0.20 \[0.17, 0.24\]
 
 </td>
 
 <td style="text-align:left;">
 
--0.06 [-0.09, -0.03]
+\-0.06 \[-0.09, -0.03\]
 
 </td>
 
 <td style="text-align:left;">
 
-0.18 [0.15, 0.21]
+0.18 \[0.15, 0.21\]
 
 </td>
 
 <td style="text-align:left;">
 
-0.19 [0.16, 0.22]
+0.19 \[0.16, 0.22\]
 
 </td>
 
 <td style="text-align:left;">
 
-109.0 [99.2, 118.9]
+109.0 \[99.2, 118.9\]
 
 </td>
 
@@ -178,31 +166,31 @@ ASPD
 
 <td style="text-align:left;">
 
-0.12 [0.09, 0.16]
+0.12 \[0.09, 0.16\]
 
 </td>
 
 <td style="text-align:left;">
 
--0.10 [-0.13, -0.06]
+\-0.10 \[-0.13, -0.06\]
 
 </td>
 
 <td style="text-align:left;">
 
-0.20 [0.17, 0.24]
+0.20 \[0.17, 0.24\]
 
 </td>
 
 <td style="text-align:left;">
 
-0.23 [0.19, 0.26]
+0.23 \[0.19, 0.26\]
 
 </td>
 
 <td style="text-align:left;">
 
-115.9 [107.4, 124.4]
+115.9 \[107.4, 124.4\]
 
 </td>
 
@@ -227,8 +215,9 @@ ssm_plot(results)
 ## Code of Conduct
 
 Please note that this project is released with a [Contributor Code of
-Conduct](CONDUCT.md). By participating in this project, you agree to
-abide by its terms.
+Conduct](.github/CODE_OF_CONDUCT.md).
+
+By contributing to this project, you agree to abide by its terms.
 
 ## References
 

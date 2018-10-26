@@ -5,10 +5,13 @@ library(ggplot2)
 library(ggforce)
 library(tibble)
 library(kableExtra)
+set.seed(12345)
 
 ## ----group---------------------------------------------------------------
 data("jz2017")
-results <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
+data("iipsc")
+jz2017s <- standardize(jz2017, PA:NO, octants(), instrument = iipsc, sample = 1)
+results <- ssm_analyze(jz2017s, PA:NO, octants(), grouping = Gender)
 summary(results)
 
 ## ----group_table, echo = FALSE-------------------------------------------
@@ -18,6 +21,9 @@ ssm_table(results, render = FALSE) %>%
 
 ## ----group_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"-----
 ssm_plot(results)
+
+## ----group_plot_lowfit, fig.width = 7.5, fig.height = 4, out.width = "100%"----
+ssm_plot(results, lowfit = FALSE)
 
 ## ----measures------------------------------------------------------------
 results2 <- ssm_analyze(jz2017, PA:NO, octants(), measures = c(NARPD, ASPD))
@@ -32,8 +38,7 @@ ssm_table(results2, render = FALSE) %>%
 ssm_plot(results2)
 
 ## ----general-------------------------------------------------------------
-results3 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
-  measures = PARPD:SZTPD)
+results3 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender, measures = PARPD:SZTPD)
 summary(results3)
 
 ## ----general_table, echo = FALSE-----------------------------------------
@@ -44,12 +49,8 @@ ssm_table(results3, render = FALSE) %>%
 ## ----general_plot, fig.width = 7.5, fig.height = 4, out.width = "100%"----
 ssm_plot(results3)
 
-## ----lowfit, fig.width = 7.5, fig.height = 4, out.width = "100%"---------
-ssm_plot(results3, lowfit = TRUE)
-
 ## ----model_contrast------------------------------------------------------
-results4 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender,
-  contrast = "model")
+results4 <- ssm_analyze(jz2017s, PA:NO, octants(), grouping = Gender, contrast = "model")
 summary(results4)
 
 ## ----model_table, echo = FALSE-------------------------------------------
@@ -110,8 +111,8 @@ knitr::kable(tab, escape = FALSE) %>%
   add_header_above(c("", "", "Arguments Needed" = 3))
 
 ## ----append, echo = FALSE------------------------------------------------
-res1 <- ssm_analyze(jz2017, PA:NO, octants())
-res2 <- ssm_analyze(jz2017, PA:NO, octants(), grouping = Gender)
+res1 <- ssm_analyze(jz2017s, PA:NO, octants())
+res2 <- ssm_analyze(jz2017s, PA:NO, octants(), grouping = Gender)
 tab1 <- ssm_table(res1, xy = FALSE, render = FALSE)
 tab2 <- ssm_table(res2, xy = FALSE, render = FALSE)
 ssm_append(tab1, tab2, render = FALSE) %>% 
@@ -119,7 +120,7 @@ ssm_append(tab1, tab2, render = FALSE) %>%
   kable_styling(full_width = TRUE, font_size = 12)
 
 ## ----amax, fig.width = 7.5, fig.height = 4, out.width = "100%"-----------
-ssm_plot(results4, amax = 0.375)
+ssm_plot(results4, amax = 0.6)
 
 ## ----custom, fig.width = 7.5, fig.height = 4, out.width = "100%"---------
 ssm_plot(results6, xy = FALSE, color = "blue", linesize = 1,
