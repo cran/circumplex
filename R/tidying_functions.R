@@ -23,10 +23,9 @@
 #' data("raw_iipsc")
 #' ipsatize(raw_iipsc, IIP01:IIP32)
 ipsatize <- function(.data, items, na.rm = TRUE, overwrite = FALSE) {
-  
   assert_that(is_provided(.data), is_enquo(items))
   assert_that(is.flag(na.rm), is.flag(overwrite))
-  
+
   items_en <- rlang::enquo(items)
   if (overwrite == TRUE) {
     .data %>%
@@ -34,17 +33,17 @@ ipsatize <- function(.data, items, na.rm = TRUE, overwrite = FALSE) {
       dplyr::mutate(.im = rowMeans(., na.rm = na.rm)) %>%
       dplyr::mutate_at(
         .vars = dplyr::vars(!!items_en),
-        .funs = dplyr::funs(. - .im)
-      ) %>% 
+        .funs = list(~ (. - .im))
+      ) %>%
       dplyr::select(-.im)
   } else {
-    .data %>% 
-      dplyr::select(!!items_en) %>% 
-      dplyr::mutate(.im = rowMeans(., na.rm = na.rm)) %>% 
+    .data %>%
+      dplyr::select(!!items_en) %>%
+      dplyr::mutate(.im = rowMeans(., na.rm = na.rm)) %>%
       dplyr::mutate_at(
         .vars = dplyr::vars(!!items_en),
-        .funs = dplyr::funs(i = . - .im)
-      ) %>% 
+        .funs = list(i = ~ (. - .im))
+      ) %>%
       dplyr::select(-.im)
   }
 }
@@ -79,7 +78,6 @@ ipsatize <- function(.data, items, na.rm = TRUE, overwrite = FALSE) {
 #' instrument("iipsc")
 #' score(raw_iipsc, IIP01:IIP32, iipsc)
 score <- function(.data, items, instrument, na.rm = TRUE, prefix = "", suffix = "") {
-  
   items_en <- rlang::enquo(items)
 
   assert_that(is_provided(.data), is_enquo(!!items_en), is_provided(instrument))
@@ -145,16 +143,13 @@ standardize <- function(.data, scales, angles, instrument, sample = 1,
     dplyr::filter(Sample == sample)
   assert_that(length(scale_names) <= nrow(key))
   for (i in 1:length(angles)) {
-    scale_i <- scale_names[[i]]
+    scale_i <- rlang::sym(scale_names[[i]])
     new_var <- rlang::sym(paste0(prefix, scale_i, suffix))
     index_i <- key$Angle == angles[[i]]
     m_i <- key$M[index_i]
     s_i <- key$SD[index_i]
     .data <- .data %>%
-      dplyr::mutate_at(
-        .vars = scale_i,
-        .funs = dplyr::funs(!!new_var := (. - m_i) / s_i)
-      )
+      dplyr::mutate(!!new_var := (!!scale_i - m_i) / s_i)
   }
   .data
 }

@@ -32,19 +32,25 @@ desired formatting.
 data("jz2017")
 
 # Create table of profile results
-res <- ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD))
+res <- ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD)
+)
 ssm_table(res)
 
 # Create table of contrast results
-res <- ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD), contrast = "test")
+res <- ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD), contrast = "test"
+)
 ssm_table(res)
 }
+
 }
 \seealso{
 Other ssm functions: \code{\link{ssm_analyze}},
-  \code{\link{ssm_append}}, \code{\link{ssm_plot}}
+  \code{\link{ssm_append}}, \code{\link{ssm_parameters}},
+  \code{\link{ssm_plot}}, \code{\link{ssm_score}}
 
 Other table functions: \code{\link{html_render}},
   \code{\link{ssm_append}}

@@ -26,21 +26,27 @@ Take in the results of an SSM analysis function and create figure from it.
 data("jz2017")
 
 # Plot profile results
-res <- ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD))
+res <- ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD)
+)
 p <- ssm_plot(res)
 
 # Plot contrast results
-res <- ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD), contrast = "test")
+res <- ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD), contrast = "test"
+)
 p <- ssm_plot(res)
 }
+
 }
 \seealso{
 ggsave Function for saving plots to image files.
 
 Other ssm functions: \code{\link{ssm_analyze}},
-  \code{\link{ssm_append}}, \code{\link{ssm_table}}
+  \code{\link{ssm_append}}, \code{\link{ssm_parameters}},
+  \code{\link{ssm_score}}, \code{\link{ssm_table}}
 }
 \concept{ssm functions}
 \concept{visualization functions}

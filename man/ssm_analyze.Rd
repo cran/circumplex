@@ -71,33 +71,47 @@ data("jz2017")
 ssm_analyze(jz2017, scales = PA:NO, angles = octants())
 
 # Single-group correlation-based SSM
-ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD))
-
+ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD)
+)
 \donttest{
 # Multiple-group mean-based SSM
 ssm_analyze(jz2017, scales = PA:NO, angles = octants(), grouping = Gender)
 
 # Multiple-group mean-based SSM with contrast
-ssm_analyze(jz2017, scales = PA:NO, angles = octants(), grouping = Gender,
-  contrast = "model")
+ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(), grouping = Gender,
+  contrast = "model"
+)
 
 # Single-group correlation-based SSM with contrast
-ssm_analyze(jz2017, scales = PA:NO, angles = octants(),
-  measures = c(NARPD, ASPD), contrast = "test")
+ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(),
+  measures = c(NARPD, ASPD), contrast = "test"
+)
 
 # Multiple-group correlation-based SSM
-ssm_analyze(jz2017, scales = PA:NO, angles = octants(), measures = NARPD,
-  grouping = Gender)
+ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(), measures = NARPD,
+  grouping = Gender
+)
 
 # Multiple-group correlation-based SSM with contrast
-ssm_analyze(jz2017, scales = PA:NO, angles = octants(), measures = NARPD,
-  grouping = Gender, contrast = "test")
+ssm_analyze(jz2017,
+  scales = PA:NO, angles = octants(), measures = NARPD,
+  grouping = Gender, contrast = "test"
+)
 }
+
 }
 \seealso{
 Other ssm functions: \code{\link{ssm_append}},
-  \code{\link{ssm_plot}}, \code{\link{ssm_table}}
+  \code{\link{ssm_parameters}}, \code{\link{ssm_plot}},
+  \code{\link{ssm_score}}, \code{\link{ssm_table}}
+
+Other analysis functions: \code{\link{ssm_parameters}},
+  \code{\link{ssm_score}}
 }
 \concept{analysis functions}
 \concept{ssm functions}

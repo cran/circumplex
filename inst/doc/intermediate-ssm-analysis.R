@@ -1,11 +1,13 @@
-## ----setup, include = FALSE----------------------------------------------
+## ---- include = FALSE----------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-library(circumplex)
 library(ggplot2)
 library(ggforce)
 library(tibble)
 library(kableExtra)
 set.seed(12345)
+
+## ----setup---------------------------------------------------------------
+library(circumplex)
 
 ## ----group---------------------------------------------------------------
 data("jz2017")
