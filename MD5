@@ -1,6 +1,6 @@
-865dea2c59192eb85c84e3ed8f5145f1 *DESCRIPTION
+7341d630439741386bffd9ccc4eb66f0 *DESCRIPTION
 1ca72708125f9a5e5bf83b0ae627d6a4 *NAMESPACE
-e1e77c85aa172cbcd381c3edf9fa8497 *NEWS.md
+7668432ed9700d9ad695915c3624bd8a *NEWS.md
 375637c8555c7e2e03b2c6576d2689f2 *R/RcppExports.R
 ce9c6b950cc190aef13611e4346cd939 *R/assertions.R
 3bdcb58947277f5c7705f22f48ba33a3 *R/circumplex.R
@@ -9,7 +9,7 @@ b4190dfbdfe57537cceae2a4afda67be *R/example_data.R
 a9ad0a84328abe8c860868f2b1b5a881 *R/instrument_data.R
 47f60acf4b996853d458ca21d6bbff93 *R/instrument_oop.R
 ac42f3060570a52377a0b90a8abb70e5 *R/ssm_analysis.R
-b214db8c05770c71dd38fa5a12c7580c *R/ssm_bootstrap.R
+4f640c89001d6ac76f4d6cac364ed3c0 *R/ssm_bootstrap.R
 fe16dcda9388aaec3b7788729585b719 *R/ssm_oop.R
 f0c39908a9f53846caf3cbda7ccd0350 *R/ssm_visualization.R
 fe82db716de1140041650b76940c025b *R/tidying_functions.R
@@ -18,8 +18,8 @@ bab7f94553feab69275250d29c00041e *R/utils-dplyr.R
 b520e01a912c1578f85a165a4d7b8c96 *R/utils-tidy-eval.R
 d06eeccda860d4d18110810d66dbff7c *R/utils.R
 a27bae8e56aec0d8f87b260bf3570722 *R/zzz.R
-e18f912c6ad929f4411b3be9946ae74d *README.md
-b94d52c8fc243ae759bf1ee1cfe833fe *build/vignette.rds
+e5be801f25da5e5f9940169d2b065c55 *README.md
+8f32d64e399fe2c5a369cd9deabc38a8 *build/vignette.rds
 6964745ba160a6d189f6c676ad9962bf *data/aw2009.rda
 b8bba113a8ab1f854e9df8a78d50f12c *data/csie.rda
 4279f419802f0ec119025ad59caedddc *data/csig.rda
@@ -37,13 +37,13 @@ aee5050f70ebd5597281158a6afe8282 *data/iis32.rda
 1b85d0eee4d27796917de7c5461d3835 *data/raw_iipsc.rda
 d15f9e9e0d285818965d3b357609de6c *inst/doc/intermediate-ssm-analysis.R
 cc6480e47692c77e7af95c2e9a4b696e *inst/doc/intermediate-ssm-analysis.Rmd
-4633cfc23841149b6a06180a8b7b9fe8 *inst/doc/intermediate-ssm-analysis.html
+2542146e8d194e604a6a5991d42f0f90 *inst/doc/intermediate-ssm-analysis.html
 8744ede591b968fef1298c257dd0fc61 *inst/doc/introduction-to-ssm-analysis.R
 ce79877e8f742036a04c59b925e6bd0b *inst/doc/introduction-to-ssm-analysis.Rmd
-219aa974429fac65459ea5753430b733 *inst/doc/introduction-to-ssm-analysis.html
+5b9f9af6c8988ebe8a8fff3d757a21ba *inst/doc/introduction-to-ssm-analysis.html
 82d90f79d3ee525289cca62de14dd461 *inst/doc/using-instruments.R
 aa7daab5884fbf896bf72e4b30602b05 *inst/doc/using-instruments.Rmd
-ebf844ea8071b6f39a2fafea79f6c73e *inst/doc/using-instruments.html
+96cac1cfbe0d6b9aafaac0f4c5044f4e *inst/doc/using-instruments.html
 9ee3ade90079deb05fad08ce499f7463 *man/anchors.Rd
 ff14ad3dc3dfa76a75e4c9d1e15ca7ed *man/aw2009.Rd
 ff5a6803676ba0ae64d9827b9e2d8d17 *man/circumplex-package.Rd
@@ -51,7 +51,7 @@ e74cc3a5643f07179815aca1edb1bd5e *man/csie.Rd
 c65126122031f720eea6c57f08e70277 *man/csig.Rd
 022ec27d7f91ca2bd1755a58bb36d6da *man/csip.Rd
 283681b2851bcced610d336e49031125 *man/csiv.Rd
-495902deaf8cda48e2833b60a581841c *man/figures/README-plot-1.png
+9bf5604bb1a4cebc81bf86570ec9d35a *man/figures/README-plot-1.png
 71613c7dd20825c9fa46c2018401fb81 *man/figures/logo.png
 b4e256cbda3b20a535c36460f0041ea7 *man/ggsave.Rd
 0a8ed44f6fcebbbebfb7d12d17f4a8d0 *man/html_render.Rd

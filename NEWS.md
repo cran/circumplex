@@ -1,3 +1,11 @@
+circumplex 0.3.1
+=============================
+
+#### BUG FIXES ####
+
+* Avoid a bug with dplyr 0.8.1 and S3 methods on Linux systems
+* Update the web address for Johannes in the README document
+
 circumplex 0.3.0
 =============================
 

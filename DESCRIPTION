@@ -1,7 +1,7 @@
 Type: Package
 Package: circumplex
 Title: Analysis and Visualization of Circular Data
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: 
     c(person(given = "Jeffrey",
              family = "Girard",
@@ -39,10 +39,10 @@ VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 NeedsCompilation: yes
-Packaged: 2019-04-26 06:05:32 UTC; jmgirard
+Packaged: 2019-05-15 17:33:23 UTC; jmgirard
 Author: Jeffrey Girard [aut, cre] (<https://orcid.org/0000-0002-7359-3746>),
   Johannes Zimmermann [aut] (<https://orcid.org/0000-0001-6975-2356>),
   Aidan Wright [aut] (<https://orcid.org/0000-0002-2369-0601>)
 Maintainer: Jeffrey Girard <me@jmgirard.com>
 Repository: CRAN
-Date/Publication: 2019-04-26 09:30:06 UTC
+Date/Publication: 2019-05-15 18:00:03 UTC
