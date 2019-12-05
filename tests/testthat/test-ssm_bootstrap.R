@@ -4,14 +4,14 @@ test_that("Quantile for circular radians works", {
   a <- as_degree(0:180)
   b <- as_radian(a)
   qb <- quantile(b)
-  expect_s3_class(qb, "radian")
+  expect_s3_class(qb, "circumplex_radian")
   expect_equivalent(qb, as_radian(as_degree(c(0, 45, 90, 135, 180))))
 
   a <- as_degree(180:360)
   b <- as_radian(a)
   qb <- quantile(b)
-  expect_s3_class(qb, "radian")
-  if (getRversion() >= "3.7.0") {
+  expect_s3_class(qb, "circumplex_radian")
+  if (getRversion() > "3.6.1" || (getRversion() == "3.6.1" && R.Version()$status == "Patched")) {
     expect_equivalent(qb, as_radian(as_degree(c(180, 225, 270, 315, 360))))
   } else {
     expect_equivalent(qb, as_radian(as_degree(c(180, 225, 270, 315, 0))))
@@ -20,8 +20,8 @@ test_that("Quantile for circular radians works", {
   a <- as_degree(c(270:360, 1:90))
   b <- as_radian(a)
   qb <- quantile(b)
-  expect_s3_class(qb, "radian")
-  if (getRversion() >= "3.7.0") {
+  expect_s3_class(qb, "circumplex_radian")
+  if (getRversion() > "3.6.1" || (getRversion() == "3.6.1" && R.Version()$status == "Patched")) {
     expect_equivalent(qb, as_radian(as_degree(c(270, 315, 360, 45, 90))))
   } else {
     expect_equivalent(qb, as_radian(as_degree(c(270, 315, 0, 45, 90))))

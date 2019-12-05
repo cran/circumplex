@@ -4,12 +4,11 @@
 \name{csig}
 \alias{csig}
 \title{Circumplex Scales of Intergroup Goals}
-\format{An object of class \code{instrument} of length 5.}
+\format{An object of class \code{circumplex_instrument} of length 5.}
 \source{
 Locke, K. D. (2014). Circumplex scales of intergroup goals: An
 interpersonal circle model of goals for interactions between groups.
 \emph{Personality and Social Psychology Bulletin, 40}(4), 433-449.
-\url{https://doi.org/10/gfrkjd}
 
 \url{https://www.webpages.uidaho.edu/klocke/csig.htm}
 }

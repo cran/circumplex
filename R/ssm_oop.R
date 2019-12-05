@@ -23,7 +23,7 @@ new_s3_scalar <- function(..., class) {
 
 # Set numeric object to class 'degree'
 new_degree <- function(x) {
-  new_s3_num(x, class = c("degree", "numeric"))
+  new_s3_num(x, class = c("circumplex_degree", "numeric"))
 }
 
 # S3 generic for class 'degree'
@@ -37,12 +37,12 @@ as_degree.default <- function(x, ...) {
 }
 
 # Return object if already class 'degree'
-as_degree.degree <- function(x, ...) {
+as_degree.circumplex_degree <- function(x, ...) {
   x
 }
 
 # Convert from class 'radian' to class 'degree'
-as_degree.radian <- function(x, ...) {
+as_degree.circumplex_radian <- function(x, ...) {
   new_degree(x * (180 / pi))
 }
 
@@ -50,7 +50,7 @@ as_degree.radian <- function(x, ...) {
 
 # Set numeric object to class 'radian'
 new_radian <- function(x) {
-  new_s3_num(x, class = c("radian", "numeric"))
+  new_s3_num(x, class = c("circumplex_radian", "numeric"))
 }
 
 # S3 generic for class 'radian'
@@ -64,12 +64,12 @@ as_radian.default <- function(x, ...) {
 }
 
 # Return object if already class 'radian'
-as_radian.radian <- function(x, ...) {
+as_radian.circumplex_radian <- function(x, ...) {
   x
 }
 
 # Convert from class 'degree' to class 'radian'
-as_radian.degree <- function(x, ...) {
+as_radian.circumplex_degree <- function(x, ...) {
   new_radian(x * (pi / 180))
 }
 
@@ -82,13 +82,13 @@ new_ssm <- function(results, details, call, ...) {
     details = details,
     call = call,
     ...,
-    class = "ssm"
+    class = "circumplex_ssm"
   )
 }
 
 #  Print method for objects of ssm class
 #' @export
-print.ssm <- function(x, digits = 3, ...) {
+print.circumplex_ssm <- function(x, digits = 3, ...) {
   # Print function call
   cat("Call:\n",
     paste(deparse(x$call), sep = "\n", collapse = "\n"),
@@ -120,7 +120,7 @@ print.ssm <- function(x, digits = 3, ...) {
 
 # Summary method for objects of ssm class
 #' @export
-summary.ssm <- function(object, digits = 3, ...) {
+summary.circumplex_ssm <- function(object, digits = 3, ...) {
   # Print function call
   cat("Call:\n",
     paste(deparse(object$call), sep = "\n", collapse = "\n"),

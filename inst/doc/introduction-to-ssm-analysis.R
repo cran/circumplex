@@ -1,4 +1,4 @@
-## ---- include = FALSE----------------------------------------------------
+## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(12345)
 library(ggforce)
@@ -8,7 +8,7 @@ library(tibble)
 library(dplyr)
 library(knitr)
 
-## ----setup---------------------------------------------------------------
+## ----setup--------------------------------------------------------------------
 library(circumplex)
 
 ## ----model, echo = FALSE, fig.width = 7.5, fig.height = 4, out.width = "100%"----
@@ -191,16 +191,16 @@ ggplot2::ggplot(dat_r, ggplot2::aes(x = Angle, y = est)) +
     panel.grid.minor.x = ggplot2::element_blank()
   )
 
-## ----elev, echo = FALSE, out.width = "100%"------------------------------
+## ----elev, echo = FALSE, out.width = "100%"-----------------------------------
 knitr::include_graphics("VIG1-e.gif")
 
-## ----ampl, echo = FALSE, out.width = "100%"------------------------------
+## ----ampl, echo = FALSE, out.width = "100%"-----------------------------------
 knitr::include_graphics("VIG1-a.gif")
 
-## ----disp, echo = FALSE, out.width = "100%"------------------------------
+## ----disp, echo = FALSE, out.width = "100%"-----------------------------------
 knitr::include_graphics("VIG1-d.gif")
 
-## ----jz2017--------------------------------------------------------------
+## ----jz2017-------------------------------------------------------------------
 data("jz2017")
 print(jz2017)
 
@@ -284,7 +284,7 @@ ggplot2::ggplot() +
     vjust = "outward"
   )
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("iipsc")
 jz2017s <- standardize(
   .data = jz2017,
@@ -295,37 +295,37 @@ jz2017s <- standardize(
 )
 print(jz2017s)
 
-## ----analyze-------------------------------------------------------------
+## ----analyze------------------------------------------------------------------
 results <- ssm_analyze(
   .data = jz2017s,
   scales = c(PA_z, BC_z, DE_z, FG_z, HI_z, JK_z, LM_z, NO_z),
   angles = c(90, 135, 180, 225, 270, 315, 360, 45)
 )
 
-## ----summary1a-----------------------------------------------------------
+## ----summary1a----------------------------------------------------------------
 summary(results)
 
-## ----summary1b-----------------------------------------------------------
+## ----summary1b----------------------------------------------------------------
 results2 <- ssm_analyze(jz2017s, PA_z:NO_z, octants())
 summary(results2)
 
-## ----table1, echo = FALSE------------------------------------------------
+## ----table1, echo = FALSE-----------------------------------------------------
 ssm_table(results2, render = FALSE) %>%
   kable(caption = circumplex:::dcaption(results2)) %>%
   kable_styling(full_width = TRUE, font_size = 14)
 
-## ----plot1, fig.width = 7.2, fig.height = 4, out.width = "100%"----------
+## ----plot1, fig.width = 7.2, fig.height = 4, out.width = "100%"---------------
 ssm_plot(results2)
 
-## ----summary2------------------------------------------------------------
+## ----summary2-----------------------------------------------------------------
 results3 <- ssm_analyze(jz2017, PA:NO, octants(), measures = NARPD)
 summary(results3)
 
-## ----table2, echo = FALSE------------------------------------------------
+## ----table2, echo = FALSE-----------------------------------------------------
 ssm_table(results3, render = FALSE) %>%
   kable(caption = circumplex:::dcaption(results3)) %>%
   kable_styling(full_width = TRUE, font_size = 14)
 
-## ----plot2, fig.width = 7.5, fig.height = 4, out.width = "100%"----------
+## ----plot2, fig.width = 7.5, fig.height = 4, out.width = "100%"---------------
 ssm_plot(results3)
 

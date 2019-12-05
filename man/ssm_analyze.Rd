@@ -4,9 +4,17 @@
 \alias{ssm_analyze}
 \title{Perform analyses using the Structural Summary Method}
 \usage{
-ssm_analyze(.data, scales, angles, measures = NULL, grouping = NULL,
-  contrast = c("none", "test", "model"), boots = 2000,
-  interval = 0.95, listwise = TRUE)
+ssm_analyze(
+  .data,
+  scales,
+  angles = octants(),
+  measures = NULL,
+  grouping = NULL,
+  contrast = c("none", "test", "model"),
+  boots = 2000,
+  interval = 0.95,
+  listwise = TRUE
+)
 }
 \arguments{
 \item{.data}{Required. A data frame containing at least circumplex scales.}
@@ -14,8 +22,9 @@ ssm_analyze(.data, scales, angles, measures = NULL, grouping = NULL,
 \item{scales}{Required. The variable names or column numbers for the
 variables in \code{.data} that contain circumplex scales to be analyzed.}
 
-\item{angles}{Required. A numeric vector containing the angular displacement
-of each circumplex scale included in \code{scales} (in degrees).}
+\item{angles}{Optional. A numeric vector containing the angular displacement
+of each circumplex scale included in \code{scales} (in degrees). (default =
+\code{octants()}).}
 
 \item{measures}{Optional. The variable names or column numbers for one or
 more variables in \code{.data} to be correlated with the circumplex scales
@@ -106,12 +115,16 @@ ssm_analyze(jz2017,
 
 }
 \seealso{
-Other ssm functions: \code{\link{ssm_append}},
-  \code{\link{ssm_parameters}}, \code{\link{ssm_plot}},
-  \code{\link{ssm_score}}, \code{\link{ssm_table}}
+Other ssm functions: 
+\code{\link{ssm_append}()},
+\code{\link{ssm_parameters}()},
+\code{\link{ssm_plot}()},
+\code{\link{ssm_score}()},
+\code{\link{ssm_table}()}
 
-Other analysis functions: \code{\link{ssm_parameters}},
-  \code{\link{ssm_score}}
+Other analysis functions: 
+\code{\link{ssm_parameters}()},
+\code{\link{ssm_score}()}
 }
 \concept{analysis functions}
 \concept{ssm functions}

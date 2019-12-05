@@ -4,11 +4,11 @@
 \name{iis32}
 \alias{iis32}
 \title{Inventory of Interpersonal Strengths, Brief Version}
-\format{An object of class \code{instrument} of length 5.}
+\format{An object of class \code{circumplex_instrument} of length 5.}
 \source{
 Hatcher, R. L., & Rogers, D. T. (2012). The IIS-32: A brief inventory
 of interpersonal strengths. \emph{Journal of Personality Assessment, 94}(6),
-638-646. \url{https://doi.org/10/gfrkjj}
+638-646.
 
 \url{https://doi.org/10.1080/00223891.2012.681818}
 }

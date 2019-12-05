@@ -4,12 +4,11 @@
 \name{csiv}
 \alias{csiv}
 \title{Circumplex Scales of Interpersonal Values}
-\format{An object of class \code{instrument} of length 5.}
+\format{An object of class \code{circumplex_instrument} of length 5.}
 \source{
 Locke, K. D. (2000). Circumplex scales of interpersonal values:
 Reliability, validity, and applicability to interpersonal problems and
 personality disorders. \emph{Journal of Personality Assessment, 75}(2), 249-267.
-\url{https://doi.org/10/frtj3p}
 
 \url{https://www.webpages.uidaho.edu/klocke/csiv.htm}
 }
