@@ -1,6 +1,6 @@
-3015e785cdb15d64c49579854b7ea47d *DESCRIPTION
+d699da55d07a236bb09da3a3769968f0 *DESCRIPTION
 6ff30ef8f56ee88b28344e6a28ff22cf *NAMESPACE
-2d08efe75e0e48eafaff89e990b0dcad *NEWS.md
+ad1d012844a40964245c8047a83ef30a *NEWS.md
 375637c8555c7e2e03b2c6576d2689f2 *R/RcppExports.R
 1ba10e5ddf9bb9ecc56d3fd04ac5713c *R/assertions.R
 88f07833c31cd46eecfb07024b8c4d15 *R/circumplex.R
@@ -19,7 +19,7 @@ bab7f94553feab69275250d29c00041e *R/utils-dplyr.R
 d06eeccda860d4d18110810d66dbff7c *R/utils.R
 a27bae8e56aec0d8f87b260bf3570722 *R/zzz.R
 6b6c8dcedfb87a042e82189594808cd8 *README.md
-e3fdd92c578958f3b28e66758d3c878c *build/vignette.rds
+c6e87ffcb4b02c9815b82ae3b41cce94 *build/vignette.rds
 6964745ba160a6d189f6c676ad9962bf *data/aw2009.rda
 a61f43bd2e334250dafbee20957e280e *data/csie.rda
 fa064d0b966e5d1afb2a5b50ff893063 *data/csig.rda
@@ -38,13 +38,13 @@ dbdf820ff902ade7f20be83f01b394af *data/isc.rda
 1b85d0eee4d27796917de7c5461d3835 *data/raw_iipsc.rda
 923a04ddb75af7ae55cef924717f46ac *inst/doc/intermediate-ssm-analysis.R
 cc6480e47692c77e7af95c2e9a4b696e *inst/doc/intermediate-ssm-analysis.Rmd
-b1746d751d3b2c42165b393a26eadfc9 *inst/doc/intermediate-ssm-analysis.html
+bbe5c87ce056c8f6234dce534cf78c80 *inst/doc/intermediate-ssm-analysis.html
 9f14171f751136ceb4667296ff82925e *inst/doc/introduction-to-ssm-analysis.R
 ce79877e8f742036a04c59b925e6bd0b *inst/doc/introduction-to-ssm-analysis.Rmd
-71beb7601b0aff0490f24c28dc958a87 *inst/doc/introduction-to-ssm-analysis.html
+d032070ab0ae37597c1d88c6fbda12f9 *inst/doc/introduction-to-ssm-analysis.html
 7f8115fbb532a116072814fd0e30da22 *inst/doc/using-instruments.R
 22855150cc1646ff9551d6094cee9cdc *inst/doc/using-instruments.Rmd
-43fe56f02b2118e9b6fb3c8854863635 *inst/doc/using-instruments.html
+00a2a41863987baac365cc97609f8910 *inst/doc/using-instruments.html
 7a47786804e1f9a18a62fe43fd1439b4 *man/anchors.Rd
 3a66f6c541952a1469fe860072a3612f *man/aw2009.Rd
 6e8e5732a8c06e0ae576d48cd5ba0f5d *man/circumplex-package.Rd
@@ -100,7 +100,7 @@ e1f19d1c6aedc4a50d3c1ae65eb573cd *src/circular.cpp
 7eb29985a7357b3dfaaeba01109d0805 *tests/testthat/test-assertions.R
 69dd5bdec8092c1caabe64b46638cc68 *tests/testthat/test-instrument_oop.R
 c3c0e724b117cb5cd055588222b033bc *tests/testthat/test-ssm_analysis.R
-121fb3137296b9e4862b543dfaecac49 *tests/testthat/test-ssm_bootstrap.R
+432855b0d3c3b79fd11c36304316dd3d *tests/testthat/test-ssm_bootstrap.R
 65372eadf4068fb5021043ce34e5483e *tests/testthat/test-ssm_oop.R
 1cf8baab16b86def6abd8b233b8e67e8 *tests/testthat/test-ssm_visualization.R
 4afa33dc2f1075b6f75b50b78643919f *tests/testthat/test-tidying_functions.R

@@ -2,6 +2,14 @@
 
 ----
 
+# circumplex 0.3.5
+
+## Minor improvements and fixes
+
+* Removed several unit tests that were causing problems for CRAN checks
+
+----
+
 # circumplex 0.3.4
 
 ## Minor improvements and fixes
