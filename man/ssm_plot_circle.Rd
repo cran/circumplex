@@ -4,7 +4,18 @@
 \alias{ssm_plot_circle}
 \title{Create a Circular Plot of SSM Results}
 \usage{
-ssm_plot_circle(.ssm_object, amax = NULL, fontsize = 12, lowfit = TRUE)
+ssm_plot_circle(
+  .ssm_object,
+  amax = NULL,
+  legend_font_size = 12,
+  scale_font_size = 12,
+  lowfit = TRUE,
+  repel = FALSE,
+  angle_labels = NULL,
+  legend.box.spacing = 0,
+  palette = "Set2",
+  ...
+)
 }
 \arguments{
 \item{.ssm_object}{The output of \code{ssm_profiles()} or
@@ -14,11 +25,34 @@ ssm_plot_circle(.ssm_object, amax = NULL, fontsize = 12, lowfit = TRUE)
 It is used to scale the amplitude values and will determine which amplitude
 labels are drawn.}
 
-\item{fontsize}{A positive real number corresponding to the size (in pt) of
-the text labels (default = 12).}
+\item{legend_font_size}{A positive real number corresponding to the size (in
+pt) of the text labels in the legend (default = 12).}
+
+\item{scale_font_size}{A positive real number corresponding to the size (in
+pt) of the text labels for the amplitude and displacement scales (default =
+12).}
 
 \item{lowfit}{A logical determining whether profiles with low model fit
 (<.70) should be plotted, with dashed borders (default = TRUE).}
+
+\item{repel}{An experimental argument for plotting text labels instead of
+colors.}
+
+\item{angle_labels}{A character vector specifying text labels to plot around
+the circle for each scale. Can also specify NULL to default to numerical
+angle labels or a vector of empty strings ("") to hide the labels. If not
+NULL, must have the same length and ordering as the \code{angles} argument
+to \code{ssm_analyze()}. (default = NULL)}
+
+\item{legend.box.spacing}{A double corresponding to the distance (in inches)
+to add between the data plot and the legend (default = 0).}
+
+\item{palette}{A string corresponding to the palette to be used from
+ColorBrewer for the color and fill aesthetics. If set to NULL, all points
+will appear blue and no legend will be there (useful for showing the
+coverage of a high number of variables).}
+
+\item{...}{Currently ignored.}
 }
 \value{
 A ggplot variable containing a completed circular plot.

@@ -58,16 +58,46 @@ ssm_plot <- function(.ssm_object, fontsize = 12, ...) {
 #' @param amax A positive real number corresponding to the radius of the circle.
 #'   It is used to scale the amplitude values and will determine which amplitude
 #'   labels are drawn.
-#' @param fontsize A positive real number corresponding to the size (in pt) of
-#'   the text labels (default = 12).
+#' @param legend_font_size A positive real number corresponding to the size (in
+#'   pt) of the text labels in the legend (default = 12).
+#' @param scale_font_size A positive real number corresponding to the size (in
+#'   pt) of the text labels for the amplitude and displacement scales (default =
+#'   12).
 #' @param lowfit A logical determining whether profiles with low model fit
 #'   (<.70) should be plotted, with dashed borders (default = TRUE).
+#' @param repel An experimental argument for plotting text labels instead of
+#'   colors.
+#' @param angle_labels A character vector specifying text labels to plot around
+#'   the circle for each scale. Can also specify NULL to default to numerical
+#'   angle labels or a vector of empty strings ("") to hide the labels. If not
+#'   NULL, must have the same length and ordering as the \code{angles} argument
+#'   to \code{ssm_analyze()}. (default = NULL)
+#' @param legend.box.spacing A double corresponding to the distance (in inches)
+#'   to add between the data plot and the legend (default = 0).
+#' @param palette A string corresponding to the palette to be used from
+#'   ColorBrewer for the color and fill aesthetics. If set to NULL, all points
+#'   will appear blue and no legend will be there (useful for showing the
+#'   coverage of a high number of variables).
+#' @param ... Currently ignored.
 #' @return A ggplot variable containing a completed circular plot.
 
-ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
-                            lowfit = TRUE) {
+ssm_plot_circle <- function(.ssm_object, amax = NULL, 
+                            legend_font_size = 12,
+                            scale_font_size = 12,
+                            lowfit = TRUE, repel = FALSE,
+                            angle_labels = NULL,
+                            legend.box.spacing = 0,
+                            palette = "Set2",
+                            ...) {
   df <- .ssm_object$results
-  angles <- as.numeric(.ssm_object$details$angles)
+  
+  assert_that(
+    is.null(angle_labels) || 
+      rlang::is_character(angle_labels, n = length(.ssm_object$details$angles))
+  )
+  
+  angles <- as.integer(round(.ssm_object$details$angles))
+  
 
   assert_that(is.null(amax) || is.number(amax))
 
@@ -102,35 +132,83 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
   df_plot <- df_plot %>%
     dplyr::mutate(lnty = dplyr::if_else(fit_est >= .70, "solid", "dashed"))
 
-  p <- circle_base(angles = angles, amax = amax, fontsize = fontsize) +
-    ggplot2::scale_color_hue() +
-    ggplot2::scale_fill_hue()
+  p <- 
+    circle_base(
+      angles = angles, 
+      amax = amax, 
+      fontsize = scale_font_size, 
+      labels = angle_labels
+    ) +
+    ggplot2::scale_color_brewer(palette = palette) +
+    ggplot2::scale_fill_brewer(palette = palette)
 
-  p <- p +
-    ggforce::geom_arc_bar(
-      data = df_plot,
-      ggplot2::aes(
-        x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
-        fill = label, color = label, linetype = lnty
-      ),
-      alpha = 0.4,
-      size = 1
-    ) +
-    ggplot2::geom_point(
-      data = df_plot,
-      ggplot2::aes(x = x_est, y = y_est, color = label),
-      shape = 16,
-      size = 3
-    ) +
-    ggplot2::guides(
-      color = ggplot2::guide_legend(.ssm_object$details$results_type),
-      fill = ggplot2::guide_legend(.ssm_object$details$results_type)
-    ) +
-    ggplot2::theme(
-      legend.text = ggplot2::element_text(size = fontsize)
-    ) +
-    ggplot2::scale_linetype_identity()
+  if (is.null(palette)) {
+    p <- p +
+      ggforce::geom_arc_bar(
+        data = df_plot,
+        ggplot2::aes(
+          x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
+          linetype = lnty
+        ),
+        fill = "cornflowerblue", 
+        color = "cornflowerblue", 
+        alpha = 0.4,
+        size = 1
+      ) +
+      ggplot2::geom_point(
+        data = df_plot,
+        ggplot2::aes(x = x_est, y = y_est),
+        shape = 21,
+        size = 3,
+        color = "black",
+        fill = "cornflowerblue"
+      ) +
+      ggplot2::scale_linetype_identity() +
+      ggplot2::theme(legend.position = "none")
+  } else {
+    p <- p +
+      ggforce::geom_arc_bar(
+        data = df_plot,
+        ggplot2::aes(
+          x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
+          fill = label, color = label, linetype = lnty
+        ),
+        alpha = 0.4,
+        size = 1
+      ) +
+      ggplot2::geom_point(
+        data = df_plot,
+        ggplot2::aes(x = x_est, y = y_est, color = label, fill = label),
+        shape = 21,
+        size = 3,
+        color = "black"
+      ) +
+      ggplot2::guides(
+        color = ggplot2::guide_legend(.ssm_object$details$results_type),
+        fill = ggplot2::guide_legend(.ssm_object$details$results_type)
+      ) +
+      ggplot2::theme(
+        legend.text = ggplot2::element_text(size = legend_font_size),
+        legend.box.spacing = ggplot2::unit(legend.box.spacing, "in")
+      ) +
+      ggplot2::scale_linetype_identity()
+  }
+  
 
+
+  if (repel == TRUE) {
+    p <- p + 
+      ggrepel::geom_label_repel(
+        data = df_plot,
+        ggplot2::aes(x = x_est, y = y_est, label = label),
+        nudge_x = -25 - df_plot$x_est,
+        direction = "y",
+        hjust = 1,
+        size = legend_font_size / 2.8346438836889
+      ) + 
+      ggplot2::theme(legend.position = "none")
+  }
+  
   p
 }
 
@@ -156,13 +234,15 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL, fontsize = 12,
 
 ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
                               xy = TRUE, color = "red", linesize = 1.25, fontsize = 12) {
-  param_names <- c(
-    e = "\u0394 Elevation",
-    x = "\u0394 X-Value",
-    y = "\u0394 Y-Value",
-    a = "\u0394 Amplitude",
-    d = "\u0394 Displacement"
+  plabs <- c(
+    e = expression(paste(Delta, " Elevation")),
+    x = expression(paste(Delta, " X-Value")),
+    y = expression(paste(Delta, " Y-Value")),
+    a = expression(paste(Delta, " Amplitude")),
+    d = expression(paste(Delta, " Displacement"))
   )
+  
+  pvals <- c("e", "x", "y", "a", "d")
 
   res <- .ssm_object$results
 
@@ -171,7 +251,8 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
       res,
       -c(x_est, x_lci, x_uci, y_est, y_lci, y_uci)
     )
-    param_names <- param_names[-c(2, 3)]
+    plabs <- plabs[-c(2, 3)]
+    pvals <- pvals[-c(2, 3)]
   }
 
   # TODO: Check that these ifelse() statements are correct
@@ -188,7 +269,7 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
     tidyr::extract(col = key, into = c("Parameter", "Type"), "(.)_(...)") %>% 
     tidyr::pivot_wider(names_from = Type, values_from = value) %>% 
     dplyr::rename(Difference = est, Contrast = label) %>%
-    dplyr::mutate(Parameter = factor(Parameter, levels = c("e", "x", "y", "a", "d")))
+    dplyr::mutate(Parameter = factor(Parameter, levels = pvals, labels = plabs))
   
   p <- 
     res %>% 
@@ -197,7 +278,9 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
     ggplot2::theme(
       legend.position = "top",
       axis.text.x = ggplot2::element_blank(),
-      axis.title.x = ggplot2::element_blank()
+      axis.title.x = ggplot2::element_blank(),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor.y = ggplot2::element_line(linetype = "dashed")
     ) +
     ggplot2::geom_hline(yintercept = 0, size = linesize, color = "darkgray") +
     ggplot2::geom_point(
@@ -211,18 +294,21 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
     ggplot2::labs(y = axislabel) +
     ggplot2::facet_wrap(~Parameter,
       nrow = 1, scales = "free",
-      labeller = ggplot2::as_labeller(param_names)
+      labeller = ggplot2::label_parsed
     )
 
   p
 }
 
 # Create an Empty Circular Plot
-circle_base <- function(angles, labels = sprintf("%d\u00B0", angles),
+circle_base <- function(angles, labels = NULL,
                         amax = 0.5, fontsize = 12) {
+  
+  if (is.null(labels)) labels <- sprintf("%d\u00B0", angles)
+  
   ggplot2::ggplot() +
     # Require plot to be square and remove default styling
-    ggplot2::coord_fixed() +
+    ggplot2::coord_fixed(clip = "off") +
     ggplot2::theme_void(base_size = fontsize) +
     # Expand the axes multiplicatively to fit labels
     ggplot2::scale_x_continuous(expand = c(0.25, 0)) +
@@ -330,11 +416,11 @@ ssm_table <- function(.ssm_object, caption = NULL, xy = TRUE, render = TRUE) {
   # Format output data
   df <- dplyr::transmute(df,
     Label = label,
-    Elevation = sprintf("%.2f [%.2f, %.2f]", e_est, e_lci, e_uci),
-    `X-Value` = sprintf("%.2f [%.2f, %.2f]", x_est, x_lci, x_uci),
-    `Y-Value` = sprintf("%.2f [%.2f, %.2f]", y_est, y_lci, y_uci),
-    Amplitude = sprintf("%.2f [%.2f, %.2f]", a_est, a_lci, a_uci),
-    Displacement = sprintf("%.1f [%.1f, %.1f]", d_est, d_lci, d_uci),
+    Elevation = sprintf("%.2f (%.2f, %.2f)", e_est, e_lci, e_uci),
+    `X-Value` = sprintf("%.2f (%.2f, %.2f)", x_est, x_lci, x_uci),
+    `Y-Value` = sprintf("%.2f (%.2f, %.2f)", y_est, y_lci, y_uci),
+    Amplitude = sprintf("%.2f (%.2f, %.2f)", a_est, a_lci, a_uci),
+    Displacement = sprintf("%.1f (%.1f, %.1f)", d_est, d_lci, d_uci),
     Fit = sprintf("%.3f", fit_est)
   )
 

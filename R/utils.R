@@ -19,9 +19,6 @@ NULL
 #' @keywords internal
 #' @export
 #' @importFrom ggplot2 ggsave
-#' @usage ggsave(filename, plot = last_plot(), device = NULL, path = NULL, scale
-#'   = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300,
-#'   limitsize = TRUE, ...)
 NULL
 
 # Compute differences between two sets of SSM parameters -----------------------
@@ -63,4 +60,16 @@ pretty_max <- function(v) {
     out <- ceiling(amax * 1.50)
   }
   out
+}
+
+count_measures <- function(.data, measures) {
+  ncol(dplyr::select(.data, {{measures}}))
+}
+
+count_levels <- function(.data, grouping) {
+  if (ncol(dplyr::select(.data, {{grouping}})) > 0) {
+    nlevels(factor(dplyr::pull(.data, {{grouping}})))
+  } else {
+    0
+  }
 }
