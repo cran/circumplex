@@ -1,7 +1,7 @@
 Type: Package
 Package: circumplex
 Title: Analysis and Visualization of Circular Data
-Version: 0.3.7
+Version: 0.3.8
 Authors@R: 
     c(person(given = "Jeffrey",
              family = "Girard",
@@ -16,13 +16,14 @@ Authors@R:
              family = "Wright",
              role = "aut",
              comment = c(ORCID = "0000-0002-2369-0601")))
-Description: Tools for analyzing and visualizing circular data,
-    including scoring functions for relevant instruments and a
-    generalization of the bootstrapped structural summary method from
-    Zimmermann & Wright (2017) <doi:10.1177/1073191115621795> and
-    functions for creating publication-ready tables and figures from the
-    results. Future versions will include tools for circular fit and
-    reliability analyses, as well as visualization enhancements.
+Description: Circumplex models, which organize constructs in a circle around two 
+    underlying dimensions, are popular for studying interpersonal functioning, 
+    mood/affect, and vocational preferences/environments. This package provides 
+    tools for analyzing and visualizing circular data, including scoring 
+    functions for relevant instruments and a generalization of the bootstrapped 
+    structural summary method from Zimmermann & Wright (2017) 
+    <doi:10.1177/1073191115621795> and functions for creating publication-ready 
+    tables and figures from the results.
 License: GPL-3
 URL: https://github.com/jmgirard/circumplex
 BugReports: https://github.com/jmgirard/circumplex/issues
@@ -41,10 +42,10 @@ LazyData: true
 RoxygenNote: 7.1.1
 Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2021-05-17 20:11:55 UTC; jeffg
+Packaged: 2021-05-28 14:34:30 UTC; jeffg
 Author: Jeffrey Girard [aut, cre] (<https://orcid.org/0000-0002-7359-3746>),
   Johannes Zimmermann [aut] (<https://orcid.org/0000-0001-6975-2356>),
   Aidan Wright [aut] (<https://orcid.org/0000-0002-2369-0601>)
 Maintainer: Jeffrey Girard <me@jmgirard.com>
 Repository: CRAN
-Date/Publication: 2021-05-17 20:30:03 UTC
+Date/Publication: 2021-05-28 15:00:06 UTC

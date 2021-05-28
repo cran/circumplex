@@ -1,4 +1,4 @@
-af0af957bb262e2ea408dd0c9ceb60a6 *DESCRIPTION
+4d099d186096da49080348e552a82adb *DESCRIPTION
 b2c23f191b715414119dcf965f0243ec *NAMESPACE
 375637c8555c7e2e03b2c6576d2689f2 *R/RcppExports.R
 1ba10e5ddf9bb9ecc56d3fd04ac5713c *R/assertions.R
@@ -17,7 +17,7 @@ bab7f94553feab69275250d29c00041e *R/utils-dplyr.R
 3ca7553f2a12076ceeca6a7217774e92 *R/utils-tidy-eval.R
 bf2e3b39d8deb8bd5b7e6af8268dd9f4 *R/utils.R
 a27bae8e56aec0d8f87b260bf3570722 *R/zzz.R
-5882b30f5c23ecbef24dc44012718770 *build/partial.rdb
+bba63a492a93314a0c5b7f50b5302c10 *build/partial.rdb
 42d2a77d6cd41cad2b560a74fa579c66 *build/vignette.rds
 6964745ba160a6d189f6c676ad9962bf *data/aw2009.rda
 a61f43bd2e334250dafbee20957e280e *data/csie.rda
@@ -93,7 +93,7 @@ b3368b3925ce52290c4d8fc2830781cb *man/tidyeval.Rd
 61059660eb073d93e00e8ee054237071 *src/Makevars.win
 ef2975118829080eb8128f3112f22394 *src/RcppExports.cpp
 f6c4c407b614fb9eef47b86b2e1d164e *src/circular.cpp
-74466119f2c2663ada2f1cde810454ba *src/parameters.cpp
+15c2edb1e93e44fafdd039bd323417ed *src/parameters.cpp
 a46cc250b605bf4dbf7cac1feac488fe *tests/figs/deps.txt
 2f8ef980aae312093a525e28c5e5d716 *tests/figs/ssm-visualization/group-constrast-correlation-ssm.svg
 cb9c5719e7b85cb6a8fe2d7f5597ae20 *tests/figs/ssm-visualization/measure-contrast-ssm.svg
@@ -104,7 +104,7 @@ dc1a8e465b20781ecc0765a987f3429d *tests/testthat/_snaps/instrument_oop.md
 41f84fcd642d5a7f1a0c8cc2fd94db49 *tests/testthat/test-RcppExport.R.R
 7eb29985a7357b3dfaaeba01109d0805 *tests/testthat/test-assertions.R
 aed9458707a3ba8de98ae39eb818421e *tests/testthat/test-instrument_oop.R
-f86c2bc608b7729693c7f4d303d1987e *tests/testthat/test-ssm_analysis.R
+54d4038ba3079d91b8a87bbb4e28d0e6 *tests/testthat/test-ssm_analysis.R
 4a28203afa9fe555bfddba5f639668cd *tests/testthat/test-ssm_bootstrap.R
 b3a0e7dd8229cf96626918adf2f8d364 *tests/testthat/test-ssm_oop.R
 3fd94c6843bbbeb65094a8e11277ba03 *tests/testthat/test-ssm_visualization.R
