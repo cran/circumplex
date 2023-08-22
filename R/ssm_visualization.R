@@ -147,13 +147,14 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL,
       ggforce::geom_arc_bar(
         data = df_plot,
         ggplot2::aes(
-          x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
+          x0 = 0, y0 = 0, 
+          r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
           linetype = lnty
         ),
         fill = "cornflowerblue", 
         color = "cornflowerblue", 
         alpha = 0.4,
-        size = 1
+        linewidth = 1
       ) +
       ggplot2::geom_point(
         data = df_plot,
@@ -170,11 +171,12 @@ ssm_plot_circle <- function(.ssm_object, amax = NULL,
       ggforce::geom_arc_bar(
         data = df_plot,
         ggplot2::aes(
-          x0 = 0, y0 = 0, r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
+          x0 = 0, y0 = 0, 
+          r0 = a_lci, r = a_uci, start = d_lci, end = d_uci,
           fill = label, color = label, linetype = lnty
         ),
         alpha = 0.4,
-        size = 1
+        linewidth = 1
       ) +
       ggplot2::geom_point(
         data = df_plot,
@@ -282,14 +284,14 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.minor.y = ggplot2::element_line(linetype = "dashed")
     ) +
-    ggplot2::geom_hline(yintercept = 0, size = linesize, color = "darkgray") +
+    ggplot2::geom_hline(yintercept = 0, linewidth = linesize, color = "darkgray") +
     ggplot2::geom_point(
       ggplot2::aes(x = Contrast, y = Difference),
       size = linesize * 3, color = color
     ) +
     ggplot2::geom_errorbar(
       ggplot2::aes(x = Contrast, ymin = lci, ymax = uci),
-      size = linesize, color = color, width = 0.1
+      linewidth = linesize, color = color, width = 0.1
     ) +
     ggplot2::labs(y = axislabel) +
     ggplot2::facet_wrap(~Parameter,
@@ -301,7 +303,7 @@ ssm_plot_contrast <- function(.ssm_object, axislabel = "Difference",
 }
 
 # Create an Empty Circular Plot
-circle_base <- function(angles, labels = NULL,
+circle_base <- function(angles, labels = NULL, amin = 0,
                         amax = 0.5, fontsize = 12) {
   
   if (is.null(labels)) labels <- sprintf("%d\u00B0", angles)
@@ -318,7 +320,7 @@ circle_base <- function(angles, labels = NULL,
       ggplot2::aes(x0 = 0, y0 = 0, r = 5),
       color = "gray50",
       fill = "white",
-      size = 1.5
+      linewidth = 1.5
     ) +
     # Draw segments corresponding to displacement scale
     ggplot2::geom_segment(
@@ -329,13 +331,13 @@ circle_base <- function(angles, labels = NULL,
         yend = 5 * sin(angles * pi / 180)
       ),
       color = "gray60",
-      size = 0.5
+      linewidth = 0.5
     ) +
     # Draw circles corresponding to amplitude scale
     ggforce::geom_circle(
       ggplot2::aes(x0 = 0, y0 = 0, r = 1:4),
       color = "gray60",
-      size = 0.5
+      linewidth = 0.5
     ) +
     # Draw labels for amplitude scale
     ggplot2::geom_label(
@@ -344,7 +346,7 @@ circle_base <- function(angles, labels = NULL,
         y = 0,
         label = sprintf(
           "%.2f",
-          seq(from = 0, to = amax, length.out = 6)[c(3, 5)]
+          seq(from = amin, to = amax, length.out = 6)[c(3, 5)]
         )
       ),
       color = "gray20",
@@ -531,4 +533,144 @@ html_render <- function(df, caption = NULL, align = "l", ...) {
     ...
   )
   print(t, type = "html")
+}
+
+# S3 Generic
+
+#' Create a spider/radar plot of circumplex scores
+#'
+#' Create a spider/radar plot of circumplex scores, either from a data frame
+#' containing scale scores or the result of \code{ssm_analyze()}.
+#'
+#' @param x A dataframe or ssm result object.
+#' @param amin An optional number to set as the minimum amplitude (center of
+#'   circle). If set to `NULL`, will try to detect a reasonable value.
+#' @param amax An optional number to set as the maximum amplitude (outer ring of
+#'   circle). If set set to `NULL`, will try to detect a reasonable value.
+#' @param angle_labels An optional character vector to display outside the
+#'   circle at each angle. Must be the same length as the number of angles.
+#' @param linewidth An optional width for the lines of the profile polygons.
+#' @param pointsize An optional size for the points at the scale scores.
+#' @param ... Additional arguments for the S3 methods
+#' @return A spider/radar plot object
+#' @export
+ssm_plot_scores <- function(x, 
+                            amin = NULL, amax = NULL, angle_labels = NULL, 
+                            linewidth = 1, pointsize = 3, ...) {
+  UseMethod("ssm_plot_scores")
+}
+
+#' @method ssm_plot_scores circumplex_ssm
+#' @export
+ssm_plot_scores.circumplex_ssm <- function(x,
+                                           amin = NULL, 
+                                           amax = NULL,
+                                           angle_labels = NULL,
+                                           linewidth = 1,
+                                           pointsize = 3,
+                                           ...) {
+  
+  # Get scores from SSM object
+  scores <- x$scores
+  # Reshape scores for plotting
+  scores_long <- tidyr::pivot_longer(
+    scores, 
+    cols = dplyr::where(is.numeric),
+    names_to = "Scale",
+    values_to = "Score"
+  )
+  # Get angles from SSM object
+  angles <- x$details$angles
+  if (is.null(amin)) amin <- pretty_min(scores_long$Score)
+  if (is.null(amax)) amax <- pretty_max(scores_long$Score)
+  scores_long$Angle <- rep(angles, times = nrow(scores_long) / length(angles))
+  scores_long$Radian <- as_radian(as_degree(scores_long$Angle))
+  scores_long$pr <- scales::rescale(
+    scores_long$Score, 
+    to = c(0, 5), 
+    from = c(amin, amax)
+  )
+  scores_long$px <- scores_long$pr * cos(scores_long$Radian)
+  scores_long$py <- scores_long$pr * sin(scores_long$Radian)
+  
+  p <- circle_base(
+    angles = angles, 
+    amin = amin,
+    amax = amax,
+    labels = angle_labels
+  )
+  
+  p +
+    ggplot2::geom_polygon(
+      data = scores_long,
+      mapping = ggplot2::aes(x = px, y = py, color = label, linetype = label),
+      fill = NA,
+      linewidth = linewidth
+    ) +
+    ggplot2::geom_point(
+      data = scores_long,
+      mapping = ggplot2::aes(x = px, y = py, color = label),
+      size = pointsize
+    )
+  
+}
+
+#' @method ssm_plot_scores data.frame
+#' @export
+ssm_plot_scores.data.frame <- function(x, 
+                                       amin = NULL, 
+                                       amax = NULL,
+                                       angle_labels = NULL,
+                                       linewidth = 1,
+                                       pointsize = 3,
+                                       scales, 
+                                       angles = octants(),
+                                       group = NULL,
+                                       ...) {
+  
+  if (!is_provided(group)) {
+    x$Group <- as.character(1:nrow(x))
+    group <- rlang::quo(Group)
+  }
+  # Get scores from SSM object
+  scores <- dplyr::select(x, {{group}}, {{scales}})
+  # Reshape scores for plotting
+  scores_long <- tidyr::pivot_longer(
+    scores, 
+    cols = {{scales}},
+    names_to = "Scale",
+    values_to = "Score"
+  )
+  if (is.null(amin)) amin <- pretty_min(scores_long$Score)
+  if (is.null(amax)) amax <- pretty_max(scores_long$Score)
+  scores_long$Angle <- rep(angles, times = nrow(scores_long) / length(angles))
+  scores_long$Radian <- as_radian(as_degree(scores_long$Angle))
+  scores_long$pr <- scales::rescale(
+    scores_long$Score, 
+    to = c(0, 5), 
+    from = c(amin, amax)
+  )
+  scores_long$px <- scores_long$pr * cos(scores_long$Radian)
+  scores_long$py <- scores_long$pr * sin(scores_long$Radian)
+  
+  p <- circle_base(
+    angles = angles, 
+    amin = amin, 
+    amax = amax,
+    labels = angle_labels
+  )
+  
+  p +
+    ggplot2::geom_polygon(
+      data = scores_long,
+      mapping = ggplot2::aes(x = px, y = py, color = {{group}}, linetype = {{group}}),
+      fill = NA,
+      linewidth = linewidth
+    ) +
+    ggplot2::geom_point(
+      data = scores_long,
+      mapping = ggplot2::aes(x = px, y = py, color = {{group}}),
+      size = pointsize
+    )
+  
 }
