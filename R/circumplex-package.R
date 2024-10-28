@@ -22,7 +22,7 @@
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib circumplex, .registration = TRUE
 ## usethis namespace: end
-#' @importFrom assertthat assert_that is.flag is.number is.count is.string
-#' @importFrom stats cor quantile sd var
+#' @importFrom rlang .data
+#' @importFrom stats quantile
 #' @keywords internal
 "_PACKAGE"

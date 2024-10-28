@@ -6,7 +6,7 @@
 \usage{
 ssm_parameters(
   scores,
-  angles,
+  angles = octants(),
   prefix = "",
   suffix = "",
   e_label = "Elev",
@@ -49,32 +49,30 @@ displacement parameter (default = "Disp").}
 fit or R-squared value (default = "Fit").}
 }
 \value{
-A tibble containing the SSM parameters calculated from \code{scores}.
+A data frame containing the SSM parameters calculated from \code{scores}.
 }
 \description{
 Calculate SSM parameters (without confidence intervals) for a set of scores
-and generate a tibble with customizable labels for each parameter value. This
-function requires the input to be a numeric vector (or coercable to one) and
-returns only the parameters. See \code{\link{ssm_score}()} for a similar
+and generate a data frame with customizable labels for each parameter value.
+This function requires the input to be a numeric vector (or coercable to one)
+and returns only the parameters. See \code{\link{ssm_score}()} for a similar
 function that calculates SSM parameters for each row of a data frame.
 }
 \examples{
 # Manually enter octant scores
 scores <- c(0.55, 0.58, 0.62, 0.76, 1.21, 1.21, 1.48, 0.90)
-ssm_parameters(scores, angles = octants())
+ssm_parameters(scores)
 
 # Customize several of the labels
-ssm_parameters(scores, angles = octants(), x_label = "LOV", y_label = "DOM")
+ssm_parameters(scores, x_label = "LOV", y_label = "DOM")
 
 # Add a prefix to all labels
-ssm_parameters(scores, angles = octants(), prefix = "IIP_")
+ssm_parameters(scores, prefix = "IIP_")
 
 }
 \seealso{
 Other ssm functions: 
 \code{\link{ssm_analyze}()},
-\code{\link{ssm_append}()},
-\code{\link{ssm_plot}()},
 \code{\link{ssm_score}()},
 \code{\link{ssm_table}()}
 

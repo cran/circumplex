@@ -85,6 +85,20 @@ as_radian.circumplex_degree <- function(x, ...) {
   new_radian(x * (pi / 180))
 }
 
+# S3 Method
+#' @method print circumplex_degree
+#' @export
+print.circumplex_degree <- function(x, digits = 3, ...) {
+  cat(round(x, digits = digits), "\nDegrees\n")
+}
+
+# S3 Method
+#' @method print circumplex_radian
+#' @export
+print.circumplex_radian <- function(x, digits = 3, ...) {
+  cat(round(x, digits = digits), "\nRadians\n")
+}
+
 # Class ssm --------------------------------------------------------------------
 
 # S3 Constructor
@@ -102,12 +116,6 @@ new_ssm <- function(results, details, call, ...) {
 #' @method print circumplex_ssm
 #' @export
 print.circumplex_ssm <- function(x, digits = 3, ...) {
-  # Print function call
-  cat("Call:\n",
-    paste(deparse(x$call), sep = "\n", collapse = "\n"),
-    "\n",
-    sep = ""
-  )
   # Print each result as a block
   for (i in 1:nrow(x$results)) {
     dat <- x$results[i, ]
@@ -117,30 +125,33 @@ print.circumplex_ssm <- function(x, digits = 3, ...) {
       dat$e_uci, dat$x_uci, dat$y_uci, dat$a_uci, dat$d_uci, NA
     )
     m <- round(matrix(v, nrow = 6, ncol = 3), digits)
-    # TODO: Add delta symbols if parameter contrast
-    rownames(m) <- c(
+    prefix <- ifelse(
+      test = x$details$contrast && i == nrow(x$results),
+      yes = "\u0394 ",
+      no = ""
+    )
+    rownames(m) <- paste0(prefix, c(
       "Elevation", "X-Value", "Y-Value",
       "Amplitude", "Displacement", "Model Fit"
-    )
+    ))
     colnames(m) <- c("Estimate", "Lower CI", "Upper CI")
-    cat("\n", x$details$results_type, " [", dat$label, "]:\n",
+    results_type <- ifelse(
+      test = x$details$contrast && i == nrow(x$results), 
+      yes = "Contrast", 
+      no = "Profile"
+    )
+    cat("\n# ", results_type, " [", dat$Label, "]:\n\n",
       sep = ""
     )
     print.default(m, print.gap = 3L, na.print = "")
+    cat("\n")
   }
-  cat("\n")
 }
 
 # Summary method for objects of ssm class
 #' @method summary circumplex_ssm
 #' @export
 summary.circumplex_ssm <- function(object, digits = 3, ...) {
-  # Print function call
-  cat("Call:\n",
-    paste(deparse(object$call), sep = "\n", collapse = "\n"),
-    "\n",
-    sep = ""
-  )
   # Print analysis details
   cat(
     "\nStatistical Basis:\t", object$details$score_type, "Scores",
@@ -148,29 +159,7 @@ summary.circumplex_ssm <- function(object, digits = 3, ...) {
     "\nConfidence Level:\t", object$details$interval,
     "\nListwise Deletion:\t", object$details$listwise,
     "\nScale Displacements:\t", as.numeric(object$details$angles),
-    "\n"
+    "\n\n"
   )
-  # Print each result as a block
-  for (i in 1:nrow(object$results)) {
-    dat <- object$results[i, ]
-    v <- c(
-      dat$e_est, dat$x_est, dat$y_est, dat$a_est, dat$d_est, dat$fit_est,
-      dat$e_lci, dat$x_lci, dat$y_lci, dat$a_lci, dat$d_lci, NA,
-      dat$e_uci, dat$x_uci, dat$y_uci, dat$a_uci, dat$d_uci, NA
-    )
-    m <- round(matrix(v, nrow = 6, ncol = 3), digits)
-    # TODO: Add delta symbols if parameter contrast
-    rownames(m) <- c(
-      "Elevation", "X-Value", "Y-Value",
-      "Amplitude", "Displacement", "Model Fit"
-    )
-    colnames(m) <- c("Estimate", "Lower CI", "Upper CI")
-    cat("\n", object$details$results_type, " [", dat$label, "]:\n",
-      sep = ""
-    )
-    print.default(m, print.gap = 3L, na.print = "")
-  }
-  cat("\n")
+  print(object)
 }
-
-

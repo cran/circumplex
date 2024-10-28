@@ -1,19 +1,18 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 ## ----setup, message=FALSE-----------------------------------------------------
 library(circumplex)
-library(dplyr)
 
 ## -----------------------------------------------------------------------------
 instruments()
 
 ## -----------------------------------------------------------------------------
-instrument(csip)
+instrument("csip")
 print(csip)
 
 ## -----------------------------------------------------------------------------
-instrument(isc)
+instrument("isc")
 print(isc)
 
 ## -----------------------------------------------------------------------------
@@ -29,10 +28,10 @@ norms(ipipipc)
 ## -----------------------------------------------------------------------------
 scales(ipipipc, items = TRUE)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  View(ipipipc)
 
-## ---- echo=FALSE, out.width='100%'--------------------------------------------
+## ----echo=FALSE, out.width='100%'---------------------------------------------
 knitr::include_graphics("./view_ipipipc.png")
 
 ## -----------------------------------------------------------------------------
@@ -40,7 +39,7 @@ data("raw_iipsc")
 print(raw_iipsc)
 
 ## -----------------------------------------------------------------------------
-ips_iipsc <- ipsatize(.data = raw_iipsc, items = IIP01:IIP32, na.rm = TRUE, overwrite = TRUE)
+ips_iipsc <- ipsatize(data = raw_iipsc, items = 1:32, append = FALSE)
 print(ips_iipsc)
 
 ## -----------------------------------------------------------------------------
@@ -52,25 +51,24 @@ instrument("iipsc")
 scales(iipsc)
 
 ## -----------------------------------------------------------------------------
-scale_scores <- score(.data = raw_iipsc, items = IIP01:IIP32, instrument = iipsc)
+scale_scores <- score(
+  data = raw_iipsc, 
+  items = 1:32, 
+  instrument = iipsc, 
+  append = FALSE
+)
 print(scale_scores)
-
-## -----------------------------------------------------------------------------
-select(scale_scores, PA:NO)
 
 ## -----------------------------------------------------------------------------
 norms(iipsc)
 
 ## -----------------------------------------------------------------------------
-z_scales <- standardize(
-  .data = scale_scores, 
-  scales = PA:NO, 
-  angles = octants(),
+z_scales <- norm_standardize(
+  data = scale_scores, 
+  scales = 1:8, 
   instrument = iipsc,
-  sample = 1
+  sample = 1,
+  append = FALSE
 )
 print(z_scales)
-
-## -----------------------------------------------------------------------------
-select(z_scales, PA_z:NO_z)
 

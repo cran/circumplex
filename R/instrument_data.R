@@ -1,3 +1,19 @@
+#' Child and Adolescent Interpersonal Survey
+#'
+#' Information about the Child and Adolescent Interpersonal Survey (CAIS).
+#'
+#' @source Sodano, S. M., & Tracey, T. J. G. (2006). Interpersonal traits in
+#'   childhood: Development of the Child and Adolescent Interpersonal Survey.
+#'   *Journal of Personality Assessment, 87*(3), 317–329.
+#' @source \doi{10.1207/s15327752jpa8703_12}
+#' @keywords internal
+#' @examples
+#' instrument("cais")
+#' summary(cais)
+#' scales(cais, items = TRUE)
+"cais"
+
+
 #' Circumplex Scales of Interpersonal Efficacy
 #'
 #' Information about the Circumplex Scales of Interpersonal Efficacy (CSIE).
@@ -58,6 +74,22 @@
 #' summary(csiv)
 #' scales(csiv, items = TRUE)
 "csiv"
+
+#' Interpersonal Emotion Inventory
+#'
+#' Information about the Interpersonal Emotion Inventory (IEI).
+#'
+#' @source Horner, M. S., Locke, K. D., & Hulsey, T. L. (in press). Assessing
+#'   affective dimensions of the interpersonal circumplex: development and
+#'   validation of the interpersonal emotion inventory. *Journal of Personality
+#'   Assessment*. Advanced online publication.
+#' @source \doi{10.1080/00223891.2024.2400266}
+#' @keywords internal
+#' @examples
+#' instrument("iei")
+#' summary(iei)
+#' scales(iei, items = TRUE)
+"iei"
 
 #' Interpersonal Goals Inventory for Children, Revised Version
 #'

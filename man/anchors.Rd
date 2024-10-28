@@ -18,13 +18,13 @@ anchors and each anchor's numerical value and text label. Anchors are the
 response options that respondants select from (e.g., 0 = No, 1 = Yes).
 }
 \examples{
-instrument(csip)
+instrument("csip")
 anchors(csip)
 }
 \seealso{
 Other instrument functions: 
-\code{\link{instruments}()},
 \code{\link{instrument}()},
+\code{\link{instruments}()},
 \code{\link{items}()},
 \code{\link{norms}()},
 \code{\link{scales}()}
