@@ -14,6 +14,8 @@ validation of the interpersonal emotion inventory. \emph{Journal of Personality
 Assessment}. Advanced online publication.
 
 \doi{10.1080/00223891.2024.2400266}
+
+\url{https://kennethlocke.org/IEI/IEI.html}
 }
 \usage{
 iei
@@ -22,7 +24,6 @@ iei
 Information about the Interpersonal Emotion Inventory (IEI).
 }
 \examples{
-instrument("iei")
 summary(iei)
 scales(iei, items = TRUE)
 }

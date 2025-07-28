@@ -23,12 +23,13 @@
 #'   angle labels or a vector of empty strings ("") to hide the labels. If not
 #'   NULL, must have the same length and ordering as the `angles` argument to
 #'   `ssm_analyze()`. (default = NULL)
-#' @param legend.box.spacing A double corresponding to the distance (in inches)
-#'   to add between the data plot and the legend (default = 0).
 #' @param palette A string corresponding to the palette to be used from
 #'   ColorBrewer for the color and fill aesthetics. If set to NULL, all points
 #'   will appear blue and no legend will be there (useful for showing the
 #'   coverage of a high number of variables).
+#' @param vary_shapes A logical determining whether profiles should each get
+#'   their own shape or vary only by fill color. This only works when the number
+#'   of profiles is five or less. (default = FALSE)
 #' @param ... Currently ignored.
 #' @return A ggplot variable containing a completed circular plot.
 #' @export
@@ -42,23 +43,23 @@
 #' )
 #' ssm_plot_circle(res)
 #' }
-ssm_plot_circle <- function(ssm_object, 
-                            amax = NULL, 
+ssm_plot_circle <- function(ssm_object,
+                            amax = NULL,
                             legend_font_size = 12,
                             scale_font_size = 12,
-                            drop_lowfit = FALSE, 
+                            drop_lowfit = FALSE,
                             repel = FALSE,
                             angle_labels = NULL,
-                            legend.box.spacing = 0,
                             palette = "Set2",
+                            vary_shapes = FALSE,
                             ...) {
   
   df <- ssm_object$results
   angles <- as.integer(round(ssm_object$details$angles))
-
+  
   stopifnot(is_null_or_num(amax, n = 1))
   stopifnot(is_null_or_char(angle_labels, n = length(angles)))
-
+  
   if (is.null(amax)) {
     amax <- pretty_max(ssm_object$results$a_uci)
   }
@@ -66,11 +67,11 @@ ssm_plot_circle <- function(ssm_object,
   if (ssm_object$details$contrast) {
     df <- df[1:2, ]
   }
-
+  
   # Convert results to numbers usable by ggplot and ggforce
   df_plot <- df
   df_plot[["d_uci"]] <- ifelse(
-    test = df_plot[["d_uci"]] < df_plot[["d_lci"]], 
+    test = df_plot[["d_uci"]] < df_plot[["d_lci"]],
     yes = ggrad(df_plot[["d_uci"]] + 360),
     no = ggrad(df_plot[["d_uci"]])
   )
@@ -79,10 +80,17 @@ ssm_plot_circle <- function(ssm_object,
     df_plot[c("a_lci", "a_uci", "x_est", "y_est")],
     function(x) x * 10 / (2 * amax)
   )
-  df_plot[["Label"]] <- factor(
-    df_plot[["Label"]], 
-    levels = unique(as.character(df_plot[["Label"]]))
-  )
+  
+  if (!is.null(palette)) {
+    df_plot[["Label"]] <- factor(
+      df_plot[["Label"]],
+      levels = unique(as.character(df_plot[["Label"]]))
+    )
+  } else {
+    df_plot[["Label"]] <- factor("All")
+  }
+  
+  n_labels <- nlevels(df_plot$Label)
   
   # Remove profiles with low model fit (unless overrided)
   n <- nrow(df_plot)
@@ -92,73 +100,83 @@ ssm_plot_circle <- function(ssm_object,
       stop("After removing profiles with low fit, there were none left to plot.")
     }
   }
-  
   df_plot[["lnty"]] <- ifelse(df_plot[["fit_est"]] >= .70, "solid", "dotted")
-
-  p <- 
-    circle_base(
-      angles = angles, 
-      amax = amax, 
-      fontsize = scale_font_size, 
-      labels = angle_labels
-    ) +
-    ggplot2::scale_color_brewer(palette = palette) +
-    ggplot2::scale_fill_brewer(palette = palette)
-
+  
+  ## Create circle base
+  p <- circle_base(
+    angles = angles,
+    amax = amax,
+    fontsize = scale_font_size,
+    labels = angle_labels
+  )
+  
+  ## Set color scales depending on palette
   if (is.null(palette)) {
+    fill_color <- "#0072B2"
     p <- p +
-      ggforce::geom_arc_bar(
-        data = df_plot,
-        mapping = ggplot2::aes(
-          x0 = 0,
-          y0 = 0,
-          r0 = .data$a_lci, 
-          r = .data$a_uci, 
-          start = .data$d_lci, 
-          end = .data$d_uci
-        ),
-        fill = "cornflowerblue", 
-        color = "cornflowerblue", 
-        alpha = 0.4,
-        linewidth = 1
-      ) +
-      ggplot2::geom_point(
-        data = df_plot,
-        mapping = ggplot2::aes(
-          x = .data$x_est, 
-          y = .data$y_est
-        ),
-        shape = 21,
-        size = 3,
-        color = "black",
-        fill = "cornflowerblue"
-      ) +
-      ggplot2::scale_linetype_identity() +
-      ggplot2::theme(legend.position = "none")
+      ggplot2::scale_color_manual(values = fill_color) +
+      ggplot2::scale_fill_manual(values = fill_color) +
+      ggplot2::guides(color = "none", fill = "none")
   } else {
     p <- p +
-      ggforce::geom_arc_bar(
-        data = df_plot,
-        mapping = ggplot2::aes(
-          x0 = 0,
-          y0 = 0,
-          r0 = .data$a_lci,
-          r = .data$a_uci,
-          start = .data$d_lci,
-          end = .data$d_uci,
-          fill = .data$Label,
-          color = .data$Label,
-          linetype = .data$lnty
-        ),
-        alpha = 0.4,
-        linewidth = 1
-      ) +
+      ggplot2::scale_color_brewer(palette = palette) +
+      ggplot2::scale_fill_brewer(palette = palette)
+  }
+  
+  p <- p +
+    ggplot2::scale_linetype_identity() +
+    ggplot2::theme(
+      legend.position = ifelse(repel | n_labels == 1 || is.null(palette), "none", "right"),
+      legend.text = ggplot2::element_text(size = legend_font_size)
+    )
+  
+  ## Add arc bars
+  p <- p +
+    ggforce::geom_arc_bar(
+      data = df_plot,
+      mapping = ggplot2::aes(
+        x0 = 0,
+        y0 = 0,
+        r0 = .data$a_lci,
+        r = .data$a_uci,
+        start = .data$d_lci,
+        end = .data$d_uci,
+        fill = .data$Label,
+        color = .data$Label,
+        linetype = .data$lnty
+      ),
+      alpha = 0.4,
+      linewidth = 1
+    )
+  
+  ## Add points
+  if (vary_shapes) {
+    stopifnot(n_labels <= 5)
+    p <- p +
       ggplot2::geom_point(
         data = df_plot,
         mapping = ggplot2::aes(
           x = .data$x_est,
           y = .data$y_est,
-          color = .data$Label,
+          fill = .data$Label,
+          shape = .data$Label
+        ),
+        size = 3,
+        color = "black"
+      ) +
+      ggplot2::scale_shape_manual(values = 21:(21 + n_labels - 1)) +
+      ggplot2::guides(
+        color = ggplot2::guide_legend("Profile"),
+        fill = ggplot2::guide_legend("Profile"),
+        shape = ggplot2::guide_legend("Profile")
+      )
+  } else {
+    p <- p +
+      ggplot2::geom_point(
+        data = df_plot,
+        mapping = ggplot2::aes(
+          x = .data$x_est,
+          y = .data$y_est,
           fill = .data$Label
         ),
         shape = 21,
@@ -168,17 +186,12 @@ ssm_plot_circle <- function(ssm_object,
       ggplot2::guides(
         color = ggplot2::guide_legend("Profile"),
         fill = ggplot2::guide_legend("Profile")
-      ) +
-      ggplot2::theme(
-        legend.text = ggplot2::element_text(size = legend_font_size),
-        legend.box.spacing = ggplot2::unit(legend.box.spacing, "in")
-      ) +
-      ggplot2::scale_linetype_identity()
+      )
   }
   
-  if (repel == TRUE) {
+  if (repel) {
     requireNamespace("ggrepel")
-    p <- p + 
+    p <- p +
       ggrepel::geom_label_repel(
         data = df_plot,
         mapping = ggplot2::aes(
@@ -190,12 +203,12 @@ ssm_plot_circle <- function(ssm_object,
         direction = "y",
         hjust = 1,
         size = legend_font_size / 2.8346438836889
-      ) + 
-      ggplot2::theme(legend.position = "none")
+      )
   }
   
   p
 }
+
 
 #' Create a Curve Plot of SSM Results
 #'
@@ -225,45 +238,45 @@ ssm_plot_circle <- function(ssm_object,
 #' ssm_plot_curve(res)
 #' ssm_plot_curve(res, angle_lables = PANO())
 #' }
-ssm_plot_curve <- function(ssm_object, 
+ssm_plot_curve <- function(ssm_object,
                            angle_labels = NULL,
                            base_size = 11,
                            drop_lowfit = FALSE,
                            ...) {
-  
+
   stopifnot(class(ssm_object) == "circumplex_ssm")
-  
+
   results <- ssm_object$results
   scores <- ssm_object$scores
   angles <- ssm_object$details$angles
-  
+
   stopifnot(is_num(base_size, n = 1) && base_size > 0)
   stopifnot(is_null_or_char(angle_labels, n = length(angles)))
   stopifnot(is_flag(drop_lowfit))
-  
+
   if (is.null(angle_labels)) {
     angle_labels <- function(x) sprintf("%.0f\U00B0", x)
     xlabel <- "Angle"
   } else {
     xlabel <- "Scale"
   }
-  
+
   # Drop the contrast row if contrast
   if (ssm_object$details$contrast) {
     results <- results[1:2, ]
     scores <- scores[1:2, ]
   }
-  
+
   # Drop profiles with low fit if requested
   if (drop_lowfit) {
     idx <- results$fit_est >= .70
     results <- results[idx, ]
     scores <- scores[idx, ]
   }
-  
+
   # Drop the info columns
   scores_only <- scores[, -c(1:3)]
-  
+
   # Reshape scores to long format
   score_df <- data.frame(
     Label = rep(scores$Label, times = length(angles)),
@@ -277,7 +290,7 @@ ssm_plot_curve <- function(ssm_object,
   all_angles <- seq(from = min(angles), to = max(angles), length.out = 100)
   param_list <- split(results, results$Label)
   pred_mat <- sapply(param_list, FUN = curve_fit, x = all_angles)
-  
+
   pred_df <- data.frame(
     Label = rep(colnames(pred_mat), each = nrow(pred_mat)),
     Angle = rep(all_angles, times = ncol(pred_mat)),
@@ -285,9 +298,9 @@ ssm_plot_curve <- function(ssm_object,
   )
   pred_df <- merge(pred_df, results[c("Label", "fit_est")])
   pred_df$lnty <- ifelse(pred_df$fit_est >= .70, "solid", "dashed")
-  
+
   # Create ggplot
-  ggplot2::ggplot() + 
+  ggplot2::ggplot() +
     ggplot2::facet_wrap(~Label) +
     # Curve
     ggplot2::geom_line(
@@ -360,18 +373,18 @@ ssm_plot_curve <- function(ssm_object,
 #' data("jz2017")
 #' res <- ssm_analyze(
 #'   jz2017,
-#'   scales = 2:9, 
+#'   scales = 2:9,
 #'   measures = c("NARPD", "ASPD"),
 #'   contrast = TRUE
 #' )
 #' ssm_plot_contrast(res)
 #' }
-ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE, 
+ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
                               sig_color = "#fc8d62", ns_color = "white",
                               linesize = 1.25, fontsize = 12, ...) {
-  
+
   stopifnot(ssm_object$details$contrast)
-  
+
   # Prepare all estimates
   plabs <- c(
     e = expression(paste(Delta, " Elevation")),
@@ -382,48 +395,48 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
   )
   pvals <- c("e", "x", "y", "a", "d")
   res <- ssm_object$results[nrow(ssm_object$results), ]
-  
-  plot_df <- 
+
+  plot_df <-
     data.frame(
       Parameter = factor(pvals, levels = pvals, labels = plabs),
       Difference = c(res$e_est, res$x_est, res$y_est, res$a_est, res$d_est),
       lci = c(res$e_lci, res$x_lci, res$y_lci, res$a_lci, res$d_lci),
       uci = c(res$e_uci, res$x_uci, res$y_uci, res$a_uci, res$d_uci)
     )
-  
+
   plot_df$sig <- sign(plot_df$lci) == sign(plot_df$uci)
-  
+
   # Drop x and y estimates if requested
   if (drop_xy) {
     plot_df <- plot_df[-c(2, 3), ]
   }
 
-  p <- 
+  p <-
     ggplot2::ggplot(plot_df) +
     ggplot2::facet_wrap(
-      ~Parameter, 
-      nrow = 1, 
+      ~Parameter,
+      nrow = 1,
       scales = "free",
       labeller = ggplot2::label_parsed
     ) +
     ggplot2::geom_hline(
-      yintercept = 0, 
-      linewidth = linesize, 
+      yintercept = 0,
+      linewidth = linesize,
       color = "darkgray"
     ) +
     ggplot2::geom_errorbar(
       ggplot2::aes(
-        x = "1", 
-        ymin = .data$lci, 
+        x = "1",
+        ymin = .data$lci,
         ymax = .data$uci
       ),
-      linewidth = linesize, 
+      linewidth = linesize,
       width = 0.15
     ) +
     ggplot2::geom_point(
       ggplot2::aes(
-        x = "1", 
-        y = .data$Difference, 
+        x = "1",
+        y = .data$Difference,
         fill = .data$sig
       ),
       size = linesize * 3,
@@ -451,9 +464,9 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
 # Create an Empty Circular Plot
 circle_base <- function(angles, labels = NULL, amin = 0,
                         amax = 0.5, fontsize = 12) {
-  
+
   if (is.null(labels)) labels <- paste0(angles, "\u00B0")
-  
+
   ggplot2::ggplot() +
     # Require plot to be square and remove default styling
     ggplot2::coord_fixed(clip = "off") +
@@ -496,6 +509,7 @@ circle_base <- function(angles, labels = NULL, amin = 0,
         )
       ),
       color = "gray20",
+      fill = "white",
       label.size = NA,
       size = fontsize / 2.8346438836889
     ) +

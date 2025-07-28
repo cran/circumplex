@@ -51,12 +51,12 @@ custom data frame.
 }
 \examples{
 data("raw_iipsc")
-instrument("iipsc")
 score(raw_iipsc, items = 1:32, instrument = iipsc, prefix = "IIPSC_")
 }
 \seealso{
 Other tidying functions: 
 \code{\link{ipsatize}()},
-\code{\link{norm_standardize}()}
+\code{\link{norm_standardize}()},
+\code{\link{self_standardize}()}
 }
 \concept{tidying functions}

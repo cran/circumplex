@@ -81,7 +81,6 @@ ipsatize <- function(data, items, na.rm = TRUE,
 #' @export
 #' @examples
 #' data("raw_iipsc")
-#' instrument("iipsc")
 #' score(raw_iipsc, items = 1:32, instrument = iipsc, prefix = "IIPSC_")
 score <- function(data, items, instrument, na.rm = TRUE, 
                   prefix = "", suffix = "", append = TRUE) {
@@ -153,7 +152,6 @@ score <- function(data, items, instrument, na.rm = TRUE,
 #' @family tidying functions
 #' @examples
 #' data("jz2017")
-#' instrument("iipsc")
 #' norm_standardize(jz2017, scales = 2:9, instrument = iipsc, sample = 1)
 norm_standardize <- function(data, scales, angles = octants(), instrument, 
                        sample = 1, prefix = "", suffix = "_z", append = TRUE) {
@@ -186,6 +184,63 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
     s_i <- key$SD[index_i]
     scores[, i] <- (scale_data[[i]] - m_i) / s_i
   }
+  scores[is.nan(scores)] <- NA_real_
+  
+  if (append) {
+    cbind(data, scores)
+  } else {
+    as.data.frame(scores) 
+  }
+}
+
+#' Standardize circumplex scales using sample data
+#'
+#' Take in a data frame containing circumplex scales (or items) and return that
+#' same data frame with each specified variable transformed into standard scores
+#' (i.e., z-scores) based on observed means and SDs.
+#'
+#' @param data Required. A data frame or matrix containing at least circumplex
+#'   scales.
+#' @param scales Required. A character vector containing the column names, or a
+#'   numeric vector containing the column indexes, for the variables (scale
+#'   scores) to be standardized.
+#' @param na.rm Optional. A logical that determines whether to remove missing
+#'   values from scales when calculating the means and SDs used for
+#'   standardization (default = TRUE).
+#' @param prefix Optional. A string to include at the beginning of the newly
+#'   calculated scale variables' names, before the scale name and `suffix`
+#'   (default = "").
+#' @param suffix Optional. A string to include at the end of the newly
+#'   calculated scale variables' names, after the scale name and `prefix`
+#'   (default = "_z").
+#' @param append Optional. A logical that determines whether the calculated
+#'   standardized scores should be added as columns to `data` in the output or
+#'   the standardized scores alone should be output (default = TRUE).
+#' @return A data frame that contains the self-standardized versions of
+#'   `scales`.
+#' @export
+#' @family tidying functions
+#' @examples
+#' self_standardize(aw2009, scales = 1:8)
+self_standardize <- function(data, scales, na.rm = TRUE,
+                             prefix = "", suffix = "_z", append = TRUE) {
+  
+  stopifnot(is.data.frame(data) || is.matrix(data))
+  stopifnot(is_var(scales))
+  stopifnot(is_flag(na.rm))
+  stopifnot(is_char(prefix, n = 1))
+  stopifnot(is_char(suffix, n = 1))
+  stopifnot(is_flag(append))
+  
+  scale_data <- data[scales]
+  scale_names <- colnames(scale_data)
+
+  zscore <- function(x, na.rm = na.rm) {
+    (x - mean(x, na.rm = na.rm)) / stats::sd(x, na.rm = na.rm)
+  }
+  
+  scores <- sapply(scale_data, FUN = zscore, na.rm = na.rm)
+  colnames(scores) <- paste0(prefix, scale_names, suffix)
   scores[is.nan(scores)] <- NA_real_
   
   if (append) {

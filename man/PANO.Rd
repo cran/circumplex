@@ -4,7 +4,11 @@
 \alias{PANO}
 \title{Two-letter abbreviations for octant circumplex scales}
 \usage{
-PANO()
+PANO(case = "upper")
+}
+\arguments{
+\item{case}{An optional string the determines whether the abbreviations should be
+in uppercase or lowercase. (default = "upper")}
 }
 \value{
 A character vector with eight elements, each corresponding to the
@@ -15,5 +19,6 @@ Return a vector of abbreviations for octant circumplex scales, from PA to NO.
 }
 \examples{
 PANO()
+PANO(case = "lower")
 
 }

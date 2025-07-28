@@ -13,7 +13,7 @@ complementarity in dyadic interactions: Integrating interpersonal and
 social-cognitive theory. \emph{Personality and Social Psychology Bulletin,
 33}(1), 94-109.
 
-\url{https://www.webpages.uidaho.edu/klocke/csie.htm}
+\url{https://kennethlocke.org/CSIE/CSIE.html}
 }
 \usage{
 csie
@@ -22,7 +22,6 @@ csie
 Information about the Circumplex Scales of Interpersonal Efficacy (CSIE).
 }
 \examples{
-instrument("csie")
 summary(csie)
 scales(csie, items = TRUE)
 }

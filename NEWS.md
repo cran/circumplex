@@ -1,3 +1,17 @@
+# circumplex 1.0.1
+
+# circumplex 1.0.1
+
+## New features
+
+* Add the `self_standardize()` function for standardizing variables using sample means and SDs
+
+## Minor improvements and fixes
+
+* Fix some typos in documentation
+
+* Change plot tests to accommodate changes to ggplot2
+
 # circumplex 1.0.0
 
 ## Breaking changes
@@ -6,7 +20,7 @@
 
 * Removed support for non-standard evaluation
 
-* The `contrast` argument to `ssm_plot()` is now TRUE or FALSE instead of "none", "model", or "test". Model contrasts were removed and TRUE yields test contrasts.
+* The `contrast` argument to `ssm_analyze()` is now TRUE or FALSE instead of "none", "model", or "test". Model contrasts were removed and TRUE yields test contrasts.
 
 * Many arguments renamed (e.g., `.data` to `data`, `.ssm_object` to `ssm_object`, `xy` to `drop_xy`)
 
