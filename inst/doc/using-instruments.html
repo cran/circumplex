@@ -574,7 +574,7 @@ expected format. Your data should be stored in a data frame where each
 row corresponds to one observation (e.g., participant, organization, or
 timepoint) and each column corresponds to one variable describing these
 observations (e.g., item responses, demographic characteristics, scale
-scores). The <a href="https://www.tidyverse.org">tidyverse</a> packages
+scores). The <a href="https://tidyverse.org">tidyverse</a> packages
 provide excellent tools for getting your data into this format from a
 variety of different file types and formats.</p>
 <p>For the purpose of illustration, we will work with a small-scale data
@@ -749,9 +749,9 @@ package</strong>. Be sure to check your item numbers against those
 displayed by the <code>items()</code> function, especially if you
 shuffle your items.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>scale_scores <span class="ot">&lt;-</span> <span class="fu">score</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">data =</span> raw_iipsc, </span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">items =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">32</span>, </span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">instrument =</span> iipsc, </span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">data =</span> raw_iipsc,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">items =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">32</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">instrument =</span> iipsc,</span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">append =</span> <span class="cn">FALSE</span></span>
 <span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
 <span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">print</span>(scale_scores)</span>
@@ -823,8 +823,8 @@ output of this function to a data frame named <code>z_scales</code> to
 reflect the idea that standardized scores are often called
 “z-scores.”</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>z_scales <span class="ot">&lt;-</span> <span class="fu">norm_standardize</span>(</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">data =</span> scale_scores, </span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">scales =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, </span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">data =</span> scale_scores,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">scales =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>,</span>
 <span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">instrument =</span> iipsc,</span>
 <span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">sample =</span> <span class="dv">1</span>,</span>
 <span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="at">append =</span> <span class="cn">FALSE</span></span>

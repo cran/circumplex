@@ -38,9 +38,9 @@ scales(iipsc)
 
 ## -----------------------------------------------------------------------------
 scale_scores <- score(
-  data = raw_iipsc, 
-  items = 1:32, 
-  instrument = iipsc, 
+  data = raw_iipsc,
+  items = 1:32,
+  instrument = iipsc,
   append = FALSE
 )
 print(scale_scores)
@@ -50,8 +50,8 @@ norms(iipsc)
 
 ## -----------------------------------------------------------------------------
 z_scales <- norm_standardize(
-  data = scale_scores, 
-  scales = 1:8, 
+  data = scale_scores,
+  scales = 1:8,
   instrument = iipsc,
   sample = 1,
   append = FALSE
