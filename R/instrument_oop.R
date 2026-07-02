@@ -11,7 +11,7 @@ new_instrument <- function(Scales, Anchors, Items, Norms, Details, ...) {
 }
 
 is_instrument <- function(x) {
-  typeof(x) == "list" & class(x) == "circumplex_instrument"
+  is.list(x) && inherits(x, "circumplex_instrument")
 }
 
 #' @export
@@ -197,7 +197,7 @@ instruments <- function() {
   # TODO: Find a way to automate this - maybe data$results minus example data?
 
   cat(
-    "The circumplex package currently includes 14 instruments:\n",
+    "The circumplex package currently includes 15 instruments:\n",
     "1. CAIS: Child and Adolescent Interpersonal Survey (cais)\n",
     "2. CSIE: Circumplex Scales of Interpersonal Efficacy (csie)\n",
     "3. CSIG: Circumplex Scales of Intergroup Goals (csig)\n",

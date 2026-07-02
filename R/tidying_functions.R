@@ -38,6 +38,7 @@ ipsatize <- function(data, items, na.rm = TRUE,
   stopifnot(is_char(suffix, n = 1))
   stopifnot(is_flag(append))
 
+  if (is.matrix(data)) data <- as.data.frame(data)
   item_data <- data[items]
   item_names <- colnames(item_data)
   rmean <- rowMeans(item_data, na.rm = na.rm)
@@ -57,7 +58,8 @@ ipsatize <- function(data, items, na.rm = TRUE,
 #' of scoring instructions, which may be loaded from the package or created as a
 #' custom data frame.
 #'
-#' @param data Required. A data frame containing at least circumplex scales.
+#' @param data Required. A data frame or matrix containing at least
+#'   circumplex scales.
 #' @param items Required. The variable names or column numbers for the variables
 #'   in \code{.data} that contain all the circumplex items from a single
 #'   circumplex measure, in ascending order from item 1 to item N.
@@ -87,12 +89,13 @@ score <- function(data, items, instrument, na.rm = TRUE,
   
   stopifnot(is.data.frame(data) || is.matrix(data))
   stopifnot(is_var(items))
-  stopifnot(class(instrument) == "circumplex_instrument")
+  stopifnot(inherits(instrument, "circumplex_instrument"))
   stopifnot(is_flag(na.rm))
   stopifnot(is_char(prefix))
   stopifnot(is_char(suffix))
   stopifnot(is_flag(append))
-  
+
+  if (is.matrix(data)) data <- as.data.frame(data)
   item_data <- data[items]
   n_items <- length(items)
   key <- instrument$Scales
@@ -132,7 +135,10 @@ score <- function(data, items, instrument, na.rm = TRUE,
 #'   scores) to be standardized.
 #' @param angles Required. A numeric vector containing the angular displacement
 #'   of each circumplex scale included in `scales` (in degrees). Can use the
-#'   `octants()`, `poles()`, or `quadrants()` convenience functions.
+#'   `octants()`, `poles()`, or `quadrants()` convenience functions. Each angle
+#'   is matched to the instrument's normative data by angular position, so 0
+#'   and 360 degrees are treated as the same angle; an angle with no matching
+#'   normative row (or with more than one) produces an informative error.
 #' @param instrument Required. An instrument object from the package. To see the
 #'   available circumplex instruments, see `instruments()`.
 #' @param sample Required. An integer corresponding to the normative sample to
@@ -160,13 +166,13 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
   stopifnot(is_var(scales))
   stopifnot(is.numeric(angles))
   stopifnot(length(scales) == length(angles))
-  stopifnot(class(instrument) == "circumplex_instrument")
+  stopifnot(inherits(instrument, "circumplex_instrument"))
   stopifnot(is_num(sample, n = 1))
   stopifnot(is_char(prefix, n = 1))
   stopifnot(is_char(suffix, n = 1))
   stopifnot(is_flag(append))
-  
-  
+
+  if (is.matrix(data)) data <- as.data.frame(data)
   key <- instrument$Norms[[1]]
   key <- key[key$Sample == sample, ]
   
@@ -177,9 +183,29 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
   
   scores <- matrix(NA, nrow = nrow(scale_data), ncol = length(scales))
   colnames(scores) <- paste0(prefix, scale_names, suffix)
-  
-  for (i in 1:length(scales)) {
-    index_i <- key$Angle == angles[[i]]
+
+  angles <- as.numeric(angles)
+  for (i in seq_along(scales)) {
+    # Match each scale to its norm row by circular angular distance, so that
+    # 0 and 360 degrees (the same angle) match and float noise is tolerated
+    dist_i <- abs(angles[[i]] - key$Angle) %% 360
+    dist_i <- pmin(dist_i, 360 - dist_i)
+    index_i <- which(dist_i < 1e-6)
+    if (length(index_i) == 0) {
+      stop(
+        "No normative data for a scale at ", angles[[i]], " degrees. ",
+        "Available angles: ", paste(sort(unique(key$Angle)), collapse = ", "),
+        ".",
+        call. = FALSE
+      )
+    }
+    if (length(index_i) > 1) {
+      stop(
+        "Multiple normative rows match ", angles[[i]], " degrees; the ",
+        "instrument's normative data has duplicate angles.",
+        call. = FALSE
+      )
+    }
     m_i <- key$M[index_i]
     s_i <- key$SD[index_i]
     scores[, i] <- (scale_data[[i]] - m_i) / s_i
@@ -231,7 +257,8 @@ self_standardize <- function(data, scales, na.rm = TRUE,
   stopifnot(is_char(prefix, n = 1))
   stopifnot(is_char(suffix, n = 1))
   stopifnot(is_flag(append))
-  
+
+  if (is.matrix(data)) data <- as.data.frame(data)
   scale_data <- data[scales]
   scale_names <- colnames(scale_data)
 

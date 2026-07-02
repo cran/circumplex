@@ -418,6 +418,62 @@ test_that("ssm_parameters works", {
   )
 })
 
+test_that("ssm_score accepts matrix input and numeric scales", {
+  data("aw2009")
+  ref <- ssm_score(aw2009, scales = PANO(), append = FALSE)
+
+  # Matrix input (advertised in the docs) must work and match the data frame
+  m <- as.matrix(aw2009)
+  out_mat <- ssm_score(m, scales = PANO(), append = FALSE)
+  expect_equal(out_mat, ref)
+
+  # Numeric column indexes must work (roxygen promises "column numbers")
+  out_num <- ssm_score(aw2009, scales = 1:8, append = FALSE)
+  expect_equal(out_num, ref)
+})
+
+test_that("ssm_analyze accepts matrix input", {
+  skip_on_cran()
+  data("aw2009")
+  set.seed(12345)
+  ref <- ssm_analyze(aw2009, scales = 1:8, boots = 50)
+  set.seed(12345)
+  out <- ssm_analyze(as.matrix(aw2009), scales = 1:8, boots = 50)
+  expect_equal(out$results, ref$results)
+})
+
+test_that("degenerate profiles return NA with one warning", {
+  # Flat profile with an exactly representable value
+  expect_warning(out <- ssm_parameters(rep(1, 8)), "flat|amplitude|undefined")
+  expect_equal(out$Elev, 1)
+  expect_true(is.na(out$Disp))
+  expect_true(is.na(out$Fit))
+  expect_lt(abs(out$Ampl), 1e-12)
+
+  # Flat profile with a non-representable value (var is ~2e-34, not exactly 0)
+  expect_warning(out2 <- ssm_parameters(rep(0.1, 8)), "flat|amplitude|undefined")
+  expect_true(is.na(out2$Disp))
+  expect_true(is.na(out2$Fit))
+
+  # Pure second harmonic: real variance but zero first-harmonic amplitude, so
+  # displacement is undefined while fit is exactly 0 (model reduces to mean)
+  rad <- as.numeric(as_radian(octants()))
+  s2 <- cos(2 * rad)
+  expect_warning(out3 <- ssm_parameters(s2), "flat|amplitude|undefined")
+  expect_true(is.na(out3$Disp))
+  expect_equal(out3$Fit, 0)
+
+  # A small but real amplitude must NOT be treated as degenerate
+  s_small <- 1 + 0.001 * cos(rad - pi / 4)
+  expect_no_warning(out4 <- ssm_parameters(s_small))
+  expect_equal(out4$Disp, 45, tolerance = 1e-6)
+  expect_equal(out4$Fit, 1, tolerance = 1e-6)
+
+  # Missing scores propagate as NA without noise angles
+  expect_warning(out5 <- ssm_parameters(c(NA, rnorm(7))), "flat|amplitude|undefined|missing")
+  expect_true(is.na(out5$Disp))
+})
+
 test_that("ssm_score works", {
   data("aw2009")
   out <- ssm_score(aw2009, scales = PANO(), append = TRUE)
@@ -432,5 +488,158 @@ test_that("ssm_score works", {
       Fit = c(0.97, 0.92)
     )
   )
+})
+
+test_that("ssm_score forwards the angles argument", {
+  data("aw2009")
+
+  # Same-length custom angles must change the results (regression: these were
+  # silently ignored and octants() used instead)
+  rotated <- c(0, 45, 90, 135, 180, 225, 270, 315)
+  out_rot <- ssm_score(aw2009, scales = PANO(), angles = rotated, append = FALSE)
+  out_oct <- ssm_score(aw2009, scales = PANO(), append = FALSE)
+  expect_false(isTRUE(all.equal(out_rot$Disp, out_oct$Disp)))
+
+  # Row-wise results must match ssm_parameters() given the same angles
+  expect_equal(
+    unlist(out_rot[1, ]),
+    unlist(ssm_parameters(unlist(aw2009[1, PANO()]), angles = rotated)),
+    ignore_attr = TRUE
+  )
+
+  # Four scales with poles() must work (regression: errored on length mismatch)
+  pano4 <- c("PA", "DE", "HI", "LM")
+  out_poles <- ssm_score(aw2009, scales = pano4, angles = poles(), append = FALSE)
+  expect_equal(
+    unlist(out_poles[2, ]),
+    unlist(ssm_parameters(unlist(aw2009[2, pano4]), angles = poles())),
+    ignore_attr = TRUE
+  )
+
+  # Boundary: profile peaking exactly at the 0/360 degree crossover
+  bdat <- as.data.frame(rbind(cos(rotated * pi / 180)))
+  colnames(bdat) <- PANO()
+  out_bound <- ssm_score(bdat, scales = PANO(), angles = rotated, append = FALSE)
+  expect_equal(out_bound$Ampl, 1)
+  expect_equal(out_bound$Fit, 1)
+  expect_true(
+    abs(out_bound$Disp - 360) < 1e-8 || abs(out_bound$Disp - 0) < 1e-8
+  )
+})
+
+test_that("NA grouping values are dropped with a message in both modes", {
+  data("jz2017")
+  jz <- jz2017
+  jz$Gender[c(1, 5, 10)] <- NA
+  manual <- jz[!is.na(jz$Gender), ]
+
+  # Pairwise deletion previously crashed (unique(): detected NaN)
+  set.seed(1)
+  expect_message(
+    res_pw <- ssm_analyze(
+      jz, scales = 2:9, grouping = "Gender", listwise = FALSE, boots = 20
+    ),
+    "3 observation"
+  )
+  set.seed(1)
+  res_pw_manual <- ssm_analyze(
+    manual, scales = 2:9, grouping = "Gender", listwise = FALSE, boots = 20
+  )
+  expect_equal(res_pw$results, res_pw_manual$results)
+  expect_equal(res_pw$scores, res_pw_manual$scores)
+
+  # Listwise deletion also reports the dropped NA-group count
+  set.seed(1)
+  expect_message(
+    res_lw <- ssm_analyze(
+      jz, scales = 2:9, grouping = "Gender", listwise = TRUE, boots = 20
+    ),
+    "3 observation"
+  )
+  set.seed(1)
+  res_lw_manual <- ssm_analyze(
+    manual, scales = 2:9, grouping = "Gender", listwise = TRUE, boots = 20
+  )
+  expect_equal(res_lw$results, res_lw_manual$results)
+
+  # A contrast over two real levels plus NA still works and matches
+  set.seed(1)
+  res_c <- suppressMessages(ssm_analyze(
+    jz, scales = 2:9, grouping = "Gender", contrast = TRUE,
+    listwise = FALSE, boots = 20
+  ))
+  set.seed(1)
+  res_c_manual <- ssm_analyze(
+    manual, scales = 2:9, grouping = "Gender", contrast = TRUE,
+    listwise = FALSE, boots = 20
+  )
+  expect_equal(res_c$results, res_c_manual$results)
+
+  # A scale literally named "Group" must not be mistaken for the grouping
+  # column. Here Gender has no NA, so no grouping rows should be dropped and
+  # no message should fire, even though the "Group" scale has an NA.
+  jz_collide <- jz2017
+  jz_collide$Group <- jz_collide$PA
+  jz_collide$Group[2] <- NA
+  expect_no_message(
+    ssm_analyze(
+      jz_collide,
+      scales = c("Group", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
+      grouping = "Gender", listwise = FALSE, boots = 5
+    )
+  )
+
+  # If every grouping value is missing, error clearly rather than crash
+  jz_allna <- jz2017
+  jz_allna$Gender <- NA
+  expect_error(
+    suppressMessages(
+      ssm_analyze(jz_allna, scales = 2:9, grouping = "Gender", boots = 5)
+    ),
+    "No observations remain"
+  )
+})
+
+test_that("measures_labels length is validated", {
+  data("jz2017")
+
+  # Wrong number of labels must error (regression: was silently accepted)
+  expect_error(
+    ssm_analyze(
+      jz2017,
+      scales = 2:9,
+      measures = c("NARPD", "ASPD"),
+      measures_labels = "Narcissistic",
+      boots = 1
+    ),
+    "measures_labels"
+  )
+
+  # Labels without measures must error rather than be silently ignored
+  expect_error(
+    ssm_analyze(jz2017, scales = 2:9, measures_labels = "Mean", boots = 1),
+    "measures_labels"
+  )
+
+  # Correct number of labels still works and is used in the output
+  set.seed(12345)
+  res <- ssm_analyze(
+    jz2017,
+    scales = 2:9,
+    measures = c("NARPD", "ASPD"),
+    measures_labels = c("Narcissistic", "Antisocial"),
+    boots = 1
+  )
+  expect_equal(res$results$Label, c("Narcissistic", "Antisocial"))
+
+  # NULL remains the default and works
+  set.seed(12345)
+  res_null <- ssm_analyze(
+    jz2017,
+    scales = 2:9,
+    measures = c("NARPD", "ASPD"),
+    boots = 1
+  )
+  expect_equal(res_null$results$Label, c("NARPD", "ASPD"))
 })
 

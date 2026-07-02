@@ -1,5 +1,6 @@
 test_that("Single-group mean-based SSM plot is correct", {
   data("aw2009")
+  set.seed(12345)
   res <- ssm_analyze(aw2009, scales = 1:8)
   p <- ssm_plot_circle(res)
 
@@ -16,6 +17,7 @@ test_that("Single-group mean-based SSM plot is correct", {
 
 test_that("Single-group correlation-based SSM plot is correct", {
   data("jz2017")
+  set.seed(12345)
   res <- ssm_analyze(jz2017, scales = 2:9, measures = "PARPD")
   p <- ssm_plot_circle(res)
   
@@ -26,6 +28,7 @@ test_that("Single-group correlation-based SSM plot is correct", {
 
 test_that("Measure-contrast SSM plot is correct", {
   data("jz2017")
+  set.seed(12345)
   res <- ssm_analyze(
     jz2017,
     scales = 2:9,
@@ -38,7 +41,7 @@ test_that("Measure-contrast SSM plot is correct", {
   expect_true(ggplot2::is_ggplot(p))
   vdiffr::expect_doppelganger("measure-contrast ssm", p)
   
-  p2 <- ssm_plot_circle(res, drop_xy = TRUE)
+  p2 <- ssm_plot_circle(res)
   
   # Test the output object
   expect_true(ggplot2::is_ggplot(p))
@@ -50,6 +53,7 @@ test_that("Measure-contrast SSM plot is correct", {
 
 test_that("Group-contrast correlation-based SSM plot is correct", {
   data("jz2017")
+  set.seed(12345)
   res <- ssm_analyze(
     jz2017, 
     scales = 2:9, 
@@ -72,6 +76,7 @@ test_that("Removing plots with low fit works as expected", {
 
 test_that("many plots works as expected", {
   data("jz2017")
+  set.seed(12345)
   res <- ssm_analyze(jz2017, scales = 2:9, measures = 10:13)
   p <- ssm_plot_circle(res)
   vdiffr::expect_doppelganger("many_circle-plots", p)
@@ -88,4 +93,25 @@ test_that("things are working at 0/360", {
   res <- ssm_analyze(dat, 2:9, measures = 19)
   p <- ssm_plot_circle(res)
   vdiffr::expect_doppelganger("cross-zero circle", p)
+})
+
+test_that("plot functions warn about unrecognized arguments", {
+  data("aw2009")
+  set.seed(1)
+  res <- ssm_analyze(aw2009, scales = 1:8, boots = 50)
+
+  # A typo'd argument lands in ... and is flagged rather than silently ignored
+  expect_warning(ssm_plot_circle(res, angle_lables = PANO()), "disregarded")
+  expect_warning(ssm_plot_curve(res, angle_lables = PANO()), "disregarded")
+
+  data("jz2017")
+  set.seed(1)
+  cres <- ssm_analyze(
+    jz2017, scales = 2:9, grouping = "Gender", contrast = TRUE, boots = 50
+  )
+  expect_warning(ssm_plot_contrast(cres, nonsense_arg = 1), "disregarded")
+
+  # A clean call emits no "disregarded" warning (partial matches are fine)
+  w <- capture_warnings(ssm_plot_circle(res, angle_labels = PANO()))
+  expect_false(any(grepl("disregarded", w)))
 })

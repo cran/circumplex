@@ -18,7 +18,8 @@ ssm_analyze(
 )
 }
 \arguments{
-\item{data}{Required. A data frame containing at least circumplex scales.}
+\item{data}{Required. A data frame or matrix containing at least
+circumplex scales.}
 
 \item{scales}{Required. A character vector of column names, or a numeric
 vector of column indexes, from \code{data} that contains the circumplex scale
@@ -26,7 +27,11 @@ scores to be analyzed.}
 
 \item{angles}{Optional. A numeric vector containing the angular displacement
 of each circumplex scale included in \code{scales} (in degrees). (default =
-\code{octants()}).}
+\code{octants()}). The closed-form SSM estimator used here equals the
+ordinary-least-squares cosine fit only when \code{angles} are equally spaced
+around the circle (e.g., octants at 45-degree intervals); for unequally
+spaced angles it is the conventional Gurtman estimator, not a
+least-squares fit.}
 
 \item{measures}{Optional. Either \code{NULL} or a character vector of column names
 from \code{data} that contains one or more variables to be correlated with the
@@ -39,7 +44,13 @@ each observation.}
 \item{contrast}{Optional. A logical indicating whether to output the
 difference between two measures' or two groups' SSM parameters. Can only be
 set to TRUE when there are exactly two measures and one group, one measure
-and two groups, or no measures and two groups (default = FALSE).}
+and two groups, or no measures and two groups (default = FALSE). The
+contrast is always the second level minus the first. For two groups, this
+is the second level of \code{grouping} alphabetically, unless \code{grouping} is
+already a factor with an explicit level order, in which case that order is
+used. For two measures, this is simply the second entry of \code{measures} as
+given (no reordering). The direction is shown in the result's Label (e.g.,
+"Male - Female").}
 
 \item{boots}{Optional. A single positive whole number indicating how many
 bootstrap resamples to use when estimating the confidence intervals
@@ -69,6 +80,23 @@ displacement of scales (angles)}
 this object}
 \item{scores}{A data frame containing the mean scale scores} \item{type}{A
 string indicating what type of SSM analysis was done}
+
+The profile displacement parameter is reported in the half-open interval
+\verb{[0, 360)} degrees. A profile that peaks exactly at the 0/360 degree
+boundary is reported as approximately 360 (equivalently 0, the same
+direction); which of the two appears is a floating-point detail and both
+denote the same pole. Contrast displacements are instead reported as a
+signed difference in \verb{(-180, 180]} degrees (see the "Contrast" block in
+the printed output).
+
+Degenerate profiles (flat or zero-amplitude) have undefined displacement
+(and fit, if flat), which is reported as \code{NA} with a warning. Bootstrap
+resamples that produce degenerate profiles (e.g., a resampled measure
+with zero variance) are excluded from the confidence intervals with a
+warning reporting how many were dropped; the intervals are then
+conditional on estimability.
+
+[0, 360)\verb{degrees. A profile that peaks exactly at the 0/360 degree boundary is reported as approximately 360 (equivalently 0, the same direction); which of the two appears is a floating-point detail and both denote the same pole. Contrast displacements are instead reported as a signed difference in}(-180, 180]: R:0,\%20360)\%60\%20degrees.\%20A\%20profile\%20that\%20peaks\%20exactly\%20at\%20the\%200/360\%20degree\%0A\%20\%20boundary\%20is\%20reported\%20as\%20approximately\%20360\%20(equivalently\%200,\%20the\%20same\%0A\%20\%20direction);\%20which\%20of\%20the\%20two\%20appears\%20is\%20a\%20floating-point\%20detail\%20and\%20both\%0A\%20\%20denote\%20the\%20same\%20pole.\%20Contrast\%20displacements\%20are\%20instead\%20reported\%20as\%20a\%0A\%20\%20signed\%20difference\%20in\%20\%60(-180,\%20180
 }
 \description{
 Calculate SSM parameters with bootstrapped confidence intervals for a variety

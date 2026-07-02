@@ -6,13 +6,18 @@
 #' groups will be used to stratify the data, and contrasts between groups or
 #' measures will be calculated.
 #'
-#' @param data Required. A data frame containing at least circumplex scales.
+#' @param data Required. A data frame or matrix containing at least
+#'   circumplex scales.
 #' @param scales Required. A character vector of column names, or a numeric
 #'   vector of column indexes, from `data` that contains the circumplex scale
 #'   scores to be analyzed.
 #' @param angles Optional. A numeric vector containing the angular displacement
 #'   of each circumplex scale included in `scales` (in degrees). (default =
-#'   `octants()`).
+#'   `octants()`). The closed-form SSM estimator used here equals the
+#'   ordinary-least-squares cosine fit only when `angles` are equally spaced
+#'   around the circle (e.g., octants at 45-degree intervals); for unequally
+#'   spaced angles it is the conventional Gurtman estimator, not a
+#'   least-squares fit.
 #' @param measures Optional. Either `NULL` or a character vector of column names
 #'   from `data` that contains one or more variables to be correlated with the
 #'   circumplex scales and analyzed using correlation-based SSM analyses.
@@ -22,7 +27,13 @@
 #' @param contrast Optional. A logical indicating whether to output the
 #'   difference between two measures' or two groups' SSM parameters. Can only be
 #'   set to TRUE when there are exactly two measures and one group, one measure
-#'   and two groups, or no measures and two groups (default = FALSE).
+#'   and two groups, or no measures and two groups (default = FALSE). The
+#'   contrast is always the second level minus the first. For two groups, this
+#'   is the second level of `grouping` alphabetically, unless `grouping` is
+#'   already a factor with an explicit level order, in which case that order is
+#'   used. For two measures, this is simply the second entry of `measures` as
+#'   given (no reordering). The direction is shown in the result's Label (e.g.,
+#'   "Male - Female").
 #' @param boots Optional. A single positive whole number indicating how many
 #'   bootstrap resamples to use when estimating the confidence intervals
 #'   (default = 2000).
@@ -46,6 +57,21 @@
 #'   this object}
 #'   \item{scores}{A data frame containing the mean scale scores} \item{type}{A
 #'   string indicating what type of SSM analysis was done}
+#'
+#'   The profile displacement parameter is reported in the half-open interval
+#'   `[0, 360)` degrees. A profile that peaks exactly at the 0/360 degree
+#'   boundary is reported as approximately 360 (equivalently 0, the same
+#'   direction); which of the two appears is a floating-point detail and both
+#'   denote the same pole. Contrast displacements are instead reported as a
+#'   signed difference in `(-180, 180]` degrees (see the "Contrast" block in
+#'   the printed output).
+#'
+#'   Degenerate profiles (flat or zero-amplitude) have undefined displacement
+#'   (and fit, if flat), which is reported as `NA` with a warning. Bootstrap
+#'   resamples that produce degenerate profiles (e.g., a resampled measure
+#'   with zero variance) are excluded from the confidence intervals with a
+#'   warning reporting how many were dropped; the intervals are then
+#'   conditional on estimability.
 #' @family ssm functions
 #' @family analysis functions
 #' @export
@@ -128,6 +154,26 @@ ssm_analyze <- function(data, scales, angles = octants(),
   stopifnot(is_flag(listwise))
   stopifnot(is_null_or_char(measures_labels, n = length(measures)))
 
+  # Coerce matrix input to a data frame so column indexing behaves uniformly
+  if (is.matrix(data)) data <- as.data.frame(data)
+
+  # Drop observations with missing grouping values (unusable in any group).
+  # Done here, on the user's actual grouping column, so both analysis paths
+  # inherit clean data and never pass NA group codes into the C++ estimators.
+  if (!is.null(grouping)) {
+    na_group <- is.na(data[[grouping]])
+    if (any(na_group)) {
+      message(
+        sum(na_group),
+        " observation(s) removed due to missing values in the grouping variable."
+      )
+      data <- data[!na_group, , drop = FALSE]
+      if (nrow(data) == 0) {
+        stop("No observations remain after removing missing grouping values.")
+      }
+    }
+  }
+
   if (contrast) {
     n_measures <- length(measures)
     n_groups <- ifelse(is.null(grouping), 1, nlevels(factor(data[[grouping]])))
@@ -189,12 +235,12 @@ ssm_analyze_means <- function(data, scales, angles, grouping, contrast,
     colnames(Group) <- "Group"
     bs_input <- cbind(bs_input, Group)
   }
-  
+
   # Perform listwise deletion if requested
   if (listwise) {
     bs_input <- stats::na.omit(bs_input)
   }
-  
+
   # Set group to factor
   bs_input[[ncol(bs_input)]] <- factor(bs_input[[ncol(bs_input)]])
   
@@ -295,7 +341,7 @@ ssm_analyze_corrs <- function(data, scales, angles, measures, grouping,
     colnames(newcol) <- "Group"
     bs_input <- cbind(bs_input, newcol)
   }
-  
+
   # Perform listwise deletion if requested
   if (listwise == TRUE) {
     bs_input <- stats::na.omit(bs_input)
@@ -434,6 +480,14 @@ ssm_analyze_corrs <- function(data, scales, angles, measures, grouping,
 #' @param f_label Optional. A string representing the variable name of the SSM
 #'   fit or R-squared value (default = "Fit").
 #' @return A data frame containing the SSM parameters calculated from `scores`.
+#'   For degenerate profiles the undefined parameters are returned as `NA`
+#'   with a warning: a flat profile (zero variance) has undefined displacement
+#'   and fit, and a profile with real variance but zero amplitude (i.e., no
+#'   first-harmonic component) has undefined displacement and a fit of 0.
+#'   Note that this applies only to amplitudes that are zero up to machine
+#'   precision; small real amplitudes are always estimated, and their
+#'   uncertainty is expressed through confidence intervals (see
+#'   \code{\link{ssm_analyze}()}).
 #' @family ssm functions
 #' @family analysis functions
 #' @export
@@ -466,8 +520,15 @@ ssm_parameters <- function(scores, angles = octants(), prefix = "", suffix = "",
 
   angles <- as_radian(as_degree(angles))
   params <- ssm_parameters_cpp(scores, angles)
+  if (is.na(params[[5]])) {
+    warning(
+      "Displacement is undefined for this profile (flat scores, zero ",
+      "amplitude, or missing values); NA returned.",
+      call. = FALSE
+    )
+  }
   params[[5]] <- as_degree(as_radian(params[[5]]))
-  
+
   rownames(params) <- paste0(
     prefix, 
     c(e_label, x_label, y_label, a_label, d_label, f_label), 
@@ -484,7 +545,8 @@ ssm_parameters <- function(scores, angles = octants(), prefix = "", suffix = "",
 #' description or visualization of individual data points rather than for
 #' statistical inference on groups of data points.
 #'
-#' @param data Required. A data frame containing at least circumplex scales.
+#' @param data Required. A data frame or matrix containing at least
+#'   circumplex scales.
 #' @param scales Required. The variable names or column numbers for the
 #'   variables in \code{.data} that contain circumplex scales to be analyzed.
 #' @param angles Required. A numeric vector containing the angular displacement
@@ -508,18 +570,20 @@ ssm_parameters <- function(scores, angles = octants(), prefix = "", suffix = "",
 ssm_score <- function(data, scales, angles = octants(), append = TRUE, ...) {
 
   stopifnot(is.data.frame(data) || is.matrix(data))
-  stopifnot(is.character(scales))
+  stopifnot(is_var(scales))
   stopifnot(is.numeric(angles))
   stopifnot(length(scales) == length(angles))
 
+  if (is.matrix(data)) data <- as.data.frame(data)
   scales_mat <- as.matrix(data[scales])
   
   out <- do.call(
-    rbind, 
+    rbind,
     apply(
       scales_mat,
-      MARGIN = 1, 
-      FUN = ssm_parameters, 
+      MARGIN = 1,
+      FUN = ssm_parameters,
+      angles = angles,
       ...
     )
   )
