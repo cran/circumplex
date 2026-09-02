@@ -1,8 +1,40 @@
+# Dispatch to the requested confidence-interval engine. Both the mean-based and
+# correlation-based analysis paths call this so the engine choice lives in one
+# place; `method` is already validated (match.arg) in ssm_analyze(). The
+# bootstrap-only arguments (bs_function, parallel, ncpus, strata) are ignored by
+# the Monte Carlo engine, and obs_scores (the caller's already-computed observed
+# score matrix) is ignored by the bootstrap engine.
+ssm_estimate_intervals <- function(method, bs_input, bs_function, scales,
+                                   measures = NULL, angles, boots, interval,
+                                   contrast, listwise, parallel, ncpus, strata,
+                                   obs_scores, occ_k = NULL) {
+  if (method == "montecarlo") {
+    ssm_montecarlo(
+      bs_input = bs_input, scales = scales, measures = measures,
+      angles = angles, boots = boots, interval = interval,
+      contrast = contrast, listwise = listwise, obs_scores = obs_scores,
+      occ_k = occ_k
+    )
+  } else {
+    ssm_bootstrap(
+      bs_input = bs_input, bs_function = bs_function, scales = scales,
+      measures = measures, angles = angles, boots = boots, interval = interval,
+      contrast = contrast, listwise = listwise, parallel = parallel,
+      ncpus = ncpus, strata = strata
+    )
+  }
+}
+
 # Perform bootstrap to get confidence intervals around SSM parameters
 ssm_bootstrap <- function(bs_input, bs_function, scales, measures = NULL,
-                          angles, boots, interval, contrast, listwise, ...) {
+                          angles, boots, interval, contrast, listwise,
+                          parallel = "no", ncpus = 1, ...) {
 
   # Perform bootstrapping ------------------------------------------------------
+  # Note on parallel reproducibility: for this nonparametric bootstrap,
+  # boot::boot() draws the full resample index array in the master process
+  # (master RNG) before dispatching, and bs_function is deterministic, so
+  # results for a given seed are identical for any parallel/ncpus setting.
   bs_results <-
     boot::boot(
       data = bs_input,
@@ -13,50 +45,87 @@ ssm_bootstrap <- function(bs_input, bs_function, scales, measures = NULL,
       angles = angles,
       contrast = contrast,
       listwise = listwise,
+      parallel = parallel,
+      ncpus = ncpus,
       ...
     )
 
-  # Extract point estimates from bootstrap results -----------------------------
-  bs_est <- reshape_params(bs_results$t0, suffix = "est")
-  bs_t <- bs_results$t
-  bs_t <- as.data.frame(bs_t)
-  colnames(bs_t) <- paste0(
-    c("e", "x", "y", "a", "d", "fit"),
-    rep(1:nrow(bs_est), each = 6)
+  ssm_replicate_intervals(
+    t0 = bs_results$t0,
+    t = bs_results$t,
+    interval = interval,
+    contrast = contrast,
+    replicate_label = "bootstrap resamples"
+  )
+}
+
+# Turn a matrix of SSM parameter replicates into estimates and intervals ------
+# Shared interval-assembly back end for the bootstrap and Monte Carlo engines:
+# t0 is the observed parameter vector (6 per group, in ssm_param_names() order,
+# displacement in radians) and t is the replicate matrix with one row per
+# resample/draw and the same columns as t0.
+ssm_replicate_intervals <- function(t0, t, interval, contrast,
+                                    replicate_label, t0_warning = NULL,
+                                    interval_label = "confidence interval",
+                                    structural_na = character(0)) {
+
+  # Extract point estimates from the observed parameter vector ----------------
+  bs_est <- reshape_params(t0, suffix = "est")
+  bs_t <- as.data.frame(t)
+  # Name every replicate column by its parameter and group, so displacement
+  # columns can be located by name below instead of by positional arithmetic.
+  pnames <- ssm_param_names()
+  n_groups <- nrow(bs_est)
+  param_of_col <- rep(pnames, times = n_groups)
+  colnames(bs_t) <- paste(
+    param_of_col,
+    rep(seq_len(n_groups), each = length(pnames)),
+    sep = "_"
   )
 
   # Degenerate profiles (flat or zero-amplitude) carry NA parameters -----------
-  if (any(is.na(bs_est$d_est))) {
-    warning(
+  # t0_warning lets a caller whose t0 is not an observed profile (the draws
+  # adapter, whose t0 is its own point summaries) supply honest wording; the
+  # default keeps the bootstrap/Monte Carlo message byte-identical.
+  if (is.null(t0_warning)) {
+    t0_warning <- paste0(
       "One or more observed profiles are flat or have zero amplitude; ",
-      "their displacement (and fit, if flat) is undefined and reported as NA.",
-      call. = FALSE
+      "their displacement (and fit, if flat) is undefined and reported as NA."
     )
   }
-  n_bad <- sum(!stats::complete.cases(bs_t))
+  if (any(is.na(bs_est$d_est))) {
+    warning(t0_warning, call. = FALSE)
+  }
+  # structural_na names parameters that are NA by construction for this
+  # caller (the draws adapter's shape A synthesizes fit = NA in every row);
+  # they are no evidence of a degenerate replicate, so they are excluded
+  # from the degeneracy count. interval_label keeps the wording honest for
+  # credible intervals; defaults keep existing callers byte-identical.
+  count_cols <- !(param_of_col %in% structural_na)
+  n_bad <- sum(!stats::complete.cases(bs_t[, count_cols, drop = FALSE]))
   if (n_bad > 0) {
     warning(
-      n_bad, " of ", nrow(bs_t), " bootstrap resamples produced degenerate ",
-      "(flat or zero-amplitude) profiles and were excluded from the ",
-      "confidence intervals, which are therefore conditional on estimability.",
+      n_bad, " of ", nrow(bs_t), " ", replicate_label, " produced degenerate ",
+      "(flat or zero-amplitude) profiles; their undefined parameter(s) ",
+      "(displacement, and fit if flat) were excluded from that parameter's ",
+      interval_label, " only, which is therefore conditional on ",
+      "estimability. Their other, well-defined parameters still contribute ",
+      "to their ", interval_label, "s.",
       call. = FALSE
     )
   }
 
   # Set the units of the displacement results to radians -----------------------
+  # Locate displacement columns by name. When contrasting, the final group is
+  # the contrast: its displacement takes the contrast radian class (which
+  # permits negative values); every other displacement takes the standard class.
+  d_cols <- which(param_of_col == "d")
   if (contrast) {
-    # Convert individual group d variables to standard radian class
-    d_vars <- 1:((ncol(bs_t) - 6) / 6) * 6 - 1
-
-    # Target the contrasted d parameter and apply the contrast class
-    contrast_d_vars <- ncol(bs_t) - 1
-    bs_t[contrast_d_vars] <- lapply(bs_t[contrast_d_vars], function(x) {
-      structure(x, class = c("circumplex_contrast_radian", "numeric"))
-    })
-  } else {
-    d_vars <- 1:(ncol(bs_t) / 6) * 6 - 1
+    contrast_d_col <- d_cols[length(d_cols)]
+    bs_t[contrast_d_col] <- lapply(bs_t[contrast_d_col], new_contrast_radian)
+    d_cols <- d_cols[-length(d_cols)]
   }
-  bs_t[d_vars] <- lapply(bs_t[d_vars], new_radian)
+  bs_t[d_cols] <- lapply(bs_t[d_cols], new_radian)
 
   # Calculate the lower bounds of the confidence intervals ---------------------
   bs_lci <- sapply(bs_t, quantile, probs = ((1 - interval) / 2), na.rm = TRUE)
@@ -113,20 +182,31 @@ ssm_by_group <- function(scores, angles, contrast) {
 # Calculate quantiles for circular data in radians
 #' @export
 quantile.circumplex_radian <- function(x, na.rm = TRUE, ...) {
-  if (all(is.na(x))) return(NA)
+  if (all(is.na(x))) return(NA_real_)
   x <- unclass(x)
   mean_angle <- atan2(mean(sin(x), na.rm = na.rm), mean(cos(x), na.rm = na.rm))
   angles_centered <- (x - mean_angle + pi) %% (2 * pi) - pi
   quantiles_centered <- stats::quantile(angles_centered, na.rm = na.rm, ...)
   out <- (quantiles_centered + mean_angle) %% (2 * pi)
-  out[abs(out - (2 * pi)) < (.Machine$double.eps * 2)] <- 0
+  # An endpoint denoting the 0/360 pole reports the LM = 360 label (2*pi),
+  # matching the estimate path's convention (D-003; value-level per M20).
+  # Both float representations of the pole are caught: at-or-near 0 (what R's
+  # %% emits at the seam) and at-or-near 2*pi (the fmod-at-the-edge artifact).
+  # The window is 16*eps =~ 3.6e-15 rad (~4 ulp of 2*pi, ~2e-13 degrees):
+  # wide enough to absorb cross-platform last-ulp libm/cancellation residue
+  # in a pole-denoting value (observed ~1e-16), yet ~11 orders of magnitude
+  # below any genuine separation between bootstrap endpoints, so genuinely
+  # near-pole endpoints are never relabeled.
+  pole <- out < (16 * .Machine$double.eps) |
+    (2 * pi - out) < (16 * .Machine$double.eps)
+  out[pole] <- 2 * pi
   as_radian(out)
 }
 
 # Calculate quantiles for circular contrast data in radians (allowing negatives)
 #' @export
 quantile.circumplex_contrast_radian <- function(x, na.rm = TRUE, ...) {
-  if (all(is.na(x))) return(NA)
+  if (all(is.na(x))) return(NA_real_)
   x <- unclass(x)
   mean_angle <- atan2(mean(sin(x), na.rm = na.rm), mean(cos(x), na.rm = na.rm))
   angles_centered <- (x - mean_angle + pi) %% (2 * pi) - pi

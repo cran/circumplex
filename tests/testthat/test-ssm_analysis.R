@@ -226,6 +226,49 @@ test_that("Single-group correlation-based SSM results are correct", {
   expect_match(res$details$score_type, "Correlation")
 })
 
+test_that("correlation path: a flat profile returns NA displacement with a warning", {
+  # Boundary class D (flat / zero-variance) on the correlation entry point: the
+  # mean path is covered at ssm_parameters()/ssm_analyze() (this file's
+  # degenerate tests and test-ssm_bootstrap.R "fully flat data"); the
+  # correlation path assembles the profile from measure-scale correlations and
+  # has its own NA/warning plumbing. Adding a distinct constant to a shared
+  # base leaves every correlation identical (a constant shift does not change
+  # cor), so the correlation profile is exactly flat -> amplitude 0 -> NA.
+  set.seed(101)
+  n <- 60
+  base <- rnorm(n)
+  m <- rnorm(n)
+  mat <- sapply(seq_len(8), function(j) base + j)
+  dat <- as.data.frame(cbind(mat, m))
+  colnames(dat) <- c(PANO(), "M")
+
+  w <- capture_warnings(
+    res <- ssm_analyze(dat, scales = PANO(), measures = "M", boots = 50)
+  )
+  expect_true(any(grepl("flat|amplitude|undefined", w)))
+  expect_true(is.na(res$results$d_est))
+  expect_true(is.na(res$results$fit_est))
+})
+
+test_that("correlation path: a profile peaking at the 0/360 pole reports displacement at the pole", {
+  # Boundary class A (peak at 0/360) reaching the estimator through the
+  # correlation-path profile assembly, not mean scoring. scale_j correlates
+  # with the measure as cos(angle_j), so the correlation profile peaks at the
+  # LM scale (360 degrees) and displacement lands on the pole.
+  set.seed(202)
+  n <- 300
+  rad <- as.numeric(as_radian(octants()))
+  z <- rnorm(n)
+  mat <- sapply(rad, function(a) cos(a) * z + rnorm(n, 0, 1))
+  dat <- as.data.frame(cbind(mat, z))
+  colnames(dat) <- c(PANO(), "M")
+
+  res <- ssm_analyze(dat, scales = PANO(), measures = "M", boots = 100)
+  # LM = 360 convention: the estimate sits on the 0/360 pole (either label).
+  dd <- as.numeric(res$results$d_est) %% 360
+  expect_lt(min(dd, 360 - dd), 15)
+})
+
 test_that("Pairwise and listwise scores are the same with no missingness", {
   skip_on_cran()
 
@@ -527,7 +570,158 @@ test_that("ssm_score forwards the angles argument", {
   )
 })
 
+test_that("ssm_score forwards prefix, suffix, and label arguments", {
+  data("aw2009")
+
+  out <- ssm_score(aw2009, scales = PANO(), append = FALSE, prefix = "IIP_")
+  expect_identical(
+    colnames(out),
+    c("IIP_Elev", "IIP_Xval", "IIP_Yval", "IIP_Ampl", "IIP_Disp", "IIP_Fit")
+  )
+
+  out2 <- ssm_score(
+    aw2009, scales = PANO(), append = FALSE,
+    x_label = "LOV", y_label = "DOM"
+  )
+  expect_identical(colnames(out2), c("Elev", "LOV", "DOM", "Ampl", "Disp", "Fit"))
+
+  # Values must match ssm_parameters() with the same labels, row for row
+  expect_equal(
+    unlist(out2[1, ]),
+    unlist(ssm_parameters(
+      unlist(aw2009[1, PANO()]), x_label = "LOV", y_label = "DOM"
+    )),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("ssm_score warns once (with a count) for degenerate rows", {
+  dat <- as.data.frame(matrix(rnorm(3 * 8), ncol = 8))
+  colnames(dat) <- PANO()
+  dat[2, ] <- 1 # flat row: undefined displacement and fit
+
+  expect_warning(
+    out <- ssm_score(dat, scales = PANO(), append = FALSE),
+    "1 of 3"
+  )
+  expect_true(is.na(out$Disp[2]))
+  expect_true(is.na(out$Fit[2]))
+  expect_false(is.na(out$Disp[1]))
+  expect_false(is.na(out$Disp[3]))
+})
+
+test_that("parallel bootstrapping reproduces serial results exactly", {
+  skip_on_cran()
+  data("jz2017")
+  scales8 <- PANO()
+
+  # Serial reference: grouped contrast engages the displacement CI and
+  # contrast branch machinery, so equality here covers the angular paths
+  set.seed(12345)
+  ref <- ssm_analyze(jz2017, scales = scales8, grouping = "Gender",
+                     contrast = TRUE, boots = 100)
+
+  # Nonparametric boot::boot() draws all resample indices in the master
+  # process before dispatching to workers, and the SSM statistic is
+  # deterministic, so parallel results must be identical -- not just close
+  set.seed(12345)
+  out_snow <- ssm_analyze(jz2017, scales = scales8, grouping = "Gender",
+                          contrast = TRUE, boots = 100,
+                          parallel = "snow", ncpus = 2)
+  expect_identical(ref$results, out_snow$results)
+
+  if (.Platform$OS.type == "unix") { # forking is unavailable on Windows
+    set.seed(12345)
+    out_mc <- ssm_analyze(jz2017, scales = scales8, grouping = "Gender",
+                          contrast = TRUE, boots = 100,
+                          parallel = "multicore", ncpus = 2)
+    expect_identical(ref$results, out_mc$results)
+  }
+})
+
+test_that("parallel bootstrapping works on the correlation path", {
+  skip_on_cran()
+  data("jz2017")
+  scales8 <- PANO()
+
+  # Covers shipping the correlation-based statistic (a closure over package
+  # internals) to PSOCK workers
+  set.seed(2222)
+  ref <- ssm_analyze(jz2017, scales = scales8, measures = "NARPD",
+                     boots = 100)
+  set.seed(2222)
+  out <- ssm_analyze(jz2017, scales = scales8, measures = "NARPD",
+                     boots = 100, parallel = "snow", ncpus = 2)
+  expect_identical(ref$results, out$results)
+})
+
+test_that("parallel arguments are validated", {
+  data("aw2009")
+  expect_error(
+    ssm_analyze(aw2009, scales = 1:8, boots = 10, parallel = "bogus")
+  )
+  expect_error(
+    ssm_analyze(aw2009, scales = 1:8, boots = 10, ncpus = 0)
+  )
+  expect_error(
+    ssm_analyze(aw2009, scales = 1:8, boots = 10, ncpus = 1.5)
+  )
+  # scalar-count args reject length > 1 (is_scalar_count hardening, M10 D-005):
+  # ssm_analyze()'s boots/ncpus previously used an inline check with no length
+  # guard, so a length-2 vector slipped through.
+  expect_error(ssm_analyze(aw2009, scales = 1:8, boots = c(10, 20)))
+  expect_error(
+    ssm_analyze(aw2009, scales = 1:8, boots = 10, ncpus = c(1, 2))
+  )
+})
+
+test_that("ssm_score errors on an unrecognized ... argument", {
+  # Regression: forwarding ... via apply(FUN = ssm_parameters, ...) used to
+  # raise "unused argument" for typos (ssm_parameters() has no ...); a typo
+  # must still be caught, not silently ignored.
+  data("aw2009")
+  expect_error(
+    ssm_score(aw2009, scales = PANO(), append = FALSE, bogus_arg = "x"),
+    "unused argument"
+  )
+})
+
+test_that("ssm_score errors on an unnamed ... argument (R1)", {
+  # Regression: v1.2.0's apply(FUN = ssm_parameters, ...) matched a bare
+  # positional string to ssm_parameters()'s `prefix` formal; the vectorized
+  # path inspected only names(extra_args) and silently discarded unnamed
+  # elements, so ssm_score(aw2009, PANO(), octants(), FALSE, "IIP_") returned
+  # unprefixed columns with no error. Unnamed extras must now error, not be
+  # silently dropped nor silently forwarded.
+  data("aw2009")
+  expect_error(
+    ssm_score(aw2009, PANO(), octants(), FALSE, "IIP_"),
+    "must be named"
+  )
+  # The common, named form is unaffected.
+  expect_silent(
+    ssm_score(aw2009, scales = PANO(), append = FALSE, prefix = "IIP_")
+  )
+})
+
+test_that("ssm_score errors on a non-scalar or non-character label (R4)", {
+  # Regression: ssm_parameters() validated each label via is_char(x, n = 1);
+  # the vectorized path dropped that, so a vector prefix recycled through
+  # paste0() into interleaved garbage column names and a numeric prefix was
+  # coerced silently. Restore the per-argument scalar-character validation.
+  data("aw2009")
+  expect_error(
+    ssm_score(aw2009, scales = PANO(), append = FALSE, prefix = c("a_", "b_")),
+    "is_char"
+  )
+  expect_error(
+    ssm_score(aw2009, scales = PANO(), append = FALSE, prefix = 5),
+    "is_char"
+  )
+})
+
 test_that("NA grouping values are dropped with a message in both modes", {
+  skip_on_cran()
   data("jz2017")
   jz <- jz2017
   jz$Gender[c(1, 5, 10)] <- NA
@@ -641,5 +835,78 @@ test_that("measures_labels length is validated", {
     boots = 1
   )
   expect_equal(res_null$results$Label, c("NARPD", "ASPD"))
+})
+
+test_that("build_result_labels() covers every mean/correlation branch (M12)", {
+  lab <- function(...) build_result_labels(...)
+
+  # --- Mean path (no measures) ---------------------------------------------
+  # Single group: Measure is NA, Label mirrors Group.
+  expect_equal(
+    lab("Mean", "All", NULL, 1L, NULL, FALSE, NULL),
+    data.frame(Label = "All", Group = "All", Measure = NA_character_,
+               stringsAsFactors = FALSE)
+  )
+  # Multiple groups, no contrast.
+  expect_equal(
+    lab("Mean", c("Female", "Male"), NULL, 2L, NULL, FALSE, "gender"),
+    data.frame(Label = c("Female", "Male"), Group = c("Female", "Male"),
+               Measure = c(NA_character_, NA_character_),
+               stringsAsFactors = FALSE)
+  )
+  # Multiple groups, contrast appends the "second - first" row.
+  expect_equal(
+    lab("Mean", c("Female", "Male"), NULL, 2L, NULL, TRUE, "gender"),
+    data.frame(
+      Label = c("Female", "Male", "Male - Female"),
+      Group = c("Female", "Male", "Male - Female"),
+      Measure = c(NA_character_, NA_character_, NA_character_),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  # --- Correlation path (measures present) ---------------------------------
+  # Single group, single measure: Label is the measure.
+  expect_equal(
+    lab("Correlation", "All", "PARPD", 1L, 1L, FALSE, NULL),
+    data.frame(Label = "PARPD", Group = "All", Measure = "PARPD",
+               stringsAsFactors = FALSE)
+  )
+  # Multiple measures, no grouping, no contrast (not asserted end-to-end).
+  expect_equal(
+    lab("Correlation", "All", c("ASPD", "NARPD"), 1L, 2L, FALSE, NULL),
+    data.frame(Label = c("ASPD", "NARPD"), Group = c("All", "All"),
+               Measure = c("ASPD", "NARPD"), stringsAsFactors = FALSE)
+  )
+  # Measure contrast (no grouping): "second - first" measure appended.
+  expect_equal(
+    lab("Correlation", "All", c("ASPD", "NARPD"), 1L, 2L, TRUE, NULL),
+    data.frame(
+      Label = c("ASPD", "NARPD", "NARPD - ASPD"),
+      Group = c("All", "All", "All"),
+      Measure = c("ASPD", "NARPD", "NARPD - ASPD"),
+      stringsAsFactors = FALSE
+    )
+  )
+  # Grouping, no contrast (not asserted end-to-end): Label is "measure: group".
+  expect_equal(
+    lab("Correlation", c("Female", "Male"), "NARPD", 2L, 1L, FALSE, "gender"),
+    data.frame(
+      Label = c("NARPD: Female", "NARPD: Male"),
+      Group = c("Female", "Male"),
+      Measure = c("NARPD", "NARPD"),
+      stringsAsFactors = FALSE
+    )
+  )
+  # Group contrast: "second - first" group appended, Label is "measure: group".
+  expect_equal(
+    lab("Correlation", c("Female", "Male"), "NARPD", 2L, 1L, TRUE, "gender"),
+    data.frame(
+      Label = c("NARPD: Female", "NARPD: Male", "NARPD: Male - Female"),
+      Group = c("Female", "Male", "Male - Female"),
+      Measure = c("NARPD", "NARPD", "NARPD"),
+      stringsAsFactors = FALSE
+    )
+  )
 })
 

@@ -65,7 +65,7 @@ summary.circumplex_instrument <- function(object, scales = TRUE, anchors = TRUE,
 #' scales(csip, items = TRUE)
 scales <- function(x, items = FALSE) {
   stopifnot(is_instrument(x))
-  stopifnot(is.logical(items) && length(items) == 1)
+  stopifnot(is_flag(items))
 
   cat("The ", x$Details$Abbrev, " contains ", x$Details$Scales, 
       " circumplex scales.\n", sep = "")
@@ -150,6 +150,35 @@ anchors <- function(x) {
 #' population, and source reference and hyperlink. If another normative data set
 #' exists that is not yet included in the package, please let us know.
 #'
+#' The population is a short standardized label chosen by this package so that
+#' samples can be compared across instruments; it is deliberately broader than
+#' the description the original source gives. Several instruments normed on
+#' students at a single named university, in a stated period or region, are all
+#' labelled "American college students" here. Consult the reference and
+#' hyperlink printed alongside it for the source's own description of the
+#' sample before treating a normative sample as representative of a
+#' population.
+#'
+#' For most samples the label names the group they were drawn from rather than
+#' a frame they were drawn to represent -- but not for all of them, and which
+#' is which is recorded per sample in the `Kind` column and printed as the
+#' sample's reference kind:
+#'
+#' \describe{
+#'   \item{standardization sample}{The sample was drawn to represent a defined
+#'     population, so its mean and standard deviation estimate that
+#'     population's. Only the IIP-32 and IIP-64 samples are of this kind.}
+#'   \item{identified published source}{The sample's octant statistics are
+#'     printed in an identified source -- a study report or an author's norms
+#'     page -- and describe that group of people rather than any wider frame.}
+#'   \item{no identified source}{The sample's octant statistics appear in no
+#'     source that has been identified, whatever is known about the sample
+#'     itself, and should be treated as unverified.}
+#' }
+#'
+#' See `vignette("using-instruments")` for what the shipped reference samples
+#' are and how to choose among them.
+#'
 #' @param x Required. An object of the instrument class.
 #' @return The same input object. Prints text to console.
 #' @family instrument functions
@@ -170,8 +199,14 @@ norms <- function(x) {
     sample_i <- samples$Sample[[i]]
     size_i <- samples$Size[[i]]
     pop_i <- samples$Population[[i]]
+    # The kind is what a reader choosing between samples most needs and the
+    # Population string cannot say: whether these statistics estimate a
+    # population, describe a group someone published, or rest on no identified
+    # source at all.
+    kind_i <- norm_kind_phrase(samples$Kind[[i]])
     cat(
       sample_i, ". ", size_i, " ", pop_i, "\n",
+      "Reference kind: ", kind_i, "\n",
       samples$Reference[[i]], "\n",
       "<", samples$URL[[i]], ">", "\n",
       sep = ""
@@ -193,25 +228,40 @@ norms <- function(x) {
 #' @examples
 #' instruments()
 instruments <- function() {
+  insts <- instrument_names()
 
-  # TODO: Find a way to automate this - maybe data$results minus example data?
-
-  cat(
-    "The circumplex package currently includes 15 instruments:\n",
-    "1. CAIS: Child and Adolescent Interpersonal Survey (cais)\n",
-    "2. CSIE: Circumplex Scales of Interpersonal Efficacy (csie)\n",
-    "3. CSIG: Circumplex Scales of Intergroup Goals (csig)\n",
-    "4. CSIP: Circumplex Scales of Interpersonal Problems (csip)\n",
-    "5. CSIV: Circumplex Scales of Interpersonal Values (csiv)\n",
-    "6. IEI: Interpersonal Emotion Inventory (iei)\n",
-    "7. IGI-CR: Interpersonal Goals Inventory for Children, Revised Version (igicr)\n",
-    "8. IIP-32: Inventory of Interpersonal Problems, Brief Version (iip32)\n",
-    "9. IIP-64: Inventory of Interpersonal Problems (iip64)\n",
-    "10. IIP-SC: Inventory of Interpersonal Problems, Short Circumplex (iipsc)\n",
-    "11. IIS-32: Inventory of Interpersonal Strengths, Brief Version (iis32)\n",
-    "12. IIS-64: Inventory of Interpersonal Strengths (iis64)\n",
-    "13. IIT-C: Inventory of Influence Tactics Circumplex (iitc)\n",
-    "14. IPIP-IPC: IPIP Interpersonal Circumplex (ipipipc)\n",
-    "15. ISC: Interpersonal Sensitivities Circumplex (isc)\n"
+  header <- sprintf(
+    "The circumplex package currently includes %d instruments:\n",
+    length(insts)
   )
+  lines <- vapply(seq_along(insts), function(i) {
+    d <- instrument_object(insts[[i]])$Details
+    sprintf("%d. %s: %s (%s)\n", i, d$Abbrev, d$Name, insts[[i]])
+  }, character(1))
+
+  cat(c(header, lines))
+}
+
+# Fetch a shipped dataset by name without attaching it to the search path.
+instrument_object <- function(nm) {
+  e <- new.env()
+  utils::data(list = nm, package = "circumplex", envir = e)
+  get(nm, envir = e)
+}
+
+# Enumerate the packaged instruments from the data itself, so any listing or
+# sweep over them can never drift from the shipped datasets. Example datasets
+# (aw2009, jz2017, raw) are filtered out by class.
+#
+# Unexported and single-sourced deliberately: this sweep was written out three
+# times over -- here, in tests/testthat/helper-norms.R, and very nearly a
+# fourth time in data-raw/audit-norms.R -- and each copy is a place the roster
+# can silently disagree with `data/`. The audit reaches it through
+# asNamespace(); the test helper calls it directly.
+instrument_names <- function() {
+  nms <- utils::data(package = "circumplex")$results[, "Item"]
+  sort(Filter(
+    function(nm) inherits(instrument_object(nm), "circumplex_instrument"),
+    nms
+  ))
 }

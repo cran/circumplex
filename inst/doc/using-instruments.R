@@ -46,6 +46,24 @@ scale_scores <- score(
 print(scale_scores)
 
 ## -----------------------------------------------------------------------------
+inst <- Filter(
+  function(x) inherits(x, "circumplex_instrument"),
+  mget(
+    utils::data(package = "circumplex")$results[, "Item"],
+    envir = as.environment("package:circumplex"),
+    ifnotfound = list(NULL)
+  )
+)
+samples <- do.call(rbind, lapply(inst, function(x) x$Norms[[2]]))
+
+n_instruments <- length(inst)
+n_samples <- nrow(samples)
+n_college <- sum(grepl("college|undergraduate", samples$Population))
+n_small <- sum(samples$Size < 300)
+n_standardization <- sum(samples$Kind == "standardization")
+n_unsourced <- sum(samples$Kind == "unsourced")
+
+## -----------------------------------------------------------------------------
 norms(iipsc)
 
 ## -----------------------------------------------------------------------------

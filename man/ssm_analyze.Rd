@@ -6,7 +6,7 @@
 \usage{
 ssm_analyze(
   data,
-  scales,
+  scales = NULL,
   angles = octants(),
   measures = NULL,
   grouping = NULL,
@@ -14,24 +14,31 @@ ssm_analyze(
   boots = 2000,
   interval = 0.95,
   listwise = TRUE,
-  measures_labels = NULL
+  measures_labels = NULL,
+  parallel = "no",
+  ncpus = 1,
+  method = "bootstrap",
+  occasions = NULL
 )
 }
 \arguments{
 \item{data}{Required. A data frame or matrix containing at least
 circumplex scales.}
 
-\item{scales}{Required. A character vector of column names, or a numeric
-vector of column indexes, from \code{data} that contains the circumplex scale
-scores to be analyzed.}
+\item{scales}{Required unless \code{occasions} is supplied (the two are mutually
+exclusive). A character vector of column names, or a numeric vector of
+column indexes, from \code{data} that contains the circumplex scale scores to
+be analyzed.}
 
 \item{angles}{Optional. A numeric vector containing the angular displacement
 of each circumplex scale included in \code{scales} (in degrees). (default =
 \code{octants()}). The closed-form SSM estimator used here equals the
-ordinary-least-squares cosine fit only when \code{angles} are equally spaced
-around the circle (e.g., octants at 45-degree intervals); for unequally
-spaced angles it is the conventional Gurtman estimator, not a
-least-squares fit.}
+ordinary-least-squares cosine fit for equally spaced \code{angles} (e.g.,
+octants at 45-degree intervals) -- more generally, for any angle set
+satisfying first- and second-harmonic balance. For angle sets violating
+that balance (generic unequally spaced sets), it is the conventional
+Gurtman estimator, not a least-squares fit, and the reported model fit
+is then no longer a bounded R-squared in \verb{[0, 1]} (it can fall below 0).}
 
 \item{measures}{Optional. Either \code{NULL} or a character vector of column names
 from \code{data} that contains one or more variables to be correlated with the
@@ -42,19 +49,22 @@ name from \code{data} of the variable that indicates the group membership of
 each observation.}
 
 \item{contrast}{Optional. A logical indicating whether to output the
-difference between two measures' or two groups' SSM parameters. Can only be
-set to TRUE when there are exactly two measures and one group, one measure
-and two groups, or no measures and two groups (default = FALSE). The
-contrast is always the second level minus the first. For two groups, this
-is the second level of \code{grouping} alphabetically, unless \code{grouping} is
-already a factor with an explicit level order, in which case that order is
-used. For two measures, this is simply the second entry of \code{measures} as
-given (no reordering). The direction is shown in the result's Label (e.g.,
+difference between two measures', two groups', or two occasions' SSM
+parameters. Can only be set to TRUE when exactly one of these holds: two
+measures and one group; one measure and two groups; no measures and two
+groups; or two occasions and one group (default = FALSE). The contrast is
+always the second level minus the first. For two groups, this is the
+second level of \code{grouping} alphabetically, unless \code{grouping} is already a
+factor with an explicit level order, in which case that order is used.
+For two measures, this is simply the second entry of \code{measures} as given
+(no reordering). For two occasions, it is the second listed element of
+\code{occasions} minus the first (list order as supplied -- temporal order --
+never alphabetical). The direction is shown in the result's Label (e.g.,
 "Male - Female").}
 
 \item{boots}{Optional. A single positive whole number indicating how many
-bootstrap resamples to use when estimating the confidence intervals
-(default = 2000).}
+bootstrap resamples (or, when \code{method = "montecarlo"}, Monte Carlo draws)
+to use when estimating the confidence intervals (default = 2000).}
 
 \item{interval}{Optional. A single positive number between 0 and 1
 (exclusive) that indicates what confidence level to use when estimating the
@@ -63,19 +73,63 @@ confidence intervals (default = 0.95).}
 \item{listwise}{Optional. A logical indicating whether missing values should
 be handled by listwise deletion (TRUE) or pairwise deletion (FALSE). Note
 that pairwise deletion may result in different missing data patterns in
-each bootstrap resample and is slower to compute (default = TRUE).}
+each bootstrap resample and is slower to compute (default = TRUE).
+Occasions analyses require \code{listwise = TRUE}: a person missing any
+occasion is dropped from all occasions (complete cases across waves), so
+the paired contrast stays a within-person comparison. Note the selection
+caution: complete-cases-across-waves estimates completers' change, which
+can differ from population change when dropout relates to the outcome.}
 
 \item{measures_labels}{Optional. Either \code{NULL} or a character vector
 providing a label for each measure provided in \code{measures} (in the same
 order) to appear in the results as well as tables and plots derived from
 the results.}
+
+\item{parallel}{Optional. A string indicating whether to distribute the
+bootstrap computation across multiple CPU cores: "no" (default),
+"multicore" (process forking; available on macOS and Linux, ignored on
+Windows), or "snow" (a local PSOCK cluster; available on all platforms).
+Passed to \code{\link[boot]{boot}}. Because the bootstrap resample
+indices are drawn in the main R process before any work is distributed,
+results for a given \code{set.seed()} are identical regardless of the
+\code{parallel} and \code{ncpus} settings.}
+
+\item{ncpus}{Optional. A single positive whole number indicating how many
+CPU cores to use when \code{parallel} is not "no" (default = 1).}
+
+\item{method}{Optional. A string indicating how to estimate the confidence
+intervals: "bootstrap" (default) resamples the data, whereas "montecarlo"
+draws parameter replicates from the asymptotic sampling distribution of
+the group mean vector (mean-based analyses) or the measure-scale
+correlation vector (correlation-based analyses) -- a multivariate normal
+with empirically estimated covariance -- and propagates them through the
+SSM parameter transformation. The Monte Carlo method is much faster for
+large samples but relies on the asymptotic normality of the means or
+correlations, so prefer the bootstrap for small samples; it also requires
+listwise-complete data. Correlations are drawn jointly across measures
+within each group on the Fisher z scale and back-transformed. The
+\code{parallel} and \code{ncpus} arguments apply only to the bootstrap.}
+
+\item{occasions}{Optional. Either \code{NULL} or a named list of character or
+numeric vectors, each selecting the same circumplex scales measured at
+one occasion, in the same scale order, all of length \code{length(angles)}
+(e.g., \code{occasions = list(T1 = c("PA_1", ..., "NO_1"), T2 = c("PA_2", ..., "NO_2"))}). Mutually exclusive with \code{scales} (and not combinable with
+\code{measures}). Data must be wide -- one row per person -- so persons remain
+the resampling unit and within-person dependence across occasions is
+preserved in both engines. Results gain an \code{Occasion} column (labels are
+\code{names(occasions)}, defaulting to \code{T1..Tk}); this column is present only
+for occasions analyses. Grouping is time-invariant by construction (one
+group per person-row). Cross-occasion column alignment is validated by
+stem matching; when the columns have no common stem structure, positional
+alignment is assumed and messaged.}
 }
 \value{
 A list containing the results and description of the analysis.
 \item{results}{A data frame with the SSM parameter estimates}
-\item{details}{A list with the number of bootstrap resamples (boots),
-the confidence interval percentage level (interval), and the angular
-displacement of scales (angles)}
+\item{details}{A list with the number of bootstrap resamples or Monte
+Carlo draws (boots), the confidence interval percentage level (interval),
+the angular displacement of scales (angles), and the interval estimation
+method (method)}
 \item{call}{A language object containing the function call that created
 this object}
 \item{scores}{A data frame containing the mean scale scores} \item{type}{A
@@ -85,9 +139,11 @@ The profile displacement parameter is reported in the half-open interval
 \verb{[0, 360)} degrees. A profile that peaks exactly at the 0/360 degree
 boundary is reported as approximately 360 (equivalently 0, the same
 direction); which of the two appears is a floating-point detail and both
-denote the same pole. Contrast displacements are instead reported as a
-signed difference in \verb{(-180, 180]} degrees (see the "Contrast" block in
-the printed output).
+denote the same pole. A displacement \emph{confidence-interval endpoint} that
+lands exactly on that pole is always reported as 360 (never 0), matching
+the package's LM = 360 labeling. Contrast displacements are instead
+reported as a signed difference in \verb{(-180, 180]} degrees (see the
+"Contrast" block in the printed output).
 
 Degenerate profiles (flat or zero-amplitude) have undefined displacement
 (and fit, if flat), which is reported as \code{NA} with a warning. Bootstrap
@@ -96,37 +152,113 @@ with zero variance) are excluded from the confidence intervals with a
 warning reporting how many were dropped; the intervals are then
 conditional on estimability.
 
-[0, 360)\verb{degrees. A profile that peaks exactly at the 0/360 degree boundary is reported as approximately 360 (equivalently 0, the same direction); which of the two appears is a floating-point detail and both denote the same pole. Contrast displacements are instead reported as a signed difference in}(-180, 180]: R:0,\%20360)\%60\%20degrees.\%20A\%20profile\%20that\%20peaks\%20exactly\%20at\%20the\%200/360\%20degree\%0A\%20\%20boundary\%20is\%20reported\%20as\%20approximately\%20360\%20(equivalently\%200,\%20the\%20same\%0A\%20\%20direction);\%20which\%20of\%20the\%20two\%20appears\%20is\%20a\%20floating-point\%20detail\%20and\%20both\%0A\%20\%20denote\%20the\%20same\%20pole.\%20Contrast\%20displacements\%20are\%20instead\%20reported\%20as\%20a\%0A\%20\%20signed\%20difference\%20in\%20\%60(-180,\%20180
+[0, 360)\verb{degrees. A profile that peaks exactly at the 0/360 degree boundary is reported as approximately 360 (equivalently 0, the same direction); which of the two appears is a floating-point detail and both denote the same pole. A displacement *confidence-interval endpoint* that lands exactly on that pole is always reported as 360 (never 0), matching the package's LM = 360 labeling. Contrast displacements are instead reported as a signed difference in}(-180, 180]: R:0,\%20360)\%60\%20degrees.\%20A\%20profile\%20that\%20peaks\%20exactly\%20at\%20the\%200/360\%20degree\%0A\%20\%20boundary\%20is\%20reported\%20as\%20approximately\%20360\%20(equivalently\%200,\%20the\%20same\%0A\%20\%20direction);\%20which\%20of\%20the\%20two\%20appears\%20is\%20a\%20floating-point\%20detail\%20and\%20both\%0A\%20\%20denote\%20the\%20same\%20pole.\%20A\%20displacement\%20\emph{confidence-interval\%20endpoint}\%20that\%0A\%20\%20lands\%20exactly\%20on\%20that\%20pole\%20is\%20always\%20reported\%20as\%20360\%20(never\%200),\%20matching\%0A\%20\%20the\%20package's\%20LM\%20=\%20360\%20labeling.\%20Contrast\%20displacements\%20are\%20instead\%0A\%20\%20reported\%20as\%20a\%20signed\%20difference\%20in\%20\%60(-180,\%20180
 }
 \description{
-Calculate SSM parameters with bootstrapped confidence intervals for a variety
-of different analysis types. Depending on what arguments are supplied, either
-mean-based or correlation-based analyses will be performed, one or more
-groups will be used to stratify the data, and contrasts between groups or
-measures will be calculated.
+Calculate SSM parameters with confidence intervals (bootstrapped by
+default, or Monte Carlo via \code{method}) for a variety of different analysis
+types. Depending on what arguments are supplied, either mean-based or
+correlation-based analyses will be performed, one or more groups will be
+used to stratify the data, and contrasts between groups or measures will be
+calculated.
 }
+\section{Reproducibility}{
+
+This function consumes R's random number stream (so do
+\code{cpm_fit(ci_method = "bootstrap")}, \code{cpm_simulate()}, and
+\code{ssm_ci_accuracy()}; \code{ssm_score()}/\code{ssm_parameters()} and the tidying
+functions are deterministic). Call \code{set.seed()} immediately before
+\code{ssm_analyze()} for reproducible confidence intervals:
+\itemize{
+\item \strong{Bootstrap} (\code{method = "bootstrap"}, the default): the
+same seed gives byte-identical \code{results}, \emph{regardless of} the
+\code{parallel}/\code{ncpus} settings (see their descriptions below), because
+\code{boot::boot()} draws all resample indices from the seed before any
+work is parallelized.
+\item \strong{Monte Carlo} (\code{method = "montecarlo"}): the same seed
+gives byte-identical \code{results}. Adding a group or measure, or
+reordering \code{scales}/\code{measures}, changes the random draw sequence, so
+results are reproducible for a fixed call but will not match after
+such structural edits even with the same seed.
+\item The two methods are \strong{not} expected to agree numerically
+for the same seed -- they consume the random stream in unrelated
+ways. Their statistical agreement (validated on real data; see
+\code{vignette("introduction-to-ssm-analysis")}) is a separate property
+from RNG reproducibility.
+\item Increasing \code{boots} changes the CI by design (more resamples/draws
+should tighten Monte Carlo error), so results are not expected to be
+stable across different \code{boots} values, only within a fixed call.
+}
+}
+
+\section{Occasions (repeated measures)}{
+
+Supplying \code{occasions} analyzes the same circumplex scales measured at
+k >= 2 occasions on the same persons (wide data, one row per person).
+Each occasion yields its own profile row; with \code{contrast = TRUE}
+(exactly 2 occasions, single group) the paired within-person contrast
+is estimated with both engines preserving the within-person dependence
+(the bootstrap resamples persons; the Monte Carlo engine draws the
+stacked occasion mean vectors jointly).
+
+Interpretation notes. A paired displacement-contrast CI is
+interpretable only when \emph{both} occasions' amplitudes are reliably
+nonzero (both profiles print without the amplitude note); if only one
+occasion's profile is interpretable, do not read the contrast as
+directional change. Paired designs are not unconditionally more
+efficient than independent groups: the paired elevation contrast has a
+narrower CI exactly when the within-person elevation correlation is
+positive, while for the amplitude and displacement contrasts the paired
+CI is narrower only when the gradient-projected cross-occasion
+covariance is positive -- under isotropic dependence this is
+proportional to cos(displacement change), so paired CIs are narrower
+for displacement changes under 90 degrees and can be \emph{wider} than
+independent-groups CIs for changes beyond 90 degrees, even with
+strongly positive within-person correlation.
+
+With \code{method = "montecarlo"} the per-group draw has dimension k x p
+(occasions times scales); group sizes should comfortably exceed k x p
+for the asymptotic covariance to be well estimated (the percentile
+bootstrap is the safer small-sample choice). Grouping is time-invariant
+by construction (one group per person-row).
+}
+
 \examples{
+# `boots` is lowered from its default of 2000 throughout these examples so
+# they run quickly; a reported analysis should use the default.
+
 # Load example data
 data("jz2017")
 
 # Single-group mean-based SSM
 ssm_analyze(
   jz2017,
-  scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO")
+  scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
+  boots = 200
 )
 
 # Single-group correlation-based SSM
 ssm_analyze(
   jz2017,
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
-  measures = c("NARPD", "ASPD")
+  measures = c("NARPD", "ASPD"),
+  boots = 200
+)
+
+# Monte Carlo confidence intervals (faster for large samples)
+ssm_analyze(
+  jz2017,
+  scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
+  method = "montecarlo",
+  boots = 200
 )
 \donttest{
 # Multiple-group mean-based SSM
 ssm_analyze(
   jz2017,
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
-  grouping = "Gender"
+  grouping = "Gender",
+  boots = 200
 )
 
 # Multiple-group mean-based SSM with contrast
@@ -134,7 +266,8 @@ ssm_analyze(
   jz2017,
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
   grouping = "Gender",
-  contrast = TRUE
+  contrast = TRUE,
+  boots = 200
 )
 
 # Single-group correlation-based SSM with contrast
@@ -142,7 +275,8 @@ ssm_analyze(
   jz2017,
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
   measures = c("NARPD", "ASPD"),
-  contrast = TRUE
+  contrast = TRUE,
+  boots = 200
 )
 
 # Multiple-group correlation-based SSM
@@ -150,7 +284,8 @@ ssm_analyze(
   jz2017,
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
   measures = "NARPD",
-  grouping = "Gender"
+  grouping = "Gender",
+  boots = 200
 )
 
 # Multiple-group correlation-based SSM with contrast
@@ -159,20 +294,38 @@ ssm_analyze(
   scales = c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO"),
   measures = "NARPD",
   grouping = "Gender",
-  contrast = TRUE
+  contrast = TRUE,
+  boots = 200
 )
 }
 
 }
 \seealso{
 Other ssm functions:
+\code{\link[=plot.circumplex_ci_accuracy]{plot.circumplex_ci_accuracy()}},
+\code{\link[=ssm_analyze_long]{ssm_analyze_long()}},
+\code{\link[=ssm_ci_accuracy]{ssm_ci_accuracy()}},
+\code{\link[=ssm_draws]{ssm_draws()}},
 \code{\link[=ssm_parameters]{ssm_parameters()}},
+\code{\link[=ssm_parameters_id]{ssm_parameters_id()}},
 \code{\link[=ssm_score]{ssm_score()}},
-\code{\link[=ssm_table]{ssm_table()}}
+\code{\link[=ssm_sem]{ssm_sem()}},
+\code{\link[=ssm_sem_parameters]{ssm_sem_parameters()}},
+\code{\link[=ssm_table]{ssm_table()}},
+\code{\link[=summary.circumplex_ssm_id]{summary.circumplex_ssm_id()}}
 
 Other analysis functions:
+\code{\link[=cpm_fit]{cpm_fit()}},
+\code{\link[=cpm_simulate]{cpm_simulate()}},
+\code{\link[=ssm_analyze_long]{ssm_analyze_long()}},
+\code{\link[=ssm_ci_accuracy]{ssm_ci_accuracy()}},
+\code{\link[=ssm_draws]{ssm_draws()}},
 \code{\link[=ssm_parameters]{ssm_parameters()}},
-\code{\link[=ssm_score]{ssm_score()}}
+\code{\link[=ssm_parameters_id]{ssm_parameters_id()}},
+\code{\link[=ssm_score]{ssm_score()}},
+\code{\link[=ssm_sem]{ssm_sem()}},
+\code{\link[=ssm_sem_parameters]{ssm_sem_parameters()}},
+\code{\link[=summary.circumplex_ssm_id]{summary.circumplex_ssm_id()}}
 }
 \concept{analysis functions}
 \concept{ssm functions}

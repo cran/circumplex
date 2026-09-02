@@ -14,6 +14,7 @@ ssm_plot_circle(
   angle_labels = NULL,
   palette = "Set2",
   vary_shapes = FALSE,
+  path = FALSE,
   ...
 )
 }
@@ -34,8 +35,11 @@ pt) of the text labels for the amplitude and displacement scales (default =
 \item{drop_lowfit}{A logical determining whether profiles with low model fit
 (<.70) should be omitted or plotted with dashed borders (default = FALSE).}
 
-\item{repel}{An experimental argument for plotting text labels instead of
-colors.}
+\item{repel}{A logical determining whether each profile is labelled with a
+repelled text label (placed on the circumplex canvas by
+\code{\link[=coord_circumplex]{coord_circumplex()}}, so labels avoid overlapping each other and the
+points) instead of distinguished by colour and a legend (default = FALSE).
+Requires the \pkg{ggrepel} package.}
 
 \item{angle_labels}{A character vector specifying text labels to plot around
 the circle for each scale. Can also specify NULL to default to numerical
@@ -52,6 +56,16 @@ coverage of a high number of variables).}
 their own shape or vary only by fill color. This only works when the number
 of profiles is five or less. (default = FALSE)}
 
+\item{path}{A logical determining whether each series' movement across
+occasions is drawn as an arrowed path on the circle (default = \code{FALSE}).
+Requires an SSM object with occasions, from \code{\link[=ssm_analyze]{ssm_analyze()}} with the
+\code{occasions} argument or from \code{\link[=ssm_analyze_long]{ssm_analyze_long()}}; supplying \code{TRUE} for any
+other object is an error. Occasions are connected in the order they were
+supplied, never alphabetically, and the path is drawn the short way across
+the 0/360 boundary. An occasion whose displacement is undefined (a flat or
+zero-amplitude profile) breaks the path rather than being interpolated
+through. See \code{\link[=geom_ssm_path]{geom_ssm_path()}} for the underlying layer.}
+
 \item{...}{Not used. Supplying an unrecognized argument produces a warning.}
 }
 \value{
@@ -63,13 +77,25 @@ point and interval estimate for each row (e.g., group or measure) in a
 circular space quantified by displacement and amplitude.
 }
 \examples{
+# `boots` is lowered from its default of 2000 throughout these examples so
+# they run quickly; a reported analysis should use the default.
+
 \donttest{
 data("jz2017")
 res <- ssm_analyze(
   jz2017,
   scales = 2:9,
-  measures = c("NARPD", "ASPD")
+  measures = c("NARPD", "ASPD"),
+  boots = 200
 )
 ssm_plot_circle(res)
 }
 }
+\seealso{
+Other visualization functions:
+\code{\link[=plot.circumplex_ci_accuracy]{plot.circumplex_ci_accuracy()}},
+\code{\link[=ssm_plot_contrast]{ssm_plot_contrast()}},
+\code{\link[=ssm_plot_curve]{ssm_plot_curve()}},
+\code{\link[=ssm_plot_trajectory]{ssm_plot_trajectory()}}
+}
+\concept{visualization functions}

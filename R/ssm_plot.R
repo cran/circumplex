@@ -1,4 +1,12 @@
 
+# Graceful-degradation gate for the optional label-repelling feature. ggrepel is
+# in Suggests (DESIGN.md dependency policy); only ssm_plot_circle(repel = TRUE)
+# needs it, so the rest of the plotting family runs without it. Wrapped so the
+# runtime gate can be exercised in tests via mocked bindings.
+has_ggrepel <- function() {
+  requireNamespace("ggrepel", quietly = TRUE)
+}
+
 #' Create a Circular Plot of SSM Results
 #'
 #' Take in the results of a Structural Summary Method analysis and plot the
@@ -16,8 +24,11 @@
 #'   12).
 #' @param drop_lowfit A logical determining whether profiles with low model fit
 #'   (<.70) should be omitted or plotted with dashed borders (default = FALSE).
-#' @param repel An experimental argument for plotting text labels instead of
-#'   colors.
+#' @param repel A logical determining whether each profile is labelled with a
+#'   repelled text label (placed on the circumplex canvas by
+#'   [coord_circumplex()], so labels avoid overlapping each other and the
+#'   points) instead of distinguished by colour and a legend (default = FALSE).
+#'   Requires the \pkg{ggrepel} package.
 #' @param angle_labels A character vector specifying text labels to plot around
 #'   the circle for each scale. Can also specify NULL to default to numerical
 #'   angle labels or a vector of empty strings ("") to hide the labels. If not
@@ -30,16 +41,30 @@
 #' @param vary_shapes A logical determining whether profiles should each get
 #'   their own shape or vary only by fill color. This only works when the number
 #'   of profiles is five or less. (default = FALSE)
+#' @param path A logical determining whether each series' movement across
+#'   occasions is drawn as an arrowed path on the circle (default = `FALSE`).
+#'   Requires an SSM object with occasions, from [ssm_analyze()] with the
+#'   `occasions` argument or from [ssm_analyze_long()]; supplying `TRUE` for any
+#'   other object is an error. Occasions are connected in the order they were
+#'   supplied, never alphabetically, and the path is drawn the short way across
+#'   the 0/360 boundary. An occasion whose displacement is undefined (a flat or
+#'   zero-amplitude profile) breaks the path rather than being interpolated
+#'   through. See [geom_ssm_path()] for the underlying layer.
 #' @param ... Not used. Supplying an unrecognized argument produces a warning.
 #' @return A ggplot variable containing a completed circular plot.
+#' @family visualization functions
 #' @export
 #' @examples
+#' # `boots` is lowered from its default of 2000 throughout these examples so
+#' # they run quickly; a reported analysis should use the default.
+#'
 #' \donttest{
 #' data("jz2017")
 #' res <- ssm_analyze(
 #'   jz2017,
 #'   scales = 2:9,
-#'   measures = c("NARPD", "ASPD")
+#'   measures = c("NARPD", "ASPD"),
+#'   boots = 200
 #' )
 #' ssm_plot_circle(res)
 #' }
@@ -52,37 +77,85 @@ ssm_plot_circle <- function(ssm_object,
                             angle_labels = NULL,
                             palette = "Set2",
                             vary_shapes = FALSE,
+                            path = FALSE,
                             ...) {
 
   chkDots(...)
 
   df <- ssm_object$results
-  angles <- as.integer(round(ssm_object$details$angles))
+  angles <- ssm_object$details$angles
 
   stopifnot(is_null_or_num(amax, n = 1))
   stopifnot(is_null_or_char(angle_labels, n = length(angles)))
+  stopifnot(is_flag(path))
+
+  # A movement path needs occasions to move between. Refuse early and name the
+  # way to produce one, rather than drawing a pathless circle that silently
+  # ignores the argument.
+  if (path && is.null(ssm_object$details$occasions)) {
+    stop(
+      "`path = TRUE` needs an SSM object with occasions to draw a movement ",
+      "path across; produce one with `ssm_analyze(occasions = )` or ",
+      "`ssm_analyze_long()`.",
+      call. = FALSE
+    )
+  }
   
   if (is.null(amax)) {
     amax <- pretty_max(ssm_object$results$a_uci)
   }
   
   if (ssm_object$details$contrast) {
-    df <- df[1:2, ]
+    # A contrast row is a difference, not a position on the circle, so it never
+    # gets drawn. The historical [1:2, ] slice is fine for the two-profile case
+    # it was written for but truncates an occasions object to its first two
+    # occasions; when a path is requested, drop only the contrast row (the last
+    # one -- the same positional detector ssm_trajectory_frame() uses).
+    df <- if (path) df[-nrow(df), , drop = FALSE] else df[1:2, ]
   }
-  
-  # Convert results to numbers usable by ggplot and ggforce
+
+  # Movement path across occasions. Built from `df` rather than the filtered
+  # `df_plot` below on purpose: an occasion with an undefined displacement must
+  # stay in the frame as NA so geom_ssm_path() BREAKS the path there. Dropping
+  # the row instead would silently connect the occasions on either side of the
+  # gap, drawing a movement that never happened.
+  df_path <- NULL
+  if (path) {
+    # Occasions in details$occasions order -- the order they were supplied in,
+    # never alphabetical, which puts T10 before T2 and reverses time.
+    df_path <- df
+    df_path[["Occasion"]] <-
+      factor(df_path[["Occasion"]], levels = ssm_object$details$occasions)
+    # One path per series: everything that is not the occasion identifies it.
+    df_path[["Series"]] <- paste(df_path[["Group"]], df_path[["Measure"]])
+    df_path <- df_path[order(df_path[["Series"]], df_path[["Occasion"]]), ]
+  }
+
+  # The amplitude/displacement-to-canvas transform (amplitude scaling and the
+  # 0/360 polar mapping, with the seam wrap-around) is owned by
+  # coord_circumplex(); geom_ssm_arc()/geom_ssm_point() just supply the SSM
+  # aesthetics below.
   df_plot <- df
-  df_plot[["d_uci"]] <- ifelse(
-    test = df_plot[["d_uci"]] < df_plot[["d_lci"]],
-    yes = ggrad(df_plot[["d_uci"]] + 360),
-    no = ggrad(df_plot[["d_uci"]])
-  )
-  df_plot[["d_lci"]] <- ggrad(df_plot[["d_lci"]])
-  df_plot[c("a_lci", "a_uci", "x_est", "y_est")] <- sapply(
-    df_plot[c("a_lci", "a_uci", "x_est", "y_est")],
-    function(x) x * 10 / (2 * amax)
-  )
-  
+
+  # Profiles with an undefined location (flat or zero-amplitude scores:
+  # d_est = NA) have no place on the circle. The arc/point geoms drop them, so
+  # remove them up front and name them rather than let them vanish silently.
+  # Uses the same plottability predicate as the geoms (ssm_has_location()).
+  undefined <- !ssm_has_location(df_plot[["a_est"]], df_plot[["d_est"]])
+  if (any(undefined)) {
+    warning(
+      "Profile(s) omitted for undefined displacement ",
+      "(flat or zero-amplitude scores): ",
+      paste(df_plot[["Label"]][undefined], collapse = ", "), ".",
+      call. = FALSE
+    )
+    df_plot <- df_plot[!undefined, ]
+    if (nrow(df_plot) < 1) {
+      stop("After removing profiles with undefined displacement, ",
+           "there were none left to plot.", call. = FALSE)
+    }
+  }
+
   if (!is.null(palette)) {
     df_plot[["Label"]] <- factor(
       df_plot[["Label"]],
@@ -101,15 +174,25 @@ ssm_plot_circle <- function(ssm_object,
     if (nrow(df_plot) < 1) {
       stop("After removing profiles with low fit, there were none left to plot.")
     }
+    # The path must honour the same removal. Blanking the occasion (rather than
+    # dropping its row) makes the path BREAK there, exactly as it does at an
+    # undefined displacement: dropping the row would connect the occasions on
+    # either side, asserting a movement through a position the function just
+    # said it would not show. Caught by review, M37.
+    if (path) {
+      lowfit <- !is.na(df_path$fit_est) & df_path$fit_est < .70
+      df_path$a_est[lowfit] <- NA_real_
+      df_path$d_est[lowfit] <- NA_real_
+    }
   }
   df_plot[["lnty"]] <- ifelse(df_plot[["fit_est"]] >= .70, "solid", "dotted")
   
   ## Create circle base
-  p <- circle_base(
+  p <- ggcircumplex(
     angles = angles,
+    labels = angle_labels,
     amax = amax,
-    fontsize = scale_font_size,
-    labels = angle_labels
+    font_size = scale_font_size
   )
   
   ## Set color scales depending on palette
@@ -134,15 +217,13 @@ ssm_plot_circle <- function(ssm_object,
   
   ## Add arc bars
   p <- p +
-    ggforce::geom_arc_bar(
+    geom_ssm_arc(
       data = df_plot,
       mapping = ggplot2::aes(
-        x0 = 0,
-        y0 = 0,
-        r0 = .data$a_lci,
-        r = .data$a_uci,
-        start = .data$d_lci,
-        end = .data$d_uci,
+        amplitude_min = .data$a_lci,
+        amplitude_max = .data$a_uci,
+        displacement_min = .data$d_lci,
+        displacement_max = .data$d_uci,
         fill = .data$Label,
         color = .data$Label,
         linetype = .data$lnty
@@ -150,16 +231,16 @@ ssm_plot_circle <- function(ssm_object,
       alpha = 0.4,
       linewidth = 1
     )
-  
+
   ## Add points
   if (vary_shapes) {
     stopifnot(n_labels <= 5)
     p <- p +
-      ggplot2::geom_point(
+      geom_ssm_point(
         data = df_plot,
         mapping = ggplot2::aes(
-          x = .data$x_est,
-          y = .data$y_est,
+          amplitude = .data$a_est,
+          displacement = .data$d_est,
           fill = .data$Label,
           shape = .data$Label
         ),
@@ -174,11 +255,11 @@ ssm_plot_circle <- function(ssm_object,
       )
   } else {
     p <- p +
-      ggplot2::geom_point(
+      geom_ssm_point(
         data = df_plot,
         mapping = ggplot2::aes(
-          x = .data$x_est,
-          y = .data$y_est,
+          amplitude = .data$a_est,
+          displacement = .data$d_est,
           fill = .data$Label
         ),
         shape = 21,
@@ -190,24 +271,56 @@ ssm_plot_circle <- function(ssm_object,
         fill = ggplot2::guide_legend("Profile")
       )
   }
-  
+
+  ## Add the movement path LAST, so its arrowhead draws on top of the occasion
+  ## markers. Underneath, the terminal arrowhead lands exactly where the final
+  ## occasion's point sits and is covered by it completely -- the direction of
+  ## time, which is the whole reason the path is drawn, becomes unreadable.
+  ## Caught by the render-and-inspect pass, M37; the data-level tests and a
+  ## vdiffr baseline both pass the version with the arrowhead hidden. The arrow
+  ## is sized to clear a size-3 point marker for the same reason.
+  if (path) {
+    p <- p +
+      geom_ssm_path(
+        data = df_path,
+        mapping = ggplot2::aes(
+          amplitude = .data$a_est,
+          displacement = .data$d_est,
+          group = .data$Series
+        ),
+        colour = "grey30",
+        linewidth = 0.6,
+        arrow = ggplot2::arrow(
+          length = ggplot2::unit(0.15, "inches"), type = "closed"
+        )
+      )
+  }
+
   if (repel) {
-    requireNamespace("ggrepel")
+    if (!has_ggrepel()) {
+      stop(
+        "`repel = TRUE` requires the 'ggrepel' package, which is not ",
+        "installed. Install it with install.packages(\"ggrepel\").",
+        call. = FALSE
+      )
+    }
+    # Coord-aware label repelling (M31): map the labels to the same
+    # amplitude/displacement aesthetics as the points and let coord_circumplex()
+    # place them, so ggrepel repels in the rendered panel space. (The old branch
+    # hand-computed canvas cartesian coordinates, which are meaningless once the
+    # coord owns the transform.)
     p <- p +
       ggrepel::geom_label_repel(
         data = df_plot,
         mapping = ggplot2::aes(
-          x = .data$x_est,
-          y = .data$y_est,
+          x = .data$d_est,
+          y = .data$a_est,
           label = .data$Label
         ),
-        nudge_x = -8 - df_plot$x_est,
-        direction = "y",
-        hjust = 1,
         size = legend_font_size / 2.8346438836889
       )
   }
-  
+
   p
 }
 
@@ -228,14 +341,19 @@ ssm_plot_circle <- function(ssm_object,
 #'   low fit (<.70) or include them with dashed lines (default = FALSE).
 #' @param ... Not used. Supplying an unrecognized argument produces a warning.
 #' @return A ggplot object depicting the SSM curve(s) of each profile.
+#' @family visualization functions
 #' @export
 #' @examples
+#' # `boots` is lowered from its default of 2000 throughout these examples so
+#' # they run quickly; a reported analysis should use the default.
+#'
 #' \donttest{
 #' data("jz2017")
 #' res <- ssm_analyze(
 #'   jz2017,
 #'   scales = 2:9,
-#'   measures = 10:13
+#'   measures = 10:13,
+#'   boots = 200
 #' )
 #' ssm_plot_curve(res)
 #' ssm_plot_curve(res, angle_labels = PANO())
@@ -257,12 +375,9 @@ ssm_plot_curve <- function(ssm_object,
   stopifnot(is_null_or_char(angle_labels, n = length(angles)))
   stopifnot(is_flag(drop_lowfit))
 
-  if (is.null(angle_labels)) {
-    angle_labels <- function(x) sprintf("%.0f\U00B0", x)
-    xlabel <- "Angle"
-  } else {
-    xlabel <- "Scale"
-  }
+  # scale_x_circumplex() (added below) supplies the degree-formatted default
+  # labels when angle_labels is NULL; here we only pick the axis title.
+  xlabel <- if (is.null(angle_labels)) "Angle" else "Scale"
 
   # Drop the contrast row if contrast
   if (ssm_object$details$contrast) {
@@ -277,8 +392,11 @@ ssm_plot_curve <- function(ssm_object,
     scores <- scores[idx, ]
   }
 
-  # Drop the info columns
-  scores_only <- scores[, -c(1:3)]
+  # Drop the info columns by name (occasions objects carry a fourth,
+  # conditional-presence Occasion column; a positional -c(1:3) would leak it
+  # into the scale columns and corrupt the reshape below)
+  scores_only <-
+    scores[, setdiff(names(scores), c("Label", "Group", "Measure", "Occasion"))]
 
   # Reshape scores to long format
   score_df <- data.frame(
@@ -336,10 +454,7 @@ ssm_plot_curve <- function(ssm_object,
       ),
       color = "black"
     ) +
-    ggplot2::scale_x_continuous(
-      breaks = angles,
-      labels = angle_labels
-    ) +
+    scale_x_circumplex(angles, labels = angle_labels) +
     ggplot2::scale_linetype_identity() +
     ggplot2::labs(x = xlabel) +
     ggplot2::theme_bw() +
@@ -370,15 +485,20 @@ ssm_plot_curve <- function(ssm_object,
 #' @param ... Not used. Supplying an unrecognized argument produces a warning.
 #' @return A ggplot variable containing difference point-ranges faceted by SSM
 #'   parameter. An interval that does not contain the value of zero has p<.05.
+#' @family visualization functions
 #' @export
 #' @examples
+#' # `boots` is lowered from its default of 2000 throughout these examples so
+#' # they run quickly; a reported analysis should use the default.
+#'
 #' \donttest{
 #' data("jz2017")
 #' res <- ssm_analyze(
 #'   jz2017,
 #'   scales = 2:9,
 #'   measures = c("NARPD", "ASPD"),
-#'   contrast = TRUE
+#'   contrast = TRUE,
+#'   boots = 200
 #' )
 #' ssm_plot_contrast(res)
 #' }
@@ -386,7 +506,29 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
                               sig_color = "#fc8d62", ns_color = "white",
                               linesize = 1.25, fontsize = 12, ...) {
 
-  stopifnot(ssm_object$details$contrast)
+  if (!isTRUE(ssm_object$details$contrast)) {
+    # A gate-rejected latent contrast (ssm_sem(contrast = TRUE) whose
+    # invariance gate failed) deliberately carries details$contrast = FALSE
+    # so no inherited method renders a contrast; the refusal here must
+    # restate that verdict, not contradict the user's contrast = TRUE call
+    # with a bare condition failure.
+    inv <- ssm_object$invariance
+    if (isTRUE(inv$contrast_requested) && !isTRUE(inv$comparable)) {
+      stop(
+        "The requested latent contrast was not computed, so there is no ",
+        "contrast to plot: ", inv$verdict, ". The object carries each ",
+        "group's separate (configural) latent profile instead; see ",
+        "print() for the invariance ladder.",
+        call. = FALSE
+      )
+    }
+    stop(
+      "This SSM object contains no contrast to plot; request one with ",
+      "`contrast = TRUE` (exactly two groups, two measures, or two ",
+      "occasions).",
+      call. = FALSE
+    )
+  }
   chkDots(...)
 
   # Prepare all estimates
@@ -465,70 +607,101 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
   p
 }
 
-# Create an Empty Circular Plot
-circle_base <- function(angles, labels = NULL, amin = 0,
-                        amax = 0.5, fontsize = 12) {
+#' Create a circumplex plotting canvas
+#'
+#' Build an empty circular canvas -- the amplitude rings, displacement spokes,
+#' and scale labels that circumplex figures are drawn on -- as a \pkg{ggplot2}
+#' object. Additional layers (points, arcs, annotations) can be added to it
+#' with `+`, so it serves as the reusable foundation for custom circumplex
+#' visualizations. The package's own `ssm_plot_circle()` draws on the same
+#' canvas.
+#'
+#' @param angles Optional. A numeric vector of the angular position (in
+#'   degrees) of each circumplex scale, going counterclockwise from the right
+#'   (default = `octants()`). Ignored if `instrument` is supplied.
+#' @param labels Optional. Either `NULL` or a character vector of text labels
+#'   to draw around the circle, one per angle and in the same order (default =
+#'   `NULL`, which draws the numeric angles). If `instrument` is supplied,
+#'   `NULL` uses the instrument's scale abbreviations.
+#' @param amax Optional. A single positive number giving the amplitude at the
+#'   outer ring, which sets the amplitude-axis labels; the center of the circle
+#'   is fixed at amplitude 0 (default = 0.5).
+#' @param font_size Optional. A single positive number giving the size (in pt)
+#'   of the scale and amplitude labels (default = 12).
+#' @param instrument Optional. Either `NULL` or a `circumplex_instrument`
+#'   object (see `instrument()`). When supplied, the scale `angles` and (unless
+#'   `labels` is given) the scale abbreviations are taken from the instrument
+#'   (default = `NULL`).
+#' @return A \pkg{ggplot2} object containing the empty circumplex canvas.
+#' @family circumplex layers
+#' @seealso [coord_circumplex()], which owns the transform this canvas is built
+#'   on; [ssm_plot_circle()], which draws SSM results on this canvas.
+#' @export
+#' @examples
+#' # A default octant canvas
+#' ggcircumplex()
+#'
+#' # Label the scales with their circumplex pole abbreviations
+#' ggcircumplex(octants(), labels = PANO())
+#'
+#' # Derive the angles and labels from a circumplex instrument
+#' ggcircumplex(instrument = csip)
+ggcircumplex <- function(angles = octants(), labels = NULL,
+                         amax = 0.5, font_size = 12, instrument = NULL) {
 
-  if (is.null(labels)) labels <- paste0(angles, "\u00B0")
+  resolved <- resolve_circumplex_labels(angles, labels, instrument)
+  stopifnot(is_num(amax, n = 1) && amax > 0)
+  stopifnot(is_num(font_size, n = 1) && font_size > 0)
 
+  ang <- resolved$angles
+  lab <- resolved$labels
+  if (is.null(lab)) lab <- circumplex_degree_labels(ang)
+
+  # coord_circumplex() owns the amplitude->radius scaling and the polar
+  # transform, so the canvas and any data layers added later share one amax and
+  # cannot disagree. The displacement spokes/labels are the theta-axis breaks
+  # (set here to the scale angles) and the amplitude rings are the r-axis
+  # breaks, both drawn as themed panel furniture -- so `+ theme_*()` restyles
+  # them. Note: no x-scale limits (they would censor a seam-straddling arc's
+  # unwrapped xmax > 360 to NA); the coord's thetalim owns the [0, 360] range.
+  # geom_blank establishes the [0, 360] x [0, amax] extent so the empty canvas's
+  # rings/spokes/labels train and draw; it censors nothing, so a seam-straddling
+  # arc added later (unwrapped xmax > 360) still extends the range freely.
   ggplot2::ggplot() +
-    # Require plot to be square and remove default styling
-    ggplot2::coord_fixed(clip = "off") +
-    ggplot2::theme_void(base_size = fontsize) +
-    # Expand the axes multiplicatively to fit labels
-    ggplot2::scale_x_continuous(expand = c(0.25, 0)) +
-    ggplot2::scale_y_continuous(expand = c(0.10, 0)) +
-    # Draw lowest circle
-    ggforce::geom_circle(
-      mapping = ggplot2::aes(x0 = 0, y0 = 0, r = 5),
-      color = "gray50",
-      fill = "white",
-      linewidth = 1.5
+    coord_circumplex(amax = amax, center = 0) +
+    ggplot2::geom_blank(
+      data = data.frame(.x = c(0, 360), .y = c(0, amax)),
+      mapping = ggplot2::aes(x = .data$.x, y = .data$.y),
+      inherit.aes = FALSE
     ) +
-    # Draw segments corresponding to displacement scale
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = 0,
-        y = 0,
-        xend = 5 * cos(angles * pi / 180),
-        yend = 5 * sin(angles * pi / 180)
-      ),
-      color = "gray60",
-      linewidth = 0.5
-    ) +
-    # Draw circles corresponding to amplitude scale
-    ggforce::geom_circle(
-      ggplot2::aes(x0 = 0, y0 = 0, r = 1:4),
-      color = "gray60",
-      linewidth = 0.5
-    ) +
-    # Draw labels for amplitude scale
-    ggplot2::geom_label(
-      ggplot2::aes(
-        x = c(2, 4),
-        y = 0,
-        label = sprintf(
-          "%.2f",
-          seq(from = amin, to = amax, length.out = 6)[c(3, 5)]
-        )
-      ),
-      color = "gray20",
-      fill = "white",
-      linewidth = NA,
-      size = fontsize / 2.8346438836889
-    ) +
-    # Draw labels for displacement scale
-    ggplot2::geom_label(
-      ggplot2::aes(
-        x = 5.1 * cos(angles * pi / 180),
-        y = 5.1 * sin(angles * pi / 180),
-        label = labels
-      ),
-      color = "gray20",
-      fill = "transparent",
-      linewidth = NA,
-      hjust = "outward",
-      vjust = "outward",
-      size = fontsize / 2.8346438836889
+    ggplot2::scale_x_continuous(breaks = ang, labels = lab) +
+    ggplot2::scale_y_continuous(name = NULL) +
+    theme_circumplex(base_size = font_size)
+}
+
+#' Circumplex canvas theme
+#'
+#' The \pkg{ggplot2} theme applied to the circumplex canvas built by
+#' [ggcircumplex()]. It is built on [ggplot2::theme_minimal()] so that the
+#' amplitude rings, displacement spokes, and labels drawn by [coord_circumplex()]
+#' are themed panel furniture that respond to further theming. Apply it to a
+#' custom circumplex plot, and add `+ theme_*()` or `+ theme()` on top to
+#' restyle the canvas.
+#'
+#' @param base_size A single positive number giving the base font size (in pt)
+#'   for the theme (default = 12).
+#' @return A \pkg{ggplot2} theme object, to be added to a plot with `+`.
+#' @family circumplex layers
+#' @export
+#' @examples
+#' # Restyle the canvas with a larger base font
+#' ggcircumplex(octants()) + theme_circumplex(base_size = 16)
+theme_circumplex <- function(base_size = 12) {
+  stopifnot(is_num(base_size, n = 1) && base_size > 0)
+  ggplot2::theme_minimal(base_size = base_size) +
+    ggplot2::theme(
+      axis.title = ggplot2::element_blank(),
+      panel.grid.major = ggplot2::element_line(color = "gray80"),
+      panel.grid.minor = ggplot2::element_blank()
     )
 }

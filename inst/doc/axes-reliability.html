@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Axes Reliability</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Axes Reliability</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(circumplex)</span></code></pre></div>
+<div id="what-is-axis-reliability" class="section level2">
+<h2>1. What is axis reliability?</h2>
+<p>A circumplex instrument places its scales around a circle and
+summarizes a person (or a profile of correlations) by their position on
+two orthogonal <strong>axes</strong> — here communion (the X axis, at
+0°) and agency (the Y axis, at 90°). Because those axis scores drive
+everything downstream — a person’s projected location, the displacement
+and amplitude of a Structural Summary Method profile — it is worth
+asking how <em>reliably</em> the instrument measures each axis.</p>
+<p><code>axes_reliability()</code> answers that question with the
+estimator of Strack, Jacobs, and Grosse Holtforth (2013). It fits an
+item-level measurement model that decomposes each item’s variance into
+orthogonal pieces — a general factor common to all items, the two
+circumplex <strong>axes</strong>, a scale-specificity component, item
+error, and, for an instrument administered in blocks, a
+block-specificity component — and reads axis reliability off the
+<strong>axes</strong> component alone. Reliability is then the
+Spearman–Brown “list-length” reliability of a composite of that length
+built from items that share only their axes variance.</p>
+<p>This is a different question from the other reliability-adjacent
+tools in the package. <code>ssm_sem()</code> disattenuates a
+<em>scale-level</em> SSM profile for measurement error;
+<code>fit_structure()</code> evaluates whether a correlation matrix has
+circumplex <em>structure</em> at all. <code>axes_reliability()</code>
+instead reports a single, interpretable number per axis: how well the
+instrument measures communion and agency.</p>
+</div>
+<div id="a-worked-example" class="section level2">
+<h2>2. A worked example</h2>
+<p>The package ships <code>simulated_items</code>, a synthetic dataset
+of 1–7 Likert responses from 500 respondents on 32 items — four items on
+each of the eight octant scales, in the order that
+<code>octants()</code> returns. The items were drawn from a
+five-component population (a general factor, two equal axes with axes
+variance .18, a shared scale-specificity component of .10, no block
+specificity — the instrument is not blockwise, so that component is zero
+here — and free item error) that implies an axis reliability of about
+.78.</p>
+<p><code>axes_reliability()</code> needs three things: the data, a map
+from items to scales, and the scales’ angles. The map is a list with one
+character vector of item names per scale, in the same angle order as the
+angles you pass:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;simulated_items&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Four items per octant scale, in octants() order (PA, BC, DE, ..., NO).</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>items <span class="ot">&lt;-</span> <span class="fu">split</span>(<span class="fu">names</span>(simulated_items), <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, <span class="at">each =</span> <span class="dv">4</span>))</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">axes_reliability</span>(simulated_items, <span class="at">items =</span> items, <span class="at">angles =</span> <span class="fu">octants</span>())</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; axes_reliability(): 500 complete case(s) used.</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>res</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; Circumplex Axes Reliability (Strack, Jacobs &amp; Grosse Holtforth, 2013)</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Input:        item data</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Items:        32 (8 scales)</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Complete N:   500</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; SEm scale:    std</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; # Per-axis reliability</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;  Axis item_n Reliability SEm   NB_Reliability</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt;  X    16     0.773       0.476 0.822         </span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt;  Y    16     0.773       0.476 0.823         </span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt;   Note: the two axes share one axes-variance estimate and, with equal</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt;   items per axis, carry the same reliability -- expected, not an error.</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;   Note: the model is fit to the item correlation matrix as if it were a</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;   covariance matrix (Cudeck, 1989), and both sides of that mismatch are</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt;   corrected -- so these numbers differ from LISREL&#39;s, and from lavaan&#39;s</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt;   own, by design.</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt;   The component standard errors are adjusted to the correlation metric</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;   and are calibrated; they are typically smaller than the values printed</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt;   by Strack et al. (2013), whose LISREL output carries no correction.</span></span></code></pre></div>
+<p>If your items belong to one of the package’s built-in instruments,
+you can pass the <code>instrument</code> object instead of
+<code>items</code> and <code>angles</code> — it supplies both the scale
+angles and the item membership, exactly as <code>score()</code> does.
+(The example above uses the explicit map because
+<code>simulated_items</code> is not a registered instrument.)</p>
+<p>The header confirms how many complete cases were used, and the
+per-axis table reports, for each axis, the effective test length
+(<code>item_n</code>), the Strack axis <code>Reliability</code>, its
+standard error of measurement (<code>SEm</code>), and the
+Nunnally–Bernstein reliability (<code>NB_Reliability</code>) for
+comparison. For a balanced instrument the two axes share one
+axes-variance estimate and carry equal <code>item_n</code>, so they
+report the same reliability — expected, not an error.</p>
+<p>The recovered reliability (about .77) lands close to the .78 built
+into the simulated population, and the axes-variance estimate (below)
+recovers the population value of .18.</p>
+</div>
+<div id="reading-the-components" class="section level2">
+<h2>3. Reading the components</h2>
+<p><code>summary()</code> adds the estimated variance components and the
+model’s global fit:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">summary</span>(res)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; Circumplex Axes Reliability (Strack, Jacobs &amp; Grosse Holtforth, 2013)</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; Input:        item data</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; Items:        32 (8 scales)</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Complete N:   500</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; SEm scale:    std</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; # Per-axis reliability</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  Axis item_n Reliability SEm   NB_Reliability</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  X    16     0.773       0.476 0.822         </span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  Y    16     0.773       0.476 0.823         </span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;   Note: the two axes share one axes-variance estimate and, with equal</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;   items per axis, carry the same reliability -- expected, not an error.</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;   Note: the model is fit to the item correlation matrix as if it were a</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   covariance matrix (Cudeck, 1989), and both sides of that mismatch are</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;   corrected -- so these numbers differ from LISREL&#39;s, and from lavaan&#39;s</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;   own, by design.</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;   The component standard errors are adjusted to the correlation metric</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;   and are calibrated; they are typically smaller than the values printed</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;   by Strack et al. (2013), whose LISREL output carries no correction.</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; # Variance components</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;  Component         Estimate SE   </span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;  general           0.051    0.005</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  axes              0.175    0.009</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  scale_specificity 0.093    0.008</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;  item              0.680    --   </span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; # Global fit</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt;   chi-square(493) = 488.27,  RMSEA = 0.000,  CFI = 1.000</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt;   The global fit statistics chisq, pvalue, rmsea and cfi are scaled to</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt;   that metric (Satorra &amp; Bentler, 1994), which removes a distortion that</span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;   flatters fit; df and srmr are unchanged. The scaled test can modestly</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt;   over-reject at typical sample sizes -- it over-flags misfit rather than</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;   flattering it; see ?axes_reliability for the measured rates.</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt;   They follow lavaan&#39;s *.scaled definitions, not its *.robust ones, and</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt;   differ from what fitMeasures() reports for an equivalent ML fit.</span></span></code></pre></div>
+<p>The <strong>variance components</strong> show the decomposition the
+reliability rests on: the <code>axes</code> component is the only one
+that feeds reliability, while <code>general</code>,
+<code>scale_specificity</code>, <code>block_specificity</code> (when
+blocks were supplied), and item error are isolated from it. This is
+precisely why the Nunnally–Bernstein figure printed alongside runs
+<strong>higher</strong> than the Strack reliability: N–B charges
+scale-specificity variance to the axis rather than isolating it, so it
+<strong>overestimates</strong> axis reliability whenever scale
+specificity is non-trivial (Strack et al., 2013, Figure 3). The gap
+between the two numbers is a direct read-out of how much scale-specific
+variance the simpler formula would have miscredited to the axes.</p>
+</div>
+<div id="starting-from-a-published-correlation-matrix" class="section level2">
+<h2>4. Starting from a published correlation matrix</h2>
+<p>You do not always have the raw data. A paper may print an item
+correlation matrix and nothing else, and that matrix is enough: pass it
+as <code>cormat</code> together with the sample size it was computed
+from, in place of <code>data</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>R <span class="ot">&lt;-</span> <span class="fu">cor</span>(simulated_items)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">axes_reliability</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">cormat =</span> R, <span class="at">items =</span> items, <span class="at">angles =</span> <span class="fu">octants</span>(), <span class="at">n =</span> <span class="fu">nrow</span>(simulated_items)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Circumplex Axes Reliability (Strack, Jacobs &amp; Grosse Holtforth, 2013)</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; Input:        correlation matrix</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; Items:        32 (8 scales)</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; Sample N:     500</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; SEm scale:    std</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; # Per-axis reliability</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;  Axis item_n Reliability SEm   NB_Reliability</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;  X    16     0.773       0.476 --            </span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt;  Y    16     0.773       0.476 --            </span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt;   Note: the two axes share one axes-variance estimate and, with equal</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;   items per axis, carry the same reliability -- expected, not an error.</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;   Note: the Nunnally-Bernstein comparison needs the raw item scores</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt;   (scale alphas and the axis-composite variance), so it is NA on the</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;   correlation-matrix path.</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt;   Note: the model is fit to the item correlation matrix as if it were a</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt;   covariance matrix (Cudeck, 1989), and both sides of that mismatch are</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt;   corrected -- so these numbers differ from LISREL&#39;s, and from lavaan&#39;s</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt;   own, by design.</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt;   The component standard errors are adjusted to the correlation metric</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt;   and are calibrated; they are typically smaller than the values printed</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt;   by Strack et al. (2013), whose LISREL output carries no correction.</span></span></code></pre></div>
+<p>The estimates are identical to the raw-data run above — the raw-data
+path builds exactly this matrix internally and fits it the same way.
+<code>items</code> selects and orders the matrix’s rows by name, so its
+own column ordering does not matter, and it must be symmetric, positive
+definite, and have a unit diagonal (the model assumes unit-variance
+items).</p>
+<p>Two things are unavailable here, and both for the same reason: they
+are properties of the respondents, not of their correlations. The
+Nunnally–Bernstein comparison is reported as <code>NA</code> — it needs
+each scale’s alpha and the axis composite’s variance, neither of which a
+correlation matrix carries. And <code>sd = &quot;raw&quot;</code> is refused,
+because there are no scale scores to take an observed SD from; supply
+the axis SDs numerically if you want SEm on a raw scale. Both are
+reported rather than silently omitted, so a matrix-based result cannot
+be mistaken for a raw-data one.</p>
+</div>
+<div id="caveats-to-keep-in-mind" class="section level2">
+<h2>5. Caveats to keep in mind</h2>
+<p>Four properties of the method shape how its output should be
+read.</p>
+<p><strong>Both the standard errors and the global fit statistics are
+corrected for the correlation metric.</strong> Following the paper’s own
+practice, the model is fit to the item <strong>correlation</strong>
+matrix as though it were a covariance matrix. That metric mismatch
+leaves the component point estimates and the reliabilities correct, but
+it misprices anything computed from the input’s sampling variability
+(Cudeck, 1989).</p>
+<p>The component standard errors are <strong>corrected</strong> for it.
+Normal-theory maximum likelihood prices its standard errors for a sample
+<strong>covariance</strong> input, while this estimator consumes a
+sample <strong>correlation</strong> matrix, whose diagonal cannot vary
+at all. Left uncorrected that mismatch <strong>overstates</strong>
+sampling variability by about 40% for an instrument whose axes carry a
+lot of variance, and <strong>understates</strong> it slightly for
+weak-axes, strong-general instruments — it changes sign across the range
+of instruments the function accepts, which is why it could not be left
+to a caveat. The reported SEs are adjusted to the correlation metric and
+are calibrated uncertainty. They are typically <strong>smaller</strong>
+than the standard errors printed in Strack et al. (2013), whose LISREL
+values carry the uncorrected approximation. What the estimator reported
+before the correction is kept in
+<code>details$se_uncorrected</code>.</p>
+<p>The <strong>global fit statistics are corrected too</strong>, for the
+same mismatch running the other way. Sample correlations vary
+<em>less</em> than the covariances the reference chi-square distribution
+is derived for, so an uncorrected test statistic comes out too small and
+fit is flattered. <code>chisq</code>, <code>pvalue</code>,
+<code>rmsea</code> and <code>cfi</code> are therefore reported as
+Satorra–Bentler-type <strong>scaled</strong> values — the chi-square
+divided by a factor computed at the fitted matrix, with <code>cfi</code>
+also scaling its own baseline model (Satorra &amp; Bentler, 1994). The
+factor is recomputed for every fit rather than being a constant, which
+is the whole point: how much fit was flattered depends on the
+instrument. <code>df</code> and <code>srmr</code> are unchanged, being a
+count of restrictions and a residual summary rather than test statistics
+with a reference distribution. What the estimator reported before the
+scaling is kept in <code>details$fit_uncorrected</code>, and the factors
+themselves in <code>details$scaling_factor</code>.</p>
+<p>If you go looking for these numbers in lavaan, match the variant.
+They are built with the definitions lavaan calls
+<code>chisq.scaled</code>, <code>pvalue.scaled</code>,
+<code>rmsea.scaled</code> and <code>cfi.scaled</code> — the
+mean-adjusted Satorra–Bentler forms — and <strong>not</strong> the
+<code>*.robust</code> ones (<code>cfi.robust</code>,
+<code>rmsea.robust</code>), which apply a different
+(Brosseau-Liard/Savalei) adjustment and give different numbers. Because
+the model is estimated with plain ML and the scaling is applied by this
+package rather than by lavaan, <code>fitMeasures()</code> on an
+equivalent fit hands back the <em>uncorrected</em> values under the bare
+names <code>chisq</code>, <code>pvalue</code>, <code>rmsea</code> and
+<code>cfi</code> — and reports no <code>*.scaled</code> or
+<code>*.robust</code> measure at all, since lavaan supplies those only
+for a genuinely scaled estimator such as <code>&quot;MLM&quot;</code> or
+<code>&quot;MLR&quot;</code>, and quietly returns a shorter vector when asked for
+one it does not have. So a cross-check against lavaan’s bare
+<code>cfi</code> will disagree with <code>$fit$cfi</code>, a request for
+<code>cfi.robust</code> will come back empty rather than disagreeing,
+and neither outcome is a defect.</p>
+<p>Read the scaled statistic for what it is. The correction makes the
+test statistic match its reference distribution <em>in expectation</em>;
+it is a calibration, not an exactness guarantee, and it will not rescue
+a model that is badly wrong. The usual cutoffs (Hu &amp; Bentler, 1999)
+are no more or less appropriate than before — what has changed is that
+the number being compared to them is no longer systematically kind.</p>
+<p><strong>How well calibrated is the test, and at what sample
+size?</strong> The scaling fixes the metric error, and the χ² test built
+on it is asymptotically exact: its rejection rate approaches the nominal
+α as the number of distinct moments, p* = p(p+1)/2, falls relative to N.
+Simulated at one population (eight octant scales, three items each, axes
+variance .35), the rejection rate at α = .05 runs</p>
+<table>
+<thead>
+<tr class="header">
+<th>p*/N</th>
+<th>0.50</th>
+<th>0.25</th>
+<th>0.12</th>
+<th>0.06</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>rejection rate</td>
+<td>.092</td>
+<td>.079</td>
+<td>.062</td>
+<td>.054</td>
+</tr>
+</tbody>
+</table>
+<p>reaching the nominal band by a p*/N of about 0.06. That is a sweep at
+a single population, not a general threshold.</p>
+<p>You do not have to work out where your own fit sits on that row. The
+object reports both halves of the ratio: <code>details$n_moments</code>
+is p*, and <code>details$n</code> is the N the fit was priced at — on
+the raw-data paths the count of rows the estimator was actually handed,
+smaller than <code>details$n_total</code> wherever cases were dropped;
+on the correlation-matrix path the <code>n</code> you supplied. Divide
+the first by the second and read across.</p>
+<p>At <strong>N = 600</strong> the test <strong>over-rejects</strong> —
+measured .06 to .11 at three populations chosen to bracket the range of
+instruments the function accepts. The uncorrected statistic
+under-rejects over the same range, at .02 to .03, and moves
+<em>further</em> from nominal as N grows, because its error is
+asymptotic while the scaled statistic’s is a finite-sample one that
+shrinks away. The over-rejection at a fixed N grows with instrument size
+(larger <code>df</code>) and shrinks with N.</p>
+<p>Two practical consequences. A p-value near whatever threshold you are
+using deserves caution at moderate N with many items — but note the
+direction: the scaled test <strong>over-flags</strong> misfit rather
+than flattering it, which is the safer error, and the opposite of what
+the uncorrected statistic did. And all of this evidence is
+<strong>complete-data</strong>: under <code>missing = &quot;fiml&quot;</code> the
+scaled statistic is calibrated in mean, but its rejection rate has not
+been measured, so none of these rates should be read as applying to that
+path.</p>
+<p>If you check the implied matrix, you will also find that it does not
+reproduce the unit diagonal exactly. That too is expected: with the
+loadings fixed, the condition a free item error satisfies is the
+<em>weighted</em> diagonal rather than the raw one, so off-diagonal
+sampling misfit leaks into the implied diagonal at roughly the sampling
+standard error of a correlation.</p>
+<p><strong>Missing data: listwise by default, FIML on request.</strong>
+The default, <code>missing = &quot;listwise&quot;</code>, uses complete cases only
+and reports how many there were. <code>missing = &quot;fiml&quot;</code> instead
+estimates from every respondent who answered at least one item, and
+reports the total N with the complete-case count beside it.
+Pairwise-deletion correlations are never used on either setting.</p>
+<p>The choice is a trade of assumptions, not a free upgrade. FIML
+requires the data to be <strong>missing at random</strong> — missingness
+may depend on values you observed, but not on the unobserved values
+themselves — <strong>and multivariate normal</strong>. Under MCAR, where
+missingness is unrelated to anything, listwise deletion is already
+consistent and merely wasteful, so FIML buys precision rather than
+correctness; under MAR, listwise deletion is genuinely biased and FIML
+is not. Under FIML the standard errors are observed-information standard
+errors on the standardized metric, conditional on the standardization
+constants. They carry the same correlation-metric correction as every
+other path, applied multiplicatively so the observed information’s own
+pricing of the missing data survives it. What the correction does not
+reach is the uncertainty in those standardization constants, which stays
+small at mild missingness but grows with the rate — at 15% cellwise
+missingness the reported SEs average about 7% <em>below</em> the
+estimator’s actual sampling variability, so treat heavy missingness as
+the regime where they are least trustworthy. Two results become
+unavailable, both needing items observed by every respondent: the
+Nunnally-Bernstein comparison is <code>NA</code> with a stated reason,
+and <code>sd = &quot;raw&quot;</code> is refused in favour of numeric axis
+SDs.</p>
+<p>Note the provenance, because it differs from the rest of this
+vignette: Strack et al. (2013) report no missing-data analyses at all,
+so nothing about the FIML path rests on their results. It is certified
+against this package’s own synthetic oracle, where the true variance
+components are known by construction.</p>
+<p><strong>A boundary fit returns <code>NA</code>, not a clipped
+value.</strong> If the model estimates an axes variance outside the
+interval (0, 1) — at or below zero the axes carry no variance to be
+reliable, at or above one they carry all of it — or any negative
+variance component, the reliability and SEm are reported as
+<code>NA</code> with a warning and a boundary flag, rather than a
+clipped, negative, or missing number. An <code>NA</code> here is a
+signal that the model did not identify a usable axes-variance component
+in your data — not a defect to be worked around.</p>
+<p><strong>A blockwise instrument needs its blocks declared.</strong>
+Some circumplex instruments are administered in blocks — items grouped
+by something other than their scale — which carries a block-specificity
+component of its own, reported as high as 6.7% by Strack et al. (2013,
+Table 3). Pass <code>blocks</code> (a list of item columns, one element
+per block, exactly as <code>items</code> is a list per scale) and that
+component is estimated too: the component table gains a
+<code>zeta2</code> row and <code>details$zeta2_fitted</code> is
+<code>TRUE</code>. Nothing in the bundled instrument objects records
+block membership, so the map has to come from you.</p>
+<p>The component is only estimable when the blocks say something the
+model does not already know. Blocks that coincide with the scales, a
+single block holding every item, or one block per item all leave
+<code>zeta2</code> unidentified, and it is dropped with
+<code>details$zeta2_fitted</code> set to <code>FALSE</code> — the same
+treatment scale specificity gets on a single-item instrument.</p>
+<p>What it costs to <em>ignore</em> real blocks depends on their
+geometry. The general factor never hands block variance back, so
+<code>xi2</code> is inflated under most layouts and unchanged under a
+few — never deflated. The axes variance, the quantity reliability is
+actually read from, moves only when block membership carries information
+about the <em>angular distance</em> between items, beyond what sharing a
+scale already tells you.</p>
+<p>One case is clean enough to rely on: when <strong>each block draws
+exactly one item from every scale</strong>, every within-block pair is a
+different-scale pair and the blocks cover every pair of scale positions
+equally often. Membership then says nothing about angular distance, and
+<code>xi1</code>, the reliability, and the SEm are untouched — worth
+estimating for its own sake, but costless to omit.</p>
+<p>Elsewhere, be careful: <em>“the blocks are spread evenly around the
+circle” is not the test.</em> Blocks pairing diametrically opposite
+scales are as evenly spread as blocks get — their angles average to the
+centre of the circle — and at eight scales they still pull
+<code>xi1</code> about 9% <em>below</em> truth, because every
+within-block pair sits exactly half a turn apart, which is very much
+information about angular distance. Blocks covering contiguous arcs pull
+about 12% the other way. Unless each block takes one item per scale,
+estimate the component rather than reasoning about the picture.</p>
+<p>Finally, a note on the <code>SEm</code>. The standard error of
+measurement supports a location interval for a single profile (Strack et
+al., 2013, use ±1.65·SEm). By default <code>axes_reliability()</code>
+reports the z-standardized SEm, <code>sqrt(1 - reliability)</code>; pass
+<code>sd = &quot;raw&quot;</code> (or your own axis SDs) to put the SEm on the raw
+axis-score scale. Such an interval describes the measurement imprecision
+of one profile’s axis position; it is not a significance test of that
+position against any particular value.</p>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>6. Wrap-up</h2>
+<p><code>axes_reliability()</code> gives a compact, per-axis answer to
+“how reliably does this instrument measure communion and agency?”,
+isolating the axes variance from the general and scale-specific
+components that a simpler reliability formula would conflate. Use it to
+characterize a circumplex instrument before leaning on its axis scores,
+and read its output with the correlation-as-covariance, missing-data,
+and boundary caveats in mind.</p>
+<p>The examples above all use the canonical eight octant scales, but
+nothing in the model requires them: any <strong>equally spaced</strong>
+set of angles works, at any rotation and at any count from four scales
+upward. Equal spacing is what matters, and it is required rather than
+merely preferred — a quasi-circumplex, whose scales sit at slightly
+unequal intervals, is refused rather than approximated, because Strack
+et al. (2013) excluded such instruments when validating the model. Three
+scales are refused for a different reason: at that count every pair of
+scales sits the same angular distance apart, so the general, axes, and
+scale-specificity variances can no longer be told apart.</p>
+<p>Scales may also carry a <strong>single item</strong> each, as Strack
+et al.’s single-item circumplex types do. With one item at every
+position no two items ever share a scale, so nothing in the data
+distinguishes scale specificity from item specificity: the
+scale-specificity component is not identified, and
+<code>axes_reliability()</code> drops it from the model rather than
+estimating a quantity the data cannot support. The components table then
+carries three rows instead of four, and
+<code>details$zeta1_fitted</code> records the drop. An instrument that
+<em>mixes</em> single-item and multi-item scales still estimates the
+component — one multi-item scale supplies the information, and the
+shared-value restriction carries it to the remaining scales. One
+consequence follows for the comparison figure: coefficient alpha is
+undefined for a one-item scale, so the Nunnally–Bernstein reliability is
+reported as <code>NA</code> with its reason whenever any scale has fewer
+than two items, exactly as Strack et al. leave that column blank for
+such instruments.</p>
+<p>One further boundary is worth stating plainly, because the paper
+crosses it and this function does not: the model implemented here is
+<strong>two</strong>-dimensional. Strack et al. also analyze a
+<em>spherical</em> instrument, SYMLOG, whose items span three orthogonal
+dimensions; the figures they publish for it come from that three-axis
+model, and no configuration <code>axes_reliability()</code> accepts will
+reproduce them.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li><p>Cudeck, R. (1989). Analysis of correlation matrices using
+covariance structure models. <em>Psychological Bulletin, 105</em>(2),
+317–327.</p></li>
+<li><p>Satorra, A., &amp; Bentler, P. M. (1994). Corrections to test
+statistics and standard errors in covariance structure analysis. In
+<em>Latent variables analysis: Applications for developmental
+research</em> (pp. 399–419).</p></li>
+<li><p>Strack, S., Jacobs, K. A., &amp; Grosse Holtforth, M. (2013). The
+reliability of circumplex axes. <em>SAGE Open, 3</em>(2). <a href="https://doi.org/10.1177/2158244013486115" class="uri">https://doi.org/10.1177/2158244013486115</a></p></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

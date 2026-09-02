@@ -37,17 +37,19 @@ test_that("norm_standardize works", {
     matrix(runif(8 * 5, min = 0, max = 4), nrow = 5, ncol = 8)
   )
   new <- norm_standardize(
-    old, 
-    scales = 1:8, 
-    instrument = iipsc, 
-    sample = 1
-  )
-  new2 <- norm_standardize(
-    old, 
+    old,
     scales = 1:8,
     instrument = iipsc,
     sample = 1,
-    append = FALSE
+    quiet = TRUE
+  )
+  new2 <- norm_standardize(
+    old,
+    scales = 1:8,
+    instrument = iipsc,
+    sample = 1,
+    append = FALSE,
+    quiet = TRUE
   )
   expect_equal(round(new$X1_z, 4), c(3.2176, 4.1562, 3.4605, 4.2189, 1.6150))
   expect_equal(round(new$X2_z, 4), c(-0.1841, 0.7361, 1.8035, 3.07, 4.5891))
@@ -71,11 +73,11 @@ test_that("norm_standardize matches 0 and 360 degrees as the same angle", {
   # LM stored as 360 in the norms; passing 0 must give identical results
   with360 <- norm_standardize(
     old, scales = 1:8, angles = octants(), instrument = iipsc, sample = 1,
-    append = FALSE
+    append = FALSE, quiet = TRUE
   )
   with0 <- norm_standardize(
     old, scales = 1:8, angles = c(90, 135, 180, 225, 270, 315, 0, 45),
-    instrument = iipsc, sample = 1, append = FALSE
+    instrument = iipsc, sample = 1, append = FALSE, quiet = TRUE
   )
   expect_equal(with0, with360)
 })
@@ -137,4 +139,82 @@ test_that("self_standardize works", {
   expect_equal(round(new$BC_z, 4), c(-0.8356, -0.8356, -0.1393, 0.2178, 1.5927))
   expect_error(self_standardize(aw2009, 2:9))
   expect_equal(ncol(new), ncol(new2) + ncol(old))
+})
+
+
+# The shipped norms of a multi-sample instrument are keyed by `Sample`, and
+# norm_standardize() subsets on that key. A miscoded key is invisible to a
+# row-count check -- the frame still has 8 rows per sample -- and shows up only
+# as which octants land in each subset, so these two tests assert the key's
+# CONTENT rather than the frame's shape. They sweep every shipped instrument
+# rather than naming the one that was broken, because the defect is a way of
+# writing the column and not a fact about one instrument.
+# The enumeration lives in helper-norms.R as shipped_instruments(); this file
+# previously carried a second, identical copy of it.
+
+test_that("each shipped norm sample keys every scale exactly once", {
+  skip_on_cran()
+  for (nm in shipped_instruments()) {
+    obj <- get(nm)
+    norms <- obj$Norms[[1]]
+    key <- if ("Scale" %in% names(norms)) "Scale" else "Abbrev"
+    for (s in obj$Norms[[2]]$Sample) {
+      rows <- norms[norms$Sample == s, ]
+      expect_equal(nrow(rows), nrow(obj$Scales),
+                   info = paste(nm, "sample", s))
+      expect_setequal(as.character(rows[[key]]), as.character(obj$Scales$Abbrev))
+      expect_equal(anyDuplicated(rows$Angle %% 360), 0L,
+                   info = paste(nm, "sample", s, "has a repeated angle"))
+    }
+  }
+})
+
+test_that("norm_standardize runs on every shipped instrument and sample", {
+  skip_on_cran()
+  # End-to-end rather than structural only: a key that survives the shape
+  # assertions above but still mixes samples would produce numbers here.
+  #
+  # A sample whose means fall outside its instrument's response range is
+  # refused rather than standardized (see test-norms-anchor-range.R for the
+  # invariant). Since M112 withdrew the CAIS adult sample no shipped sample
+  # violates it, so the refusal arm below is unreachable today and this file
+  # exercises only the standardizing arm; the constructed positive controls
+  # live in test-norms-anchor-range.R. The expectation is derived from the
+  # predicate rather than hand-listing exceptions, so the refusal arm becomes
+  # live again on its own if an off-metric sample is ever added.
+  probe <- as.data.frame(matrix(2, nrow = 2, ncol = 8))
+  for (nm in shipped_instruments()) {
+    obj <- get(nm)
+    names(probe) <- obj$Scales$Abbrev
+    for (s in obj$Norms[[2]]$Sample) {
+      key <- obj$Norms[[1]]
+      m <- key$M[key$Sample == s]
+      in_range <- all(
+        m >= min(obj$Anchors$Value) & m <= max(obj$Anchors$Value),
+        na.rm = TRUE
+      )
+      standardize_it <- function() {
+        norm_standardize(probe, scales = names(probe),
+                         angles = obj$Scales$Angle, instrument = obj,
+                         sample = s, append = FALSE, quiet = TRUE)
+      }
+      if (in_range) {
+        expect_no_error(standardize_it())
+      } else {
+        expect_error(standardize_it(), "response range")
+      }
+    }
+  }
+
+  # And pin the values for one multi-sample instrument against its published
+  # source, so the sweep above cannot pass on norms that run but are wrong.
+  # iei sample 1 is Horner, Locke & Hulsey's Study 1 (N = 1223): PA M = 2.00,
+  # SD = 0.71 and BC M = 1.21, SD = 0.61, so an all-2 probe gives PA_z = 0 and
+  # BC_z = (2 - 1.21) / 0.61.
+  names(probe) <- iei$Scales$Abbrev
+  z1 <- norm_standardize(probe, scales = names(probe),
+                         angles = iei$Scales$Angle, instrument = iei,
+                         sample = 1, append = FALSE, quiet = TRUE)
+  expect_equal(z1$PA_z[[1]], 0)
+  expect_equal(z1$BC_z[[1]], (2 - 1.21) / 0.61)
 })

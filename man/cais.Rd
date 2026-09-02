@@ -20,6 +20,22 @@ cais
 \description{
 Information about the Child and Adolescent Interpersonal Survey (CAIS).
 }
+\section{Note on the withdrawn second normative sample}{
+
+The package ships one CAIS normative sample, the child sample. A second,
+drawn from the source's adult respondents, was shipped until version 2.0.0
+and has been withdrawn. The CAIS is rated on a 5-point scale, but three of
+the octant means the source publishes for those respondents fall above 5, so
+that sample cannot be on the same metric as the scores it would standardize:
+\code{norm_standardize()} refused it, which left it as data no call could use.
+The transcription was faithful and the source's own table is the origin of
+the discrepancy, so the values are not lost — they are recorded, with the
+evidence about what went wrong in the source and what a reply from its
+authors would reopen, in the package's source repository under
+\code{cairn/references/sodano2006.md}, which also records the state of the query
+to the source's authors.
+}
+
 \examples{
 summary(cais)
 scales(cais, items = TRUE)

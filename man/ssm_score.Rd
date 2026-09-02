@@ -14,13 +14,23 @@ circumplex scales.}
 variables in \code{.data} that contain circumplex scales to be analyzed.}
 
 \item{angles}{Required. A numeric vector containing the angular displacement
-of each circumplex scale included in \code{scales} (in degrees).}
+of each circumplex scale included in \code{scales} (in degrees). The
+closed-form SSM estimator used here equals the ordinary-least-squares
+cosine fit for equally spaced \code{angles} (e.g., octants at 45-degree
+intervals) -- more generally, for any angle set satisfying first- and
+second-harmonic balance. For angle sets violating that balance (generic
+unequally spaced sets), it is the conventional Gurtman estimator, not a
+least-squares fit, and the
+reported fit is then no longer a bounded R-squared in \code{[0, 1]} (it can
+fall below 0).}
 
 \item{append}{Optional. A logical indicating whether to append the output to
 \code{data} or simply return the output (default = "TRUE").}
 
-\item{...}{Optional. Additional parameters to pass to
-\code{\link{ssm_parameters}()}, such as \code{prefix} and \code{suffix}.}
+\item{...}{Optional. Additional \strong{named} arguments passed to
+\code{\link{ssm_parameters}()}, such as \code{prefix} and \code{suffix};
+each must be a single string. Unnamed or non-scalar arguments raise an
+error.}
 }
 \value{
 A data frame containing \code{.data} plus six additional columns
@@ -42,13 +52,30 @@ ssm_score(
 }
 \seealso{
 Other ssm functions:
+\code{\link[=plot.circumplex_ci_accuracy]{plot.circumplex_ci_accuracy()}},
 \code{\link[=ssm_analyze]{ssm_analyze()}},
+\code{\link[=ssm_analyze_long]{ssm_analyze_long()}},
+\code{\link[=ssm_ci_accuracy]{ssm_ci_accuracy()}},
+\code{\link[=ssm_draws]{ssm_draws()}},
 \code{\link[=ssm_parameters]{ssm_parameters()}},
-\code{\link[=ssm_table]{ssm_table()}}
+\code{\link[=ssm_parameters_id]{ssm_parameters_id()}},
+\code{\link[=ssm_sem]{ssm_sem()}},
+\code{\link[=ssm_sem_parameters]{ssm_sem_parameters()}},
+\code{\link[=ssm_table]{ssm_table()}},
+\code{\link[=summary.circumplex_ssm_id]{summary.circumplex_ssm_id()}}
 
 Other analysis functions:
+\code{\link[=cpm_fit]{cpm_fit()}},
+\code{\link[=cpm_simulate]{cpm_simulate()}},
 \code{\link[=ssm_analyze]{ssm_analyze()}},
-\code{\link[=ssm_parameters]{ssm_parameters()}}
+\code{\link[=ssm_analyze_long]{ssm_analyze_long()}},
+\code{\link[=ssm_ci_accuracy]{ssm_ci_accuracy()}},
+\code{\link[=ssm_draws]{ssm_draws()}},
+\code{\link[=ssm_parameters]{ssm_parameters()}},
+\code{\link[=ssm_parameters_id]{ssm_parameters_id()}},
+\code{\link[=ssm_sem]{ssm_sem()}},
+\code{\link[=ssm_sem_parameters]{ssm_sem_parameters()}},
+\code{\link[=summary.circumplex_ssm_id]{summary.circumplex_ssm_id()}}
 }
 \concept{analysis functions}
 \concept{ssm functions}

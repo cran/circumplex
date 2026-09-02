@@ -1,22 +1,23 @@
 test_that("Quantile for circular radians works", {
+  # A quantile landing on the 0/360 pole reports the LM = 360 label (M20).
   a <- as_degree(0:180)
   b <- as_radian(a)
   qb <- stats::quantile(b)
   expect_s3_class(qb, "circumplex_radian")
-  expect_equal(qb, as_radian(as_degree(c(0, 45, 90, 135, 180))),
+  expect_equal(qb, as_radian(as_degree(c(360, 45, 90, 135, 180))),
                ignore_attr = TRUE)
 
   a <- as_degree(180:360)
   b <- as_radian(a)
   qb <- quantile(b)
   expect_s3_class(qb, "circumplex_radian")
-  expect_equal(qb, as_radian(as_degree(c(180, 225, 270, 315, 0))),
+  expect_equal(qb, as_radian(as_degree(c(180, 225, 270, 315, 360))),
                ignore_attr = TRUE)
 
   a <- as_degree(c(270:360, 1:90))
   b <- as_radian(a)
   qb <- quantile(b)
-  expect_equal(qb, as_radian(as_degree(c(270, 315, 0, 45, 90))),
+  expect_equal(qb, as_radian(as_degree(c(270, 315, 360, 45, 90))),
                ignore_attr = TRUE)
 
   a <- as_degree(c(NA_real_, NA_real_, NA_real_))
@@ -32,6 +33,65 @@ test_that("Quantile for circular radians works", {
 })
 
 library(testthat)
+
+test_that("internal parameter layout is name-driven, not positional", {
+  # Contract with the C++ group_parameters()/ssm_parameters_cpp(): six
+  # parameters per group in this fixed order. The bootstrap assembly relies on
+  # these names (not positional arithmetic) to locate displacement, so pin them.
+  expect_identical(ssm_param_names(), c("e", "x", "y", "a", "d", "fit"))
+  expect_identical(which(ssm_param_names() == "d"), 5L)
+
+  # reshape_params() lays one group per row with parameter_suffix column names,
+  # derived from ssm_param_names() rather than a hardcoded six-block.
+  two_groups <- reshape_params(as.numeric(1:12), suffix = "est")
+  expect_identical(
+    colnames(two_groups),
+    c("e_est", "x_est", "y_est", "a_est", "d_est", "fit_est")
+  )
+  expect_equal(nrow(two_groups), 2)
+  expect_equal(two_groups$d_est, c(5, 11)) # 5th value of each six-block
+})
+
+test_that("param_diff() generalizes to matrices row-wise (C1)", {
+  # The Monte Carlo engine contrasts an R x 6 draw matrix; param_diff() must
+  # give the same result row-by-row as the length-6 vector form (which the
+  # bootstrap path uses), so both engines share one contrast convention.
+  set.seed(1)
+  second <- matrix(rnorm(18, sd = 2), nrow = 3) # 3 draws x 6 params
+  first <- matrix(rnorm(18, sd = 2), nrow = 3)
+  mres <- param_diff(second, first)
+  expect_true(is.matrix(mres))
+  for (i in seq_len(nrow(second))) {
+    expect_equal(
+      unname(mres[i, ]),
+      unname(param_diff(second[i, ], first[i, ]))
+    )
+  }
+  # Displacement column (5) is an angular distance, not a plain difference
+  d <- which(ssm_param_names() == "d")
+  expect_false(isTRUE(all.equal(mres[, d], second[, d] - first[, d])))
+})
+
+test_that("displacement is classed by name across >2 groups (non-contrast)", {
+  # Three groups exercise the multi-block name-based displacement selection
+  # beyond the one/two-group cases covered elsewhere: every group's
+  # displacement must land on [0, 360) in degrees and be finite.
+  rad <- as.numeric(as_radian(octants()))
+  set.seed(2017)
+  mk <- function(peak) {
+    t(sapply(1:15, function(i) 1 + 2 * cos(rad - peak * pi / 180) + rnorm(8, 0, 1)))
+  }
+  dat <- as.data.frame(rbind(mk(45), mk(180), mk(315)))
+  colnames(dat) <- PANO()
+  dat$Group <- rep(c("A", "B", "C"), each = 15)
+
+  set.seed(1)
+  res <- ssm_analyze(dat, scales = 1:8, grouping = "Group", boots = 50)
+  d <- res$results$d_est
+  expect_length(d, 3)
+  expect_true(all(is.finite(d)))
+  expect_true(all(d >= 0 & d < 360))
+})
 
 test_that("bootstrap with some degenerate replicates does not error", {
   # A rare binary measure: some resamples are constant, giving NaN
@@ -50,6 +110,30 @@ test_that("bootstrap with some degenerate replicates does not error", {
   expect_true(is.finite(res$results$e_est))
   expect_true(is.finite(res$results$d_lci) && is.finite(res$results$d_uci))
   expect_true(is.finite(res$results$a_lci) && is.finite(res$results$a_uci))
+})
+
+test_that("pairwise-deletion bootstrap tolerates an all-NA resampled column (F1)", {
+  skip_on_cran()
+  # F1 (Brief C audit): under listwise = FALSE a resample can draw only NA rows
+  # for one scale, leaving an empty column for col_means(). Pre-fix this aborted
+  # the whole ssm_analyze() call with "mean(): object has no elements". The mean
+  # path should now degrade like the correlation path (pairwise_r): return NA for
+  # the empty column and let the degenerate-replicate exclusion + warning absorb
+  # it. Deterministic repro from the audit (seed 123, 4/6-missing scale).
+  set.seed(123)
+  df <- data.frame(
+    S1 = c(1, 2, NA, NA, NA, NA),
+    S2 = rnorm(6), S3 = rnorm(6), S4 = rnorm(6),
+    S5 = rnorm(6), S6 = rnorm(6), S7 = rnorm(6), S8 = rnorm(6)
+  )
+  expect_warning(
+    res <- ssm_analyze(df, scales = paste0("S", 1:8), boots = 500,
+                       listwise = FALSE),
+    "resamples"
+  )
+  # The observed profile is well-defined; only some resamples are degenerate.
+  expect_true(is.finite(res$results$e_est))
+  expect_true(is.finite(res$results$a_est))
 })
 
 test_that("fully flat data yields NA estimates without erroring", {
@@ -93,6 +177,38 @@ test_that("contrast displacement estimate and CI share a branch at +/-180", {
   expect_lt(abs(abs(r$d_est) - 180), 10)
 })
 
+test_that("exactly opposite profiles report a +180 contrast inside its CI (F3)", {
+  # Exactly sign-flipped group profiles: group b's mean vector is the exact
+  # negation of group a's, so the two displacements are atan2(-y, -x) vs
+  # atan2(y, x) -- a float-exact (or wrap-absorbed) half-turn. The (-180, 180]
+  # convention requires the contrast to be reported as +180, not -180
+  # (pre-fix it was exactly -180), and the CI branch-alignment shift must
+  # follow the estimate to the +180 branch so the estimate stays numerically
+  # inside its interval.
+  set.seed(42)
+  base <- matrix(rnorm(50 * 8), 50, 8) %*% diag(1:8 / 4)
+  dat <- data.frame(rbind(base, -base))
+  names(dat) <- paste0("S", 1:8)
+  dat$G <- rep(c("a", "b"), each = 50)
+
+  set.seed(24)
+  res <- suppressWarnings(ssm_analyze(
+    dat, scales = paste0("S", 1:8), grouping = "G", contrast = TRUE,
+    boots = 200
+  ))
+  r <- res$results[nrow(res$results), ]
+
+  # Contract: strictly inside (-180, 180] (pre-fix: exactly -180, failing this)
+  expect_true(r$d_est > -180 && r$d_est <= 180)
+  # The exact half-turn atom reports the +180 branch. NB: this seed lands on the
+  # bit-exact atom (remapped to +180); other seeds can leave the half-turn 1-2
+  # ulp off and report -179.9999...deg, so this +sign assertion is seed-specific.
+  expect_equal(abs(r$d_est), 180)
+  expect_gt(r$d_est, 0)
+  # Estimate lies numerically inside its own CI at the atom
+  expect_true(r$d_lci <= r$d_est && r$d_est <= r$d_uci)
+})
+
 test_that("quantile.circumplex_contrast_radian handles 0/360 boundary crossings cleanly", {
   # Create mock bootstrap replicates that straddle the 0/2*pi boundary.
   # 0.01 and 0.02 rad are just above 0° (~0.57° and ~1.15°).
@@ -118,6 +234,67 @@ test_that("quantile.circumplex_contrast_radian handles 0/360 boundary crossings 
 
   # The lower quantile should correctly cross into negative space
   expect_true(res_quantiles[["25%"]] < 0)
+})
+
+test_that("quantile.circumplex_radian reports a pole-denoting endpoint as 2*pi, never 0 (M20)", {
+  # A CI endpoint that denotes the 0/360 pole must report the LM = 360 label
+  # (D-003's convention for the estimate path, extended to CI endpoints by
+  # M20). Both float representations of the pole are exercised: exact 0 (what
+  # R's %% emits on this platform) and exact 2*pi (the fmod-at-the-edge
+  # artifact D-003 documents for the estimate path).
+  probs <- c(0.025, 0.975)
+  q0 <- as.numeric(quantile(new_radian(rep(0, 8)), probs = probs))
+  expect_identical(q0, rep(2 * pi, 2L))
+  q2 <- as.numeric(quantile(new_radian(rep(2 * pi, 8)), probs = probs))
+  expect_identical(q2, rep(2 * pi, 2L))
+  qm <- as.numeric(quantile(new_radian(c(rep(0, 4), rep(2 * pi, 4))), probs = probs))
+  expect_identical(qm, rep(2 * pi, 2L))
+
+  # No over-fire: a genuinely near-pole (but not pole-denoting) endpoint keeps
+  # its value. These straddling replicates put the lower endpoint ~0.0224 rad
+  # below 2*pi and the upper ~0.0193 rad above 0 -- far outside the
+  # float-artifact tolerance, so neither may be snapped to 2*pi.
+  qs <- as.numeric(quantile(new_radian(c(0.01, 0.02, 6.26, 6.27)), probs = probs))
+  expect_true(qs[1] < 2 * pi && (2 * pi - qs[1]) > 0.01)
+  expect_true(qs[2] > 0 && qs[2] < 0.1)
+})
+
+test_that("a pole-peaking profile reports its degenerate CI at 360, not 0 (M20)", {
+  # Identical rows tracing an exact cosine peaking at 0/360: every bootstrap
+  # resample reproduces the same profile, so the displacement replicates all
+  # land on the pole and the CI collapses onto it. The estimate path reports
+  # the pole as 360 (D-003); pre-M20 the quantile path snapped the same pole
+  # to 0, printing est 360 with CI [0, 0]. Both endpoints must now agree with
+  # the estimate's LM = 360 label.
+  rad <- as.numeric(as_radian(octants()))
+  row <- 1 + 2 * cos(rad)                 # peak at 0 deg == the 360 pole
+  dat <- as.data.frame(matrix(rep(row, each = 20), nrow = 20))
+  colnames(dat) <- PANO()
+  set.seed(1)
+  res <- suppressWarnings(ssm_analyze(dat, scales = 1:8, boots = 25))
+  r <- res$results
+  # The ESTIMATE path is unchanged by M20: per DESIGN.md G2 (D-003) a
+  # pole-peaking estimate may carry either float label (~0 or ~360, a
+  # platform libm detail), so assert only that it denotes the pole.
+  expect_lt(min(abs(r$d_est), abs(r$d_est - 360)), 1e-9)
+  # The CI ENDPOINTS carry the M20 contract: a pole-denoting endpoint is
+  # relabeled to exactly 360, never 0 (the pre-M20 snap reported 0 here).
+  expect_identical(as.numeric(r$d_lci), 360)
+  expect_identical(as.numeric(r$d_uci), 360)
+})
+
+test_that("quantile.circumplex_* return NA_real_ on an all-NA column (M13)", {
+  # A flat / zero-variance displacement column arrives all-NA; the circular
+  # quantile methods must return a numeric NA (NA_real_), not a logical NA, so
+  # downstream numeric CI assembly stays type-stable (sapply/rbind, cpm_fit's
+  # q[1]/q[2]).
+  r <- new_radian(rep(NA_real_, 4))
+  cr <- new_contrast_radian(rep(NA_real_, 4))
+  expect_identical(quantile(r), NA_real_)
+  expect_identical(quantile(cr), NA_real_)
+  # length-1 return is preserved (the ssm_ci_accuracy.R length==1 guard depends
+  # on it)
+  expect_length(quantile(r), 1L)
 })
 
 test_that("SSM class conversions preserve negative degrees for contrasts", {

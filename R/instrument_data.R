@@ -2,6 +2,20 @@
 #'
 #' Information about the Child and Adolescent Interpersonal Survey (CAIS).
 #'
+#' @section Note on the withdrawn second normative sample:
+#' The package ships one CAIS normative sample, the child sample. A second,
+#' drawn from the source's adult respondents, was shipped until version 2.0.0
+#' and has been withdrawn. The CAIS is rated on a 5-point scale, but three of
+#' the octant means the source publishes for those respondents fall above 5, so
+#' that sample cannot be on the same metric as the scores it would standardize:
+#' `norm_standardize()` refused it, which left it as data no call could use.
+#' The transcription was faithful and the source's own table is the origin of
+#' the discrepancy, so the values are not lost — they are recorded, with the
+#' evidence about what went wrong in the source and what a reply from its
+#' authors would reopen, in the package's source repository under
+#' `cairn/references/sodano2006.md`, which also records the state of the query
+#' to the source's authors.
+#'
 #' @source Sodano, S. M., & Tracey, T. J. G. (2006). Interpersonal traits in
 #'   childhood: Development of the Child and Adolescent Interpersonal Survey.
 #'   *Journal of Personality Assessment, 87*(3), 317–329.
@@ -20,7 +34,10 @@
 #' @source Locke, K. D., & Sadler, P. (2007). Self-efficacy, values, and
 #'   complementarity in dyadic interactions: Integrating interpersonal and
 #'   social-cognitive theory. *Personality and Social Psychology Bulletin,
-#'   33*(1), 94-109.
+#'   33*(1), 94-109. The normative sample below is this article's Study 1
+#'   sample, but the octant means and standard deviations themselves are
+#'   published in the author's norms table, not in the article:
+#'   \url{https://kennethlocke.org/CSIE/CSIE_Norms.html}
 #' @source \url{https://kennethlocke.org/CSIE/CSIE.html}
 #' @keywords internal
 #' @examples
@@ -63,6 +80,12 @@
 #' @source Locke, K. D. (2000). Circumplex scales of interpersonal values:
 #'   Reliability, validity, and applicability to interpersonal problems and
 #'   personality disorders. *Journal of Personality Assessment, 75*(2), 249-267.
+#'   This article defines the instrument; it reports no octant means or
+#'   standard deviations, and its samples are not the normative sample below.
+#' @source Norms: Locke, K. D. (n.d.). *CSIV norms* \[unpublished data\]. The
+#'   shipped octant means and standard deviations, and the N of 1,200, come
+#'   from the author's norms table:
+#'   \url{https://kennethlocke.org/CSIV/CSIV_Norms.html}
 #' @source \url{https://kennethlocke.org/CSIV/CSIV.html}
 #' @keywords internal
 #' @examples
@@ -74,10 +97,10 @@
 #'
 #' Information about the Interpersonal Emotion Inventory (IEI).
 #'
-#' @source Horner, M. S., Locke, K. D., & Hulsey, T. L. (in press). Assessing
-#'   affective dimensions of the interpersonal circumplex: development and
-#'   validation of the interpersonal emotion inventory. *Journal of Personality
-#'   Assessment*. Advanced online publication.
+#' @source Horner, M. S., Locke, K. D., & Hulsey, T. L. (2025). Assessing
+#'   affective dimensions of the interpersonal circumplex: Development and
+#'   validation of the Interpersonal Emotion Inventory. *Journal of Personality
+#'   Assessment, 107*(2), 170-187. First published online 13 September 2024.
 #' @source \doi{10.1080/00223891.2024.2400266}
 #' @source \url{https://kennethlocke.org/IEI/IEI.html}
 #' @keywords internal
@@ -108,9 +131,27 @@
 #' about the IIP-32, Mind Garden Inc. has exclusive rights to distribute it in
 #' full.
 #'
+#' The normative means and standard deviations are the manual's Table F.5
+#' (p. 91), divided by 4 to express the printed four-item scale sums as item
+#' means. They are reproduced under the credit line the publisher's permission
+#' requires:
+#'
+#' "Reproduction by special permission of the Publisher, Mind Garden, Inc.,
+#' www.mindgarden.com from the Inventory of Interpersonal Problems by Leonard M.
+#' Horowitz, Lynn E. Alden, Jerry S. Wiggins, & Aaron L. Pincus. Copyright ©
+#' 2000 by Leonard M. Horowitz, Lynn E. Alden, Jerry S. Wiggins, & Aaron L.
+#' Pincus. Further Reproduction is prohibited without the Publisher's written
+#' consent."
+#'
+#' That credit line is the publisher's own required wording, reproduced
+#' verbatim; its 2000 copyright date is part of that wording and is not the
+#' edition the values come from, which is the 2003 third edition cited below.
+#'
 #' @source Horowitz, L. M., Alden, L. E., Wiggins, J. S., & Pincus, A. L.
-#'   (2000). *IIP-64/IIP-32 professional manual.* San Antonio, TX: The
-#'   Psychological Corporation.
+#'   (2003). *Inventory of Interpersonal Problems manual: Includes IIP-64 and
+#'   IIP-32 forms* (3rd ed.). Menlo Park, CA: Mind Garden. Originally published
+#'   by The Psychological Corporation; the shipped values are verified against
+#'   this third edition.
 #' @source \url{https://www.mindgarden.com/113-inventory-of-interpersonal-problems}
 #' @keywords internal
 #' @examples
@@ -123,9 +164,27 @@
 #' that, although we have permission to provide some information about the
 #' IIP-64, Mind Garden Inc. has exclusive rights to distribute it in full.
 #'
+#' The normative means and standard deviations are the manual's Table 4.4
+#' (pp. 27-29), divided by 8 to express the printed eight-item scale sums as
+#' item means. They are reproduced under the credit line the publisher's
+#' permission requires:
+#'
+#' "Reproduction by special permission of the Publisher, Mind Garden, Inc.,
+#' www.mindgarden.com from the Inventory of Interpersonal Problems by Leonard M.
+#' Horowitz, Lynn E. Alden, Jerry S. Wiggins, & Aaron L. Pincus. Copyright ©
+#' 2000 by Leonard M. Horowitz, Lynn E. Alden, Jerry S. Wiggins, & Aaron L.
+#' Pincus. Further Reproduction is prohibited without the Publisher's written
+#' consent."
+#'
+#' That credit line is the publisher's own required wording, reproduced
+#' verbatim; its 2000 copyright date is part of that wording and is not the
+#' edition the values come from, which is the 2003 third edition cited below.
+#'
 #' @source Horowitz, L. M., Alden, L. E., Wiggins, J. S., & Pincus, A. L.
-#'   (2000). *IIP-64/IIP-32 professional manual.* San Antonio, TX: The
-#'   Psychological Corporation.
+#'   (2003). *Inventory of Interpersonal Problems manual: Includes IIP-64 and
+#'   IIP-32 forms* (3rd ed.). Menlo Park, CA: Mind Garden. Originally published
+#'   by The Psychological Corporation; the shipped values are verified against
+#'   this third edition.
 #' @source \url{https://www.mindgarden.com/113-inventory-of-interpersonal-problems}
 #' @keywords internal
 #' @examples
@@ -139,7 +198,13 @@
 #'
 #' @source Soldz, S., Budman, S., Demby, A., & Merry, J. (1995). A short form of
 #'   the Inventory of Interpersonal Problems Circumplex Scales. *Assessment,
-#'   2*(1), 53-63.
+#'   2*(1), 53-63. This article constructed the IIP-SC and is the source of the
+#'   outpatient normative sample below.
+#' @source Hopwood, C. J., Pincus, A. L., DeMoor, R. M., & Koonce, E. A. (2008).
+#'   Psychometric characteristics of the Inventory of Interpersonal
+#'   Problems-Short Circumplex (IIP-SC) with college students. *Journal of
+#'   Personality Assessment, 90*(6), 615-618. The source of the college-student
+#'   normative sample below.
 #' @source \doi{10.1080/00223890802388665}
 #' @keywords internal
 #' @examples
@@ -153,7 +218,13 @@
 #'
 #' @source Hatcher, R. L., & Rogers, D. T. (2012). The IIS-32: A brief inventory
 #'   of interpersonal strengths. *Journal of Personality Assessment, 94*(6),
-#'   638-646.
+#'   638-646. This article defines the instrument and supplies the
+#'   item-to-octant grouping (Appendix, p. 646); it reports no octant means or
+#'   standard deviations, and none of its samples is the normative sample below.
+#' @source Norms: source unconfirmed. The shipped octant means and standard
+#'   deviations, the N of 1380, and the sample description that accompanies
+#'   them are published in no source that has been identified, including the
+#'   article above. Treat them as unverified until a source is established.
 #' @source \doi{10.1080/00223891.2012.681818}
 #' @keywords internal
 #' @examples
@@ -179,9 +250,10 @@
 #'
 #' Information about the Inventory of Influence Tactics Circumplex (IIT-C).
 #'
-#' @source Bliton, C. F., & Pincus, A. L. (in press). Construction and
-#'   Validation of the Interpersonal Influence Tactics Circumplex (IIT-C)
-#'   Scales. *Assessment*.
+#' @source Bliton, C. F., & Pincus, A. L. (2020). Construction and validation
+#'   of the Interpersonal Influence Tactics Circumplex (IIT-C) Scales.
+#'   *Assessment, 27*(4), 688-705. First published online 25 July 2019, which is
+#'   the version the shipped norms credit as Bliton & Pincus (2019).
 #' @source \doi{10.1177/1073191119864661}
 #' @keywords internal
 #' @examples
@@ -194,7 +266,16 @@
 #' Information about the IPIP Interpersonal Circumplex (IPIP-IPC).
 #'
 #' @source Markey, P. M., & Markey, C. N. (2009). A brief assessment of the
-#'   interpersonal circumplex: The IPIP-IPC. *Assessment, 16*(4), 352-361.
+#'   interpersonal circumplex: The IPIP-IPC. *Assessment, 16*(4), 352-361. This
+#'   article defines the instrument and supplies its item-to-octant assignment
+#'   and response anchors (Appendix, p. 360); the only octant means and standard
+#'   deviations it reports are for a different sample (Study 1 combined,
+#'   p. 354).
+#' @source Norms: source unconfirmed. The shipped octant means and standard
+#'   deviations are published in no source that has been identified. The sample
+#'   size of 274 is the article's Study 2 (p. 357), for which the article
+#'   reports no descriptive statistics. Treat them as unverified until a source
+#'   is established.
 #' @source \doi{10.1177/1073191109340382}
 #' @keywords internal
 #' @examples

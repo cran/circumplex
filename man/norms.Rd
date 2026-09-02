@@ -18,6 +18,36 @@ normative data sets available and each data set's number, sample size,
 population, and source reference and hyperlink. If another normative data set
 exists that is not yet included in the package, please let us know.
 }
+\details{
+The population is a short standardized label chosen by this package so that
+samples can be compared across instruments; it is deliberately broader than
+the description the original source gives. Several instruments normed on
+students at a single named university, in a stated period or region, are all
+labelled "American college students" here. Consult the reference and
+hyperlink printed alongside it for the source's own description of the
+sample before treating a normative sample as representative of a
+population.
+
+For most samples the label names the group they were drawn from rather than
+a frame they were drawn to represent -- but not for all of them, and which
+is which is recorded per sample in the \code{Kind} column and printed as the
+sample's reference kind:
+
+\describe{
+\item{standardization sample}{The sample was drawn to represent a defined
+population, so its mean and standard deviation estimate that
+population's. Only the IIP-32 and IIP-64 samples are of this kind.}
+\item{identified published source}{The sample's octant statistics are
+printed in an identified source -- a study report or an author's norms
+page -- and describe that group of people rather than any wider frame.}
+\item{no identified source}{The sample's octant statistics appear in no
+source that has been identified, whatever is known about the sample
+itself, and should be treated as unverified.}
+}
+
+See \code{vignette("using-instruments")} for what the shipped reference samples
+are and how to choose among them.
+}
 \examples{
 norms(csip)
 }

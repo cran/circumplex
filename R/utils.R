@@ -14,29 +14,58 @@ param_diff <- function(p1, p2) {
   stopifnot(is.numeric(p1))
   stopifnot(is.numeric(p2))
   pd <- p1 - p2
-  pd[[5]] <- angle_dist(as_radian(p1[[5]]), as_radian(p2[[5]]))
+  # Displacement is angular, so its contrast is the signed angular distance
+  # (second minus first), not a plain subtraction. Works for a single length-6
+  # parameter vector (bootstrap replicate) or an R x 6 matrix of draws (Monte
+  # Carlo), so both engines share one contrast convention.
+  d <- which(ssm_param_names() == "d")
+  if (is.matrix(p1)) {
+    pd[, d] <- angle_dist(as_radian(p1[, d]), as_radian(p2[, d]))
+  } else {
+    pd[[d]] <- angle_dist(as_radian(p1[[d]]), as_radian(p2[[d]]))
+  }
   pd
+}
+
+# Canonical SSM parameter names -----------------------------------------------
+# The fixed order in which group_parameters()/ssm_parameters_cpp() (src/) emit
+# each group's parameters: elevation, x, y, amplitude, displacement, fit. Single
+# source of truth so the bootstrap assembly can locate parameters (notably
+# displacement) by name rather than by positional arithmetic over six-blocks.
+ssm_param_names <- function() {
+  c("e", "x", "y", "a", "d", "fit")
 }
 
 # Reshape parameters from wide to long format ----------------------------------
 reshape_params <- function(v, suffix) {
-  # Convert vector to matrix
-  out <- matrix(v, ncol = 6, byrow = TRUE)
-  # Add column names
-  colnames(out) <- paste0(c("e_", "x_", "y_", "a_", "d_", "fit_"), suffix)
-  # Convert to data frame
+  pnames <- ssm_param_names()
+  # The C++ ssm_parameters_cpp()/group_parameters() emit one value per entry in
+  # ssm_param_names(); a length that is not a whole multiple means the C++
+  # parameter count and ssm_param_names() have drifted out of sync (which would
+  # otherwise misalign every column). The contract is pinned in test-RcppExports.R.
+  stopifnot(length(v) %% length(pnames) == 0)
+  # One row per group; one column per parameter, named parameter_suffix
+  out <- matrix(v, ncol = length(pnames), byrow = TRUE)
+  colnames(out) <- paste(pnames, suffix, sep = "_")
   as.data.frame(out)
 }
 
 # Calculate angular distance ---------------------------------------------------
+# Shortest signed rotation from y to x on the principal branch (-pi, pi], per
+# the contrast convention (second minus first, reported in (-180, 180]). The
+# plain wrap ((x - y + pi) %% 2pi) - pi has range [-pi, pi), so an exact
+# half-turn lands on -pi; the convention requires +pi. Remapping the exact -pi
+# atom is safe because the wrap yields exactly -pi only when x - y is exactly an
+# odd multiple of pi, which no genuine near-boundary (non-half-turn) contrast
+# ever produces -- so nothing legitimate is flipped. This catches the float-exact
+# half-turn (e.g. raw sign-flipped atan2 displacements, which are bit-exact
+# +/-pi). A true half-turn that upstream wrapping leaves 1-2 ulp off the atom is
+# not remapped and simply reports just inside the branch (e.g. -179.9999...deg,
+# which never rounds to -180) -- also correct. NA is preserved.
 angle_dist <- function(x, y) {
-  ((x - y + pi) %% (2 * pi)) - pi
-}
-
-# Convert degrees to ggplot's radian format ------------------------------------
-ggrad <- function(v) {
-  v <- as.numeric(v)
-  (v - 90) * (-pi / 180)
+  d <- ((x - y + pi) %% (2 * pi)) - pi
+  d[!is.na(d) & d == -pi] <- pi
+  d
 }
 
 # Convert percent number to a formatted string ---------------------------------
@@ -133,6 +162,21 @@ is_count <- function(x) {
   )
 }
 
+# A single non-negative whole number: the scalar sibling of is_count(). Unlike
+# is_count() (a vectorized non-negative-integer test used only as the internal
+# `n=` guard in is_char/is_var/is_num), this bakes in length-1 the way is_flag()
+# does, so user-facing count arguments (reps, boots, ncpus, digits, sample n)
+# validate with one predicate instead of a hand-bolted `length(x) == 1`. `min`
+# sets the floor: 1L for a positive count, 0L where zero is allowed (digits).
+# Returns FALSE (never NA) for NA, length != 1, non-numeric, or non-integer.
+is_scalar_count <- function(x, min = 1L) {
+  is.numeric(x) &&
+    length(x) == 1 &&
+    !is.na(x) &&
+    ceiling(x) == floor(x) &&
+    x >= min
+}
+
 is_char <- function(x, n = NULL) {
   if (is.null(n)) {
     is.character(x)
@@ -174,4 +218,20 @@ is_num <- function(x, n = NULL) {
 
 is_null_or_num <- function(x, n = NULL) {
   is.null(x) || is_num(x, n)
+}
+
+# The reader-facing phrase for a stored reference-kind token. One mapping for
+# both surfaces that report a kind -- norms() and norm_standardize()'s
+# disclosure -- so the two cannot drift into describing the same sample
+# differently. An unrecognized token returns NA rather than a plausible-looking
+# phrase: the controlled vocabulary is pinned by the test suite, so reaching
+# this branch means the data went somewhere the vocabulary does not cover, and
+# printing a guess there would hide it.
+norm_kind_phrase <- function(kind) {
+  phrases <- c(
+    standardization = "standardization sample",
+    published = "identified published source",
+    unsourced = "no identified source"
+  )
+  unname(phrases[match(as.character(kind), names(phrases))])
 }

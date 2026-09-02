@@ -101,6 +101,7 @@
     
     The ISC currently has 1 normative data set(s):
     1. 649 American college students
+    Reference kind: identified published source
     Hopwood et al. (2011)
     <https://doi.org/10.1111/j.1467-6494.2011.00696.x>
 
@@ -228,6 +229,7 @@
     
     The ISC currently has 1 normative data set(s):
     1. 649 American college students
+    Reference kind: identified published source
     Hopwood et al. (2011)
     <https://doi.org/10.1111/j.1467-6494.2011.00696.x>
 
@@ -404,6 +406,7 @@
 
     The ISC currently has 1 normative data set(s):
     1. 649 American college students
+    Reference kind: identified published source
     Hopwood et al. (2011)
     <https://doi.org/10.1111/j.1467-6494.2011.00696.x>
 
@@ -419,7 +422,7 @@
      7. IGI-CR: Interpersonal Goals Inventory for Children, Revised Version (igicr)
      8. IIP-32: Inventory of Interpersonal Problems, Brief Version (iip32)
      9. IIP-64: Inventory of Interpersonal Problems (iip64)
-     10. IIP-SC: Inventory of Interpersonal Problems, Short Circumplex (iipsc)
+     10. IIP-SC: Inventory of Interpersonal Problems Short Circumplex (iipsc)
      11. IIS-32: Inventory of Interpersonal Strengths, Brief Version (iis32)
      12. IIS-64: Inventory of Interpersonal Strengths (iis64)
      13. IIT-C: Inventory of Influence Tactics Circumplex (iitc)

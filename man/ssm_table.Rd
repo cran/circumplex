@@ -26,6 +26,9 @@ Take in the results of an SSM analysis and return an HTML table with the
 desired formatting.
 }
 \examples{
+# `boots` is lowered from its default of 2000 throughout these examples so
+# they run quickly; a reported analysis should use the default.
+
 \donttest{
 # Load example data
 data("jz2017")
@@ -34,7 +37,8 @@ data("jz2017")
 res <- ssm_analyze(
   jz2017,
   scales = 2:9,
-  measures = c("NARPD", "ASPD")
+  measures = c("NARPD", "ASPD"),
+  boots = 200
 )
 ssm_table(res)
 
@@ -43,7 +47,8 @@ res <- ssm_analyze(
   jz2017,
   scales = 2:9,
   measures = c("NARPD", "ASPD"), 
-  contrast = TRUE
+  contrast = TRUE,
+  boots = 200
 )
 ssm_table(res)
 }
@@ -51,9 +56,17 @@ ssm_table(res)
 }
 \seealso{
 Other ssm functions:
+\code{\link[=plot.circumplex_ci_accuracy]{plot.circumplex_ci_accuracy()}},
 \code{\link[=ssm_analyze]{ssm_analyze()}},
+\code{\link[=ssm_analyze_long]{ssm_analyze_long()}},
+\code{\link[=ssm_ci_accuracy]{ssm_ci_accuracy()}},
+\code{\link[=ssm_draws]{ssm_draws()}},
 \code{\link[=ssm_parameters]{ssm_parameters()}},
-\code{\link[=ssm_score]{ssm_score()}}
+\code{\link[=ssm_parameters_id]{ssm_parameters_id()}},
+\code{\link[=ssm_score]{ssm_score()}},
+\code{\link[=ssm_sem]{ssm_sem()}},
+\code{\link[=ssm_sem_parameters]{ssm_sem_parameters()}},
+\code{\link[=summary.circumplex_ssm_id]{summary.circumplex_ssm_id()}}
 
 Other table functions:
 \code{\link[=html_render]{html_render()}}

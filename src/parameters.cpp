@@ -61,6 +61,10 @@ arma::vec ssm_parameters_cpp(arma::vec scores, arma::vec angles) {
 // [[Rcpp::export]]
 arma::vec group_parameters(arma::mat scores, arma::vec angles) {
   double n = scores.n_rows;
+  // The stride 6 is the SSM parameter count. It MUST equal the length of
+  // ssm_parameters_cpp()'s output vector {elev,x,y,ampl,disp,gfit} above AND of
+  // R's ssm_param_names(); adding/removing a parameter means updating all three
+  // (test-RcppExport pins length(ssm_parameters_cpp) == length(ssm_param_names)).
   arma::vec out = arma::zeros<arma::vec>(n * 6);
   for (int i(0); i < n; i++) {
     out.subvec(i * 6, i * 6 + 5) = ssm_parameters_cpp(scores.row(i).t(), angles);
@@ -76,7 +80,10 @@ arma::rowvec col_means(arma::mat x) {
   for (arma::uword i = 0; i < p; i++) {
     arma::colvec y = x.col(i);
     y = y.elem(find_finite(y));
-    out(i) = arma::mean(y);
+    // A column with no finite values has no mean; return NA rather than calling
+    // arma::mean() on an empty vector (which throws). This mirrors pairwise_r()'s
+    // guard and lets the degenerate-replicate machinery absorb the resample.
+    out(i) = y.n_elem == 0 ? NA_REAL : arma::mean(y);
   }
   return out;
 }
