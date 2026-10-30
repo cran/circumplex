@@ -1,12 +1,15 @@
-## ----include = FALSE----------------------------------------------------------
+## ----include = FALSE-------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(12345)
 library(ggplot2)
+# Output that follows the console width wraps at 77 columns, so with its "#> "
+# prefix it fits in 80. Text printed with cat() does not wrap.
+options(width = 77)
 
-## ----setup--------------------------------------------------------------------
+## ----setup-----------------------------------------------------------------
 library(circumplex)
 
-## ----known-direction----------------------------------------------------------
+## ----known-direction-------------------------------------------------------
 # Truth: e = 1, a = 2, d = 90 degrees
 theta <- as.numeric(octants()) * pi / 180
 scores <- 1 + 2 * cos(theta - pi / 2)
@@ -15,10 +18,12 @@ x_hat <- coef(fit)[["cos(theta)"]]
 y_hat <- coef(fit)[["sin(theta)"]]
 d_hat <- atan2(y_hat, x_hat) * 180 / pi
 round(c(x = x_hat, y = y_hat, d = d_hat), 6)
+
+## ----known-direction-check, echo = FALSE-----------------------------------
 stopifnot(isTRUE(all.equal(d_hat, 90)))          # atan2(y, x): correct
 stopifnot(!isTRUE(all.equal(atan2(x_hat, y_hat) * 180 / pi, 90)))  # swapped
 
-## ----data-prep----------------------------------------------------------------
+## ----data-prep, echo = FALSE-----------------------------------------------
 data("jz2017")
 set.seed(12345)
 sub <- jz2017[sample(nrow(jz2017), 200), ]
@@ -30,9 +35,11 @@ dat <- data.frame(
   sin_theta = rep(sin(theta), each = 200),
   score = unlist(sub[scales], use.names = FALSE)
 )
+
+## ----data-head-------------------------------------------------------------
 head(dat)
 
-## ----brms-fit, eval = FALSE---------------------------------------------------
+## ----brms-fit, eval = FALSE------------------------------------------------
 # library(brms)
 # bfit <- brm(
 #   score ~ cos_theta + sin_theta + (1 | id),
@@ -43,16 +50,18 @@ head(dat)
 # draws <- as.matrix(bfit,
 #                    variable = c("b_Intercept", "b_cos_theta", "b_sin_theta"))
 
-## ----load-draws---------------------------------------------------------------
+## ----load-draws, echo = FALSE----------------------------------------------
 draws <- readRDS("bayesian_ssm_draws.rds")
+
+## ----draws-shape-----------------------------------------------------------
 dim(draws)
 head(round(draws, 3))
 
-## ----adapter------------------------------------------------------------------
+## ----adapter---------------------------------------------------------------
 res <- ssm_draws(draws, type = "parameters")
 summary(res)
 
-## ----induced-prior, fig.width = 5, fig.height = 3-----------------------------
+## ----induced-prior, echo = FALSE, fig.width = 5, fig.height = 3------------
 x_prior <- rnorm(10000, 0, 1)
 y_prior <- rnorm(10000, 0, 1)
 a_prior <- sqrt(x_prior^2 + y_prior^2)

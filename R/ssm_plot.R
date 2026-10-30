@@ -13,6 +13,12 @@ has_ggrepel <- function() {
 #' point and interval estimate for each row (e.g., group or measure) in a
 #' circular space quantified by displacement and amplitude.
 #'
+#' The amplitude axis and its labels are drawn along the midpoint of the widest
+#' gap between displacement spokes that holds no plotted point estimate (ties go
+#' to the smallest midpoint; a point on a spoke counts as in both gaps next to
+#' it). When every gap holds a point, the axis goes in the widest gap, as
+#' [coord_circumplex()] places it by default.
+#'
 #' @param ssm_object Required. The output of `ssm_analyze()`.
 #' @param amax A positive real number corresponding to the radius of the circle.
 #'   It is used to scale the amplitude values and will determine which amplitude
@@ -194,7 +200,9 @@ ssm_plot_circle <- function(ssm_object,
     amax = amax,
     font_size = scale_font_size
   )
-  
+  # Keep the amplitude axis labels off the plotted points.
+  p$coordinates$r_axis_angle <- ssm_r_axis_angle_clear(angles, df_plot$d_est)
+
   ## Set color scales depending on palette
   if (is.null(palette)) {
     fill_color <- "#0072B2"
@@ -632,6 +640,26 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
 #'   object (see `instrument()`). When supplied, the scale `angles` and (unless
 #'   `labels` is given) the scale abbreviations are taken from the instrument
 #'   (default = `NULL`).
+#' @param grid Optional. A single string naming the canvas furniture, passed to
+#'   [coord_circumplex()]. `"polar"` (the default) draws amplitude rings,
+#'   displacement spokes and the amplitude axis. `"cartesian"` draws one rim
+#'   ring, a crosshair with a tick mark and a signed label at each amplitude
+#'   break between the center and the rim on every half-axis, and tick marks
+#'   outward from the rim at the scale angles (the canvas of Nagy et al.,
+#'   2019). The labels on the 180 and 270 halves are negative Cartesian
+#'   coordinates, not negative amplitudes.
+#' @param angle_labels Optional. A single logical, independent of `grid`.
+#'   `TRUE` appends each scale's angle to its label, in parentheses with the
+#'   degree sign, the angle rounded to the nearest whole degree and the 0/360
+#'   pole written as 360, and turns each label to read along its radius
+#'   (default = `FALSE`). It applies to text labels, from `labels` or an
+#'   instrument; the default degree labels already show the angle and are left
+#'   as they are. Each side of the plot margin is widened to fit the labels
+#'   that point toward it: a label reaches past a side by its length,
+#'   estimated at half of `font_size` per character, times the share of its
+#'   direction that points toward that side. A side that no label points
+#'   toward keeps the theme's margin, so the circle can sit off-center on the
+#'   page. Add `+ theme(plot.margin = ...)` to set the margin yourself.
 #' @return A \pkg{ggplot2} object containing the empty circumplex canvas.
 #' @family circumplex layers
 #' @seealso [coord_circumplex()], which owns the transform this canvas is built
@@ -646,16 +674,57 @@ ssm_plot_contrast <- function(ssm_object, drop_xy = FALSE,
 #'
 #' # Derive the angles and labels from a circumplex instrument
 #' ggcircumplex(instrument = csip)
+#'
+#' # A Cartesian grid: one rim ring and a labelled crosshair
+#' ggcircumplex(octants(), labels = PANO(), grid = "cartesian")
+#'
+#' # Each scale labelled with its angle, read along the radius
+#' ggcircumplex(octants(), labels = PANO(), grid = "cartesian", angle_labels = TRUE)
 ggcircumplex <- function(angles = octants(), labels = NULL,
-                         amax = 0.5, font_size = 12, instrument = NULL) {
+                         amax = 0.5, font_size = 12, instrument = NULL,
+                         grid = c("polar", "cartesian"), angle_labels = FALSE) {
 
   resolved <- resolve_circumplex_labels(angles, labels, instrument)
   stopifnot(is_num(amax, n = 1) && amax > 0)
   stopifnot(is_num(font_size, n = 1) && font_size > 0)
+  grid <- circumplex_grid(grid)
+  stopifnot(is_flag(angle_labels), !is.na(angle_labels))
 
   ang <- resolved$angles
   lab <- resolved$labels
-  if (is.null(lab)) lab <- circumplex_degree_labels(ang)
+  # angle_labels acts on text labels only: the default degree labels already
+  # read as their angle and are left as they are, format, rotation and margin
+  # alike (implement gate, 2026-09-20).
+  angle_labels <- angle_labels && !is.null(lab)
+  if (is.null(lab)) {
+    lab <- circumplex_degree_labels(ang)
+  } else if (angle_labels) {
+    lab <- circumplex_angle_labels(lab, ang)
+  }
+  # The cartesian canvas marks the scale angles with ticks outward from the
+  # rim. theme_circumplex() inherits a blank `axis.ticks`, so it is overridden
+  # per axis: `axis.ticks.theta` for the rim ticks, and `axis.ticks.r`, which
+  # the coord reads for the crosshair ticks.
+  grid_theme <- if (identical(grid, "cartesian")) {
+    ggplot2::theme(
+      axis.ticks.theta = ggplot2::element_line(colour = "gray30"),
+      axis.ticks.length.theta = grid::unit(5, "pt"),
+      axis.ticks.r = ggplot2::element_line(colour = "gray30"),
+      axis.ticks.length.r = grid::unit(4, "pt")
+    )
+  }
+  # angle = 90 in guide_axis_theta() is the radial direction: each label is
+  # turned by its own angle from there, and one that would read upside down is
+  # flipped, so the text runs along the radius everywhere. A radial label runs
+  # outward from the rim by its own length, and the panel keeps only a tenth of
+  # its width outside the rim, so each side of the plot margin grows with the
+  # labels pointing toward that side (see angle_label_margin()).
+  label_guide <- if (angle_labels) {
+    list(
+      ggplot2::guides(theta = ggplot2::guide_axis_theta(angle = 90)),
+      ggplot2::theme(plot.margin = angle_label_margin(lab, ang, font_size))
+    )
+  }
 
   # coord_circumplex() owns the amplitude->radius scaling and the polar
   # transform, so the canvas and any data layers added later share one amax and
@@ -668,7 +737,7 @@ ggcircumplex <- function(angles = octants(), labels = NULL,
   # rings/spokes/labels train and draw; it censors nothing, so a seam-straddling
   # arc added later (unwrapped xmax > 360) still extends the range freely.
   ggplot2::ggplot() +
-    coord_circumplex(amax = amax, center = 0) +
+    coord_circumplex(amax = amax, center = 0, grid = grid) +
     ggplot2::geom_blank(
       data = data.frame(.x = c(0, 360), .y = c(0, amax)),
       mapping = ggplot2::aes(x = .data$.x, y = .data$.y),
@@ -676,7 +745,34 @@ ggcircumplex <- function(angles = octants(), labels = NULL,
     ) +
     ggplot2::scale_x_continuous(breaks = ang, labels = lab) +
     ggplot2::scale_y_continuous(name = NULL) +
-    theme_circumplex(base_size = font_size)
+    theme_circumplex(base_size = font_size) +
+    grid_theme +
+    label_guide
+}
+
+# The plot margin for ggcircumplex(angle_labels = TRUE), one value per side. A
+# label read along its radius runs outward from the rim at its angle, so it
+# reaches past a side by its length times the component of its direction
+# toward that side (displacement 0 points right, 90 up). Its length is
+# estimated at half the font size per character, which needs no graphics
+# device when the plot is built. Each side takes the longest such reach, or the
+# theme's own margin when that is larger; a side no label points toward keeps
+# the theme's margin, so the circle may sit off-center on the page.
+angle_label_margin <- function(labels, angles, font_size) {
+  len <- 0.5 * font_size * nchar(labels)
+  toward <- list(
+    t = sinpi(angles / 180), r = cospi(angles / 180),
+    b = -sinpi(angles / 180), l = -cospi(angles / 180)
+  )
+  reach <- vapply(toward, function(u) max(pmax(0, u) * len), numeric(1))
+  floor <- ggplot2::calc_element(
+    "plot.margin",
+    ggplot2::complete_theme(theme_circumplex(base_size = font_size))
+  )
+  # The theme's margin is in pt, so it is read as a number: grid::convertUnit()
+  # would open a graphics device just to build the plot.
+  stopifnot(all(grid::unitType(floor) == "points"))
+  grid::unit(pmax(as.numeric(floor), reach), "pt")
 }
 
 #' Circumplex canvas theme

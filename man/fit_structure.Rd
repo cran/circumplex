@@ -19,7 +19,8 @@ fit_structure(
 \item{scales}{A character vector of column names (or a numeric vector of
 column indexes) selecting the circumplex scales, \strong{in hypothesised circular
 order} (the order is RANDALL's order hypothesis). At least four scales are
-required.}
+required. They must not select one column twice, hold a number below 1, or
+name a column whose name occurs more than once in \code{data}.}
 
 \item{scoring}{Either \code{"deviation"} (the default; row-mean-center the scales
 before analysis) or \code{"raw"} (analyze the scores as given). Selects the
@@ -80,7 +81,7 @@ the number of scales. Only eight scales (the canonical octant instrument) are
 calibrated; with any other count the statistics are still reported but no
 interpretation is attached (see \code{\link[=print]{print()}}/\code{\link[=summary]{summary()}}). The cutoffs were
 re-derived under Acton and Revelle's own generating model at eight scales;
-see \code{vignette("evaluating-circumplex-structure")}. RANDALL needs no cutoffs:
+see \code{vignette("structure-tests")}. RANDALL needs no cutoffs:
 with up to nine scales its null distribution is enumerated exactly, so its
 p-value is available at any scale count of four or more.
 }

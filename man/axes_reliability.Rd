@@ -23,7 +23,11 @@ exactly one of \code{data} or \code{cormat}.}
 \item{items}{Item selection. With \code{instrument}, a character vector of column
 names (or numeric indices) giving \strong{all} items in item-number order, as in
 \code{\link[=score]{score()}}. Without \code{instrument}, a list with one element per scale, each a
-character vector (or numeric indices) of that scale's item columns.}
+character vector (or numeric indices) of that scale's item columns. In
+either form, \code{items} must not select one column twice (in the list form,
+within a scale or across two scales), hold a number below 1, or name a
+column whose name occurs more than once in \code{data} (or in \code{cormat}). Items
+are matched by name, so a number must not reach such a column either.}
 
 \item{angles}{A numeric vector of the scales' angles in degrees (one per
 scale), required for the explicit map and forbidden with \code{instrument}
@@ -82,7 +86,10 @@ that correction succeeded or a string naming why the reported SEs are
 \code{NA} -- notably the shared degeneracy criterion's two literals
 (evaluated on \code{cov2cor()} of the fitted covariance matrix; the eigenvalue
 floor \code{sqrt(p * .Machine$double.eps / 1e-5)} decides which fits are
-\emph{checked} by the per-fit accuracy check rather than which are refused,
+\emph{checked} by the per-fit accuracy check rather than which are refused
+(a fit the floor admits is also checked when its information matrix's
+reciprocal condition estimate falls below \code{sqrt(.Machine$double.eps)},
+a near-singularity in the derivative structure the floor cannot see),
 where the \code{1e-5} is the \code{1e-4} accuracy target
 divided by the floor's factor-of-\code{10} calibration ceiling, and the
 target's noise-dominance reading is calibrated for \code{n} up to about
@@ -102,7 +109,10 @@ criterion evaluated on the raw fitted matrix or by that arm's own
 pricing (\code{"singular"}, \code{"unidentified"}, \code{"indefinite"}, and
 \code{"ill_conditioned"} -- the raw arm is refused by the floor itself and
 never reaches the per-fit check, so this is the one field on which that
-literal still appears); it is
+literal still appears, and it inverts at R's default \code{solve()}
+tolerance, so at a fitted matrix whose information matrix sits near
+machine precision this field can differ across platforms while every
+reported field does not); it is
 deliberately silent -- no warning or printed note accompanies it --
 \code{fit_uncorrected}, the six fit statistics as
 lavaan reports them
@@ -127,7 +137,7 @@ the estimator was actually handed, after listwise deletion or after
 dropping rows with no observed item, and the \code{n} you supplied on the
 correlation-matrix path. It is the N to divide \code{n_moments} by when locating
 a fit on the calibration table in
-\code{vignette("axes-reliability")}. \code{n_total} is the number of rows
+\code{vignette("axes-reliability-caveats")}. \code{n_total} is the number of rows
 supplied before any of that, and \code{n_complete} the number answering every
 item. \code{n_complete} and \code{min_coverage} are
 present on every path so that a caller can read them unconditionally, and
@@ -234,7 +244,18 @@ fit computes whenever the WORST of those three is within the accuracy target
 below the floor, all but one committed counterexample estimate around
 \code{1e-11} and compute. A fit whose worst estimate exceeds the target, or that
 the check cannot price at all, is refused as \code{"uncertified"}, and its warning
-names that same worst estimate. The three are read as one because both
+names that same worst estimate. At a severely ill-conditioned fit that
+estimate is a property of the fit as computed on the machine that ran it,
+not of the data alone: the numbers being checked are dominated by rounding
+there. The one counterexample above shows this. It is the three-variable
+matrix saved in the package sources as
+\code{tests/testthat/fixtures/rb18-counterexample-b.rds}. Three variables are too
+few scales for \code{axes_reliability()} itself, so the check was run on it
+through the package's internal functions. Given that same matrix, the worst
+estimate differed between macOS (arm64, R's reference BLAS and LAPACK) and
+Linux (arm64, OpenBLAS), and both machines refused it as \code{"uncertified"}.
+The standard-error, scaling-factor and FIML-ratio estimates are read as one
+because both
 surfaces refuse as a unit, so a fit on any path can be refused on the FIML
 ratio's estimate even where that ratio is not part of what it reports. That \code{1e-5} in the floor is not itself the tolerance: it is the
 accuracy target \code{1e-4}, the largest relative error a reported standard
@@ -262,7 +283,14 @@ non-finite entries or a nonpositive fitted variance, and \code{"uncertified"}
 when the per-fit check could not
 place this fit's numbers inside the accuracy target -- roundoff-level
 negativity, exact singularity and severe ill-conditioning all arrive here
-(a numerical caution). Either way the corrected standard errors and the four
+(a numerical caution). The check is also consulted at a fit the floor
+admits whose information matrix is nearly singular (reciprocal condition
+estimate below \code{sqrt(.Machine$double.eps)}); every such fit of a kind this
+function can produce that the package's sweep measured passed it, and a
+fit the floor admits but that
+this function refuses at its door (fewer than four scales) can be refused
+\code{"uncertified"} at the internal helpers
+where it used to compute. Either way the corrected standard errors and the four
 scaled statistics go \code{NA} together (each with its own warning naming that
 reason) rather than one surface refusing while the other silently scales.
 The standard-error surface additionally applies the same criterion to the

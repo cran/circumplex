@@ -31,7 +31,8 @@ circumplex scales and measures.}
 
 \item{scales}{Required. A character vector of column names, or a numeric
 vector of column indexes, from \code{data} that contains the circumplex scale
-scores.}
+scores. It must not select one column twice, hold a number below 1, or
+name a column whose name occurs more than once in \code{data}.}
 
 \item{angles}{Optional. A numeric vector containing the angular displacement
 of each circumplex scale included in \code{scales}, in degrees
@@ -44,7 +45,8 @@ related to the latent circumplex content (the disattenuated correlation
 path). With \code{grouping} and \code{measures = NULL}, the latent MEAN path is
 analyzed instead: each group's model-implied latent mean profile, on the
 raw-score metric. (A single-group latent mean profile is not a product:
-factor means are not identified in one group.)}
+factor means are not identified in one group.) A measure must not carry
+the name of one of the \code{scales}, since lavaan reaches variables by name.}
 
 \item{grouping}{Optional. A string naming the column of \code{data} indicating
 group membership. With \code{grouping}, the fixed-angle measurement model is
@@ -88,17 +90,22 @@ general rule rejects an invariance step when CFI drops by more than .01
 verdict, and the fit the estimation layer consumes are decided by the
 nested test alone, and the two criteria can legitimately disagree (a
 change in CFI is insensitive to sample size where the nested test is not).
-The retain/reject label prints \strong{only inside the envelope that simulation
+The retain/reject label is set \strong{only inside the envelope that simulation
 covers}: exactly two groups, ML estimation, and a plain (non-robust) CFI.
-Three separate things put a fit outside it, and the printed note names
-which one applies. A robust estimator -- the default \code{"MLR"}, or \code{"MLM"}
--- makes lavaan report a robust CFI; so does \code{missing = "fiml"}, even
-under \code{estimator = "ML"}, so plain ML is necessary for the label but not
-sufficient. \code{"GLS"}, \code{"WLS"}, \code{"ULS"} and \code{"DWLS"} are not ML estimation
-at all, though their CFI is plain-named. And more than two groups is
+\code{print()} shows the \code{dcfi} and \code{cr} columns and a short note only inside
+it, and only when a rung has a \code{dcfi} value. Three separate things put a
+fit outside it. \code{dcfi_scope} in the returned \code{invariance} element records
+the number of groups, the estimator as lavaan reports it (\code{"ML"} for
+\code{"MLR"} and \code{"MLM"}), whether it is ML estimation and whether the CFI is
+plain, and the conditions that apply follow from those fields. A robust
+estimator -- the default \code{"MLR"}, or \code{"MLM"} -- makes lavaan report a
+robust CFI; so does \code{missing = "fiml"}, even under \code{estimator = "ML"},
+so plain ML is necessary for the label but not sufficient. \code{"GLS"},
+\code{"WLS"}, \code{"ULS"} and \code{"DWLS"} are not ML estimation at all, though their
+CFI is plain-named. And more than two groups is
 outside the simulation whatever the estimator. In each case the \code{dcfi}
-value still prints, marked as not validated for that configuration and
-with no verdict attached.
+value stays in the returned ladder table with no label attached, and
+\code{print()} shows neither the value nor a note.
 
 Cheung and Rensvold simulated two groups, ML estimation, multivariate
 normal data, and Type I error only; robust CFI variants were not in their

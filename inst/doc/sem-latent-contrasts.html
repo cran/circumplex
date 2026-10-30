@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Latent Group Contrasts</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Latent Group Contrasts</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(circumplex)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;jz2017&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>scales <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;PA&quot;</span>, <span class="st">&quot;BC&quot;</span>, <span class="st">&quot;DE&quot;</span>, <span class="st">&quot;FG&quot;</span>, <span class="st">&quot;HI&quot;</span>, <span class="st">&quot;JK&quot;</span>, <span class="st">&quot;LM&quot;</span>, <span class="st">&quot;NO&quot;</span>)</span></code></pre></div>
+<p><strong>Level:</strong> Advanced. Read “SEM-Based SSM Analysis”
+first.</p>
+<div class="alert alert-warning" role="alert">
+<p><strong>Not yet peer reviewed.</strong> The invariance-gated latent
+contrast this page teaches is the package’s own proposal. Its authors
+have not yet published it in a peer-reviewed venue. Read it as a
+research tool, and state that status when you report results from
+it.</p>
+</div>
+<div id="overview" class="section level2">
+<h2>1. Overview</h2>
+<p>This page continues “SEM-Based SSM Analysis”, which fits the latent
+profile of a measure with <code>ssm_sem()</code>. It teaches the second
+product of the latent SSM, the invariance-gated latent contrast between
+groups, and it places the method. The setup chunk loads
+<code>jz2017</code> and names the eight scales, as the previous page
+did. Section 2, “Two questions about group differences”, separates the
+observed contrast from the latent one. Section 3, “Invariance-gated
+latent contrasts”, fits the invariance ladder and shows a comparison
+that the gate refuses. It then shows a contrast of two measures within
+one group, where no invariance gate applies. Section 4, “When to trust
+it: limitations”, lists the assumptions that the latent layer rests on.
+Section 5, “Relation to the literature”, places the method beside the
+published circumplex models. The Wrap-up restates when a latent contrast
+is computed and names the next page, and the References list the sources
+cited.</p>
+</div>
+<div id="two-questions-about-group-differences" class="section level2">
+<h2>2. Two questions about group differences</h2>
+<p>When you have groups, there are <strong>two</strong> distinct
+estimands (quantities to be estimated), and <code>circumplex</code>
+keeps them separate on purpose.</p>
+<table>
+<caption>Two estimands for a group difference</caption>
+<colgroup>
+<col width="39%" />
+<col width="7%" />
+<col width="12%" />
+<col width="40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Question</th>
+<th align="left">Estimand</th>
+<th align="left">Tool</th>
+<th align="left">Confounds</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Do the groups’ <em>measured</em> profiles differ?</td>
+<td align="left">Observed contrast</td>
+<td align="left">ssm_analyze(contrast = TRUE)</td>
+<td align="left">Structural difference, differential reliability, and
+non-invariance are combined.</td>
+</tr>
+<tr class="even">
+<td align="left">Do the groups’ <em>constructs</em> differ, granted the
+instrument measures the same thing in both?</td>
+<td align="left">Latent contrast</td>
+<td align="left">ssm_sem(contrast = TRUE)</td>
+<td align="left">Disattenuated and conditional on measurement
+invariance; not computed when invariance fails.</td>
+</tr>
+</tbody>
+</table>
+<p>Neither is more correct in the abstract. The observed contrast
+answers a question about <em>scores</em> and is always available. The
+latent contrast answers a question about <em>constructs</em>, but only
+<em>if</em> the instrument behaves the same way in both groups. When it
+does not, the honest answer is that the groups cannot be compared on the
+latent metric. That answer is not a number.</p>
+</div>
+<div id="invariance-gated-latent-contrasts" class="section level2">
+<h2>3. Invariance-gated latent contrasts</h2>
+<p>Before it computes a latent group contrast, <code>ssm_sem()</code>
+fits an invariance ladder: configural, then metric, then scalar. It
+tests each rung against the previous one with lavaan’s own nested-model
+test (the scaled difference test under the robust estimator). The latent
+<em>measure-profile</em> contrast requires <strong>metric</strong>
+invariance (equal saturations across groups). The latent <em>mean</em>
+contrast additionally requires scalar invariance. If the required rung
+is rejected, the contrast is <strong>not</strong> computed.</p>
+<p>On real data this gate does its job. Comparing the NARPD profile
+across the <code>Gender</code> groups in <code>jz2017</code> rejects
+metric invariance. So <code>ssm_sem()</code> returns each group’s
+separate profile and an explicit non-comparison verdict, rather than a
+contrast:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>by_gender <span class="ot">&lt;-</span> <span class="fu">ssm_sem</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  jz2017,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">scales =</span> scales,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">angles =</span> <span class="fu">octants</span>(),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">measures =</span> <span class="st">&quot;NARPD&quot;</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">grouping =</span> <span class="st">&quot;Gender&quot;</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">contrast =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">boots =</span> <span class="dv">300</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>by_gender</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; # Latent (SEM-based) SSM</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Measurement model:    scaled fixed-angle circumplex</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; Global fit (N = 1166, robust): chisq(34) = 287.272, p &lt; 0.001 </span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt;          CFI = 0.938, RMSEA = 0.123, SRMR = 0.06</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; Invariance ladder (gate: metric, alpha = 0.05):</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt;        rung   chisq df   cfi rmsea dchisq ddf       p</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt;  configural 287.272 34 0.938 0.123     NA  NA        </span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt;      metric 337.356 48 0.927 0.112 54.781  14 &lt; 0.001</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; Verdict:    metric invariance rejected</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt;   Test:     Δχ²(14) = 54.78, p &lt; 0.0001, alpha = 0.05</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;   Result:   these groups cannot be compared on this instrument&#39;s latent</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;             metric</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt;   Contrast: the requested latent contrast was not computed</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt;   Profiles: the rows below are each group&#39;s separate (configural) latent</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt;             profile</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;   Instead:  the observed-score contrast from ssm_analyze() answers a</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt;             different question and remains available</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; # Profile [NARPD: Female]:</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="co">#&gt; Elevation         0.198      0.141      0.252</span></span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co">#&gt; X-Value          -0.023     -0.083      0.040</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="co">#&gt; Y-Value           0.250      0.188      0.318</span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.251      0.194      0.318</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co">#&gt; Displacement     95.206     81.443    110.519</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.966                      </span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt; # Profile [NARPD: Male]:</span></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#&gt; Elevation         0.313      0.243      0.376</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co">#&gt; X-Value           0.012     -0.046      0.076</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co">#&gt; Y-Value           0.199      0.146      0.250</span></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.199      0.147      0.257</span></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co">#&gt; Displacement     86.611     70.075    103.660</span></span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.977</span></span></code></pre></div>
+<p>The invariance ladder is printed with the decision, and no contrast
+is rendered. The <code>Verdict:</code> line names the decision. The
+labeled lines under it give the nested test, what the decision means for
+comparing the groups, and what to use instead.
+<code>ssm_plot_contrast()</code> on this object would have nothing to
+draw. This is deliberate: there is no <code>force = TRUE</code>. If you
+have a principled partial-invariance model, fit it yourself and pass it
+to <code>ssm_sem_parameters()</code>. That function computes the
+contrast from whatever multi-group fit you supply, and it leaves the
+comparability claim to you.</p>
+<p>The ladder table in the returned object also carries
+<code>dcfi</code>, the change in the comparative fit index (CFI) from
+the previous fitted rung. CFI compares the model’s fit with that of a
+baseline model in which the variables are uncorrelated, and values near
+1 mean good fit. <code>dcfi</code> is Cheung and Rensvold’s (2002)
+secondary criterion. Its general rule rejects an invariance step when
+CFI falls by more than .01. It is <strong>reported, never
+gating</strong>. Comparability, the verdict, and the model that the
+estimates are taken from are decided by the nested test alone. The two
+criteria can disagree, and neither is a tiebreaker for the other. A
+change in CFI is insensitive to sample size, but the nested test is not.
+So in a large sample the nested test can reject a step whose CFI barely
+moves.</p>
+<p>The direction of the ΔCFI rule is worth stating carefully, because
+the article gives it two ways. Its Table 5 reports critical values that
+are the 1% <em>lower</em> tails of the simulated null distributions. So
+a ΔCFI at or below one of them is the 1%-level evidence <em>against</em>
+invariance, which is the sense used here. The sentence stating the
+general rule on the article’s p. 251 reads the opposite way relative to
+that same table. This package follows the simulation.</p>
+<p>Read the retain/reject label narrowly on the occasions it appears.
+Cheung and Rensvold simulated two groups, maximum likelihood (ML)
+estimation, and multivariate normal data. They examined Type I error
+only, not power, and robust CFI variants were not part of their study.
+<code>ssm_sem()</code> therefore prints the <code>dcfi</code> and
+<code>cr</code> columns and a short ΔCFI note only inside that envelope.
+That is a two-group fit estimated by ML whose CFI is the plain,
+non-robust one. Note that <code>estimator = &quot;ML&quot;</code> is necessary but
+not sufficient. <code>missing = &quot;fiml&quot;</code> also makes lavaan report a
+robust CFI, so a fit can be ML and still fall outside the envelope. The
+default estimator is <code>&quot;MLR&quot;</code>. So the ladder above prints no
+<code>dcfi</code> column and no ΔCFI note. The values are still in
+<code>by_gender$invariance$table$dcfi</code> with no label, and
+<code>by_gender$invariance$dcfi_scope</code> records the fields that
+show which condition applies. The same withholding covers a non-ML
+estimator such as <code>&quot;GLS&quot;</code>. Its CFI is plain-named, but its
+fit function is not the one that the criterion was simulated under. That
+is a deliberate refusal rather than a gap. Extending the cutoff to a
+robust index, another estimator, or three or more groups would take
+simulation work that nobody has done.</p>
+<p>When invariance is not the obstacle, the contrast is computed. An
+example is a contrast of <strong>two measures</strong> within one group,
+where no cross-group invariance is at stake. That contrast behaves like
+the observed contrast (second measure minus first, displacement
+differences via the circular branch machinery):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>contrast <span class="ot">&lt;-</span> <span class="fu">ssm_sem</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  jz2017,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">scales =</span> scales,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">angles =</span> <span class="fu">octants</span>(),</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">measures =</span> <span class="fu">c</span>(<span class="st">&quot;NARPD&quot;</span>, <span class="st">&quot;ASPD&quot;</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">contrast =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">boots =</span> <span class="dv">500</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>contrast</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; # Latent (SEM-based) SSM</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; Measurement model:    scaled fixed-angle circumplex</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; Global fit (N = 1166, robust): chisq(22) = 317.867, p &lt; 0.001 </span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;          CFI = 0.935, RMSEA = 0.114, SRMR = 0.068</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; # Profile [NARPD]:</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; Elevation         0.248      0.210      0.295</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; X-Value          -0.009     -0.052      0.032</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; Y-Value           0.231      0.191      0.272</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.231      0.193      0.272</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; Displacement     92.119     82.715    103.513</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.974                      </span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; # Profile [ASPD]:</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; Elevation         0.161      0.115      0.207</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; X-Value          -0.043     -0.092     -0.002</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; Y-Value           0.250      0.208      0.295</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.254      0.216      0.298</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; Displacement     99.732     90.351    111.188</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.978                      </span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; # Contrast [ASPD - NARPD]:</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;                  Estimate   Lower CI   Upper CI</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; Δ Elevation        -0.087     -0.138     -0.044</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt; Δ X-Value          -0.034     -0.084      0.019</span></span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt; Δ Y-Value           0.019     -0.028      0.066</span></span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt; Δ Amplitude         0.022     -0.025      0.066</span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; Δ Displacement      7.613     -6.113     19.993</span></span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt; Δ Model Fit         0.003</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">ssm_plot_contrast</span>(contrast)</span></code></pre></div>
+<p><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnID8+CjxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB4bWxuczp4bGluaz0naHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluaycgd2lkdGg9JzU0MC4wMHB0JyBoZWlnaHQ9JzI4OC4wMHB0JyB2aWV3Qm94PScwIDAgNTQwLjAwIDI4OC4wMCc+CjxnIGNsYXNzPSdzdmdsaXRlJz4KPGRlZnM+CiAgPHN0eWxlIHR5cGU9J3RleHQvY3NzJz48IVtDREFUQVsKICAgIC5zdmdsaXRlIGxpbmUsIC5zdmdsaXRlIHBvbHlsaW5lLCAuc3ZnbGl0ZSBwb2x5Z29uLCAuc3ZnbGl0ZSBwYXRoLCAuc3ZnbGl0ZSByZWN0LCAuc3ZnbGl0ZSBjaXJjbGUgewogICAgICBmaWxsOiBub25lOwogICAgICBzdHJva2U6ICMwMDAwMDA7CiAgICAgIHN0cm9rZS1saW5lY2FwOiByb3VuZDsKICAgICAgc3Ryb2tlLWxpbmVqb2luOiByb3VuZDsKICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwLjAwOwogICAgfQogICAgLnN2Z2xpdGUgdGV4dCB7CiAgICAgIHdoaXRlLXNwYWNlOiBwcmU7CiAgICB9CiAgICAuc3ZnbGl0ZSBnLmdseXBoZ3JvdXAgcGF0aCB7CiAgICAgIGZpbGw6IGluaGVyaXQ7CiAgICAgIHN0cm9rZTogbm9uZTsKICAgIH0KICBdXT48L3N0eWxlPgo8L2RlZnM+CjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIHN0eWxlPSdzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7Jy8+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSc+CiAgICA8cmVjdCB4PScwLjAwJyB5PScwLjAwJyB3aWR0aD0nNTQwLjAwJyBoZWlnaHQ9JzI4OC4wMCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTkRBdU1EQjhNQzR3TUh3eU9EZ3VNREE9KSc+CjxyZWN0IHg9JzAuMDAnIHk9JzAuMDAnIHdpZHRoPSc1NDAuMDAnIGhlaWdodD0nMjg4LjAwJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNGRkZGRkY7IGZpbGw6ICNGRkZGRkY7JyAvPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BORGN1TXpGOE1URTRMakl3ZkRZM0xqVXlmREk0TWk0d01nPT0nPgogICAgPHJlY3QgeD0nNDcuMzEnIHk9JzY3LjUyJyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjE0LjUwJyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRjdU16RjhNVEU0TGpJd2ZEWTNMalV5ZkRJNE1pNHdNZz09KSc+CjxyZWN0IHg9JzQ3LjMxJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuMzEsMjU0LjI0IDExOC4yMCwyNTQuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0Ny4zMSwxODMuNDUgMTE4LjIwLDE4My40NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTg7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWRhc2hhcnJheTogNC4wMCw0LjAwOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ3LjMxLDExMi42NyAxMTguMjAsMTEyLjY3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuMzEsMjE4Ljg0IDExOC4yMCwyMTguODQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuMzEsMTQ4LjA2IDExOC4yMCwxNDguMDYgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuMzEsNzcuMjcgMTE4LjIwLDc3LjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxsaW5lIHgxPSc0Ny4zMScgeTE9Jzc3LjI3JyB4Mj0nMTE4LjIwJyB5Mj0nNzcuMjcnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZTogI0E5QTlBOTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc3OC4zMiwxMzkuMzAgODcuMTgsMTM5LjMwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc4Mi43NSwxMzkuMzAgODIuNzUsMjcyLjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc3OC4zMiwyNzIuMjcgODcuMTgsMjcyLjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8Y2lyY2xlIGN4PSc4Mi43NScgY3k9JzIwMC4xOCcgcj0nNC44OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMS43NzsgZmlsbDogI0ZDOEQ2MjsnIC8+CjxyZWN0IHg9JzQ3LjMxJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNVFV4TGpRd2ZESXlNaTR5T0h3Mk55NDFNbnd5T0RJdU1EST0nPgogICAgPHJlY3QgeD0nMTUxLjQwJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1UVXhMalF3ZkRJeU1pNHlPSHcyTnk0MU1ud3lPREl1TURJPSknPgo8cmVjdCB4PScxNTEuNDAnIHk9JzY3LjUyJyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjE0LjUwJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNTEuNDAsMjU0LjgyIDIyMi4yOCwyNTQuODIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNTEuNDAsMTk4LjIyIDIyMi4yOCwxOTguMjIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNTEuNDAsMTQxLjYyIDIyMi4yOCwxNDEuNjIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNTEuNDAsODUuMDIgMjIyLjI4LDg1LjAyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTUxLjQwLDIyNi41MiAyMjIuMjgsMjI2LjUyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE1MS40MCwxNjkuOTIgMjIyLjI4LDE2OS45MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNTEuNDAsMTEzLjMyIDIyMi4yOCwxMTMuMzIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGxpbmUgeDE9JzE1MS40MCcgeTE9JzExMy4zMicgeDI9JzIyMi4yOCcgeTI9JzExMy4zMicgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlOiAjQTlBOUE5OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE4Mi40MSw3Ny4yNyAxOTEuMjcsNzcuMjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE4Ni44NCw3Ny4yNyAxODYuODQsMjcyLjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxODIuNDEsMjcyLjI3IDE5MS4yNywyNzIuMjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxjaXJjbGUgY3g9JzE4Ni44NCcgY3k9JzE3OC4xNicgcj0nNC44OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMS43NzsgZmlsbDogI0ZGRkZGRjsnIC8+CjxyZWN0IHg9JzE1MS40MCcgeT0nNjcuNTInIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMTQuNTAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsnIC8+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd5T0RndU1EQT0pJz4KPC9nPgo8ZGVmcz4KICA8Y2xpcFBhdGggaWQ9J2NwTWpZd0xqZ3hmRE16TVM0M01IdzJOeTQxTW53eU9ESXVNREk9Jz4KICAgIDxyZWN0IHg9JzI2MC44MScgeT0nNjcuNTInIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMTQuNTAnIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNall3TGpneGZETXpNUzQzTUh3Mk55NDFNbnd5T0RJdU1EST0pJz4KPHJlY3QgeD0nMjYwLjgxJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjYwLjgxLDIzOS42NiAzMzEuNzAsMjM5LjY2ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjYwLjgxLDE4Ny45NCAzMzEuNzAsMTg3Ljk0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjYwLjgxLDEzNi4yMyAzMzEuNzAsMTM2LjIzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjYwLjgxLDg0LjUxIDMzMS43MCw4NC41MSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTg7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWRhc2hhcnJheTogNC4wMCw0LjAwOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI2MC44MSwyNjUuNTIgMzMxLjcwLDI2NS41MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNjAuODEsMjEzLjgwIDMzMS43MCwyMTMuODAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjYwLjgxLDE2Mi4wOCAzMzEuNzAsMTYyLjA4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI2MC44MSwxMTAuMzcgMzMxLjcwLDExMC4zNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8bGluZSB4MT0nMjYwLjgxJyB5MT0nMjEzLjgwJyB4Mj0nMzMxLjcwJyB5Mj0nMjEzLjgwJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2U6ICNBOUE5QTk7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjkxLjgzLDc3LjI3IDMwMC42OSw3Ny4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjk2LjI2LDc3LjI3IDI5Ni4yNiwyNzIuMjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI5MS44MywyNzIuMjcgMzAwLjY5LDI3Mi4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nMjk2LjI2JyBjeT0nMTc0LjUxJyByPSc0Ljg5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjc3OyBmaWxsOiAjRkZGRkZGOycgLz4KPHJlY3QgeD0nMjYwLjgxJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNemN3TGpJemZEUTBNUzR4TW53Mk55NDFNbnd5T0RJdU1EST0nPgogICAgPHJlY3QgeD0nMzcwLjIzJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE16Y3dMakl6ZkRRME1TNHhNbncyTnk0MU1ud3lPREl1TURJPSknPgo8cmVjdCB4PSczNzAuMjMnIHk9JzY3LjUyJyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjE0LjUwJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzAuMjMsMjQ2LjA1IDQ0MS4xMiwyNDYuMDUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzAuMjMsMTkyLjYwIDQ0MS4xMiwxOTIuNjAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzAuMjMsMTM5LjE1IDQ0MS4xMiwxMzkuMTUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjU4OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1kYXNoYXJyYXk6IDQuMDAsNC4wMDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzAuMjMsODUuNzAgNDQxLjEyLDg1LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41ODsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtZGFzaGFycmF5OiA0LjAwLDQuMDA7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzcwLjIzLDI3Mi43OCA0NDEuMTIsMjcyLjc4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3MC4yMywyMTkuMzMgNDQxLjEyLDIxOS4zMyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzAuMjMsMTY1Ljg4IDQ0MS4xMiwxNjUuODggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzcwLjIzLDExMi40MyA0NDEuMTIsMTEyLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxsaW5lIHgxPSczNzAuMjMnIHkxPScyMTkuMzMnIHgyPSc0NDEuMTInIHkyPScyMTkuMzMnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZTogI0E5QTlBOTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MDEuMjUsNzcuMjcgNDEwLjExLDc3LjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MDUuNjgsNzcuMjcgNDA1LjY4LDI3Mi4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDAxLjI1LDI3Mi4yNyA0MTAuMTEsMjcyLjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMi42Nzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8Y2lyY2xlIGN4PSc0MDUuNjgnIGN5PScxNzEuMjQnIHI9JzQuODknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuNzc7IGZpbGw6ICNGRkZGRkY7JyAvPgo8cmVjdCB4PSczNzAuMjMnIHk9JzY3LjUyJyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjE0LjUwJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7JyAvPgo8L2c+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTkRBdU1EQjhNQzR3TUh3eU9EZ3VNREE9KSc+CjwvZz4KPGRlZnM+CiAgPGNsaXBQYXRoIGlkPSdjcE5EWXpMakV6ZkRVek5DNHdNbncyTnk0MU1ud3lPREl1TURJPSc+CiAgICA8cmVjdCB4PSc0NjMuMTMnIHk9JzY3LjUyJyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjE0LjUwJyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRZekxqRXpmRFV6TkM0d01udzJOeTQxTW53eU9ESXVNREk9KSc+CjxyZWN0IHg9JzQ2My4xMycgeT0nNjcuNTInIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMTQuNTAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ2My4xMywyNjMuOTYgNTM0LjAyLDI2My45NiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTg7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWRhc2hhcnJheTogNC4wMCw0LjAwOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ2My4xMywxODkuMjYgNTM0LjAyLDE4OS4yNiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTg7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWRhc2hhcnJheTogNC4wMCw0LjAwOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ2My4xMywxMTQuNTcgNTM0LjAyLDExNC41NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTg7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWRhc2hhcnJheTogNC4wMCw0LjAwOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ2My4xMywyMjYuNjEgNTM0LjAyLDIyNi42MSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NjMuMTMsMTUxLjkyIDUzNC4wMiwxNTEuOTIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDYzLjEzLDc3LjIyIDUzNC4wMiw3Ny4yMiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8bGluZSB4MT0nNDYzLjEzJyB5MT0nMjI2LjYxJyB4Mj0nNTM0LjAyJyB5Mj0nMjI2LjYxJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2U6ICNBOUE5QTk7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDk0LjE1LDc3LjI3IDUwMy4wMSw3Ny4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDk4LjU4LDc3LjI3IDQ5OC41OCwyNzIuMjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAyLjY3OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ5NC4xNSwyNzIuMjcgNTAzLjAxLDI3Mi4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDIuNjc7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nNDk4LjU4JyBjeT0nMTY5Ljc0JyByPSc0Ljg5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjc3OyBmaWxsOiAjRkZGRkZGOycgLz4KPHJlY3QgeD0nNDYzLjEzJyB5PSc2Ny41Micgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIxNC41MCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BORGN1TXpGOE1URTRMakl3ZkRRM0xqRTNmRFkzTGpVeSc+CiAgICA8cmVjdCB4PSc0Ny4zMScgeT0nNDcuMTcnIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMC4zNicgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE5EY3VNekY4TVRFNExqSXdmRFEzTGpFM2ZEWTNMalV5KSc+CjxyZWN0IHg9JzQ3LjMxJyB5PSc0Ny4xNycgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIwLjM2JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IGZpbGw6ICNEOUQ5RDk7JyAvPgo8dGV4dCB4PSc1OC40OScgeT0nNjAuNzMnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjMUExQTFBOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzYuNDFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz7OlDwvdGV4dD4KPHRleHQgeD0nNjQuOTAnIHk9JzYwLjczJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc0Mi4xMXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPiBFbGV2YXRpb248L3RleHQ+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd5T0RndU1EQT0pJz4KPC9nPgo8ZGVmcz4KICA8Y2xpcFBhdGggaWQ9J2NwTVRVeExqUXdmREl5TWk0eU9IdzBOeTR4TjN3Mk55NDFNZz09Jz4KICAgIDxyZWN0IHg9JzE1MS40MCcgeT0nNDcuMTcnIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMC4zNicgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1UVXhMalF3ZkRJeU1pNHlPSHcwTnk0eE4zdzJOeTQxTWc9PSknPgo8cmVjdCB4PScxNTEuNDAnIHk9JzQ3LjE3JyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjAuMzYnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzE2NS44NicgeT0nNjAuNzMnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjMUExQTFBOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzYuNDFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz7OlDwvdGV4dD4KPHRleHQgeD0nMTcyLjI3JyB5PSc2MC43Mycgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICMxQTFBMUE7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMzUuNTVweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4gWCBWYWx1ZTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNall3TGpneGZETXpNUzQzTUh3ME55NHhOM3cyTnk0MU1nPT0nPgogICAgPHJlY3QgeD0nMjYwLjgxJyB5PSc0Ny4xNycgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIwLjM2JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTWpZd0xqZ3hmRE16TVM0M01IdzBOeTR4TjN3Mk55NDFNZz09KSc+CjxyZWN0IHg9JzI2MC44MScgeT0nNDcuMTcnIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMC4zNicgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBmaWxsOiAjRDlEOUQ5OycgLz4KPHRleHQgeD0nMjc1LjQ1JyB5PSc2MC43Mycgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICMxQTFBMUE7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nNi40MXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPs6UPC90ZXh0Pgo8dGV4dCB4PScyODEuODYnIHk9JzYwLjczJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSczNS4yMHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPiBZIFZhbHVlPC90ZXh0Pgo8L2c+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTkRBdU1EQjhNQzR3TUh3eU9EZ3VNREE9KSc+CjwvZz4KPGRlZnM+CiAgPGNsaXBQYXRoIGlkPSdjcE16Y3dMakl6ZkRRME1TNHhNbncwTnk0eE4zdzJOeTQxTWc9PSc+CiAgICA8cmVjdCB4PSczNzAuMjMnIHk9JzQ3LjE3JyB3aWR0aD0nNzAuODknIGhlaWdodD0nMjAuMzYnIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNemN3TGpJemZEUTBNUzR4TW53ME55NHhOM3cyTnk0MU1nPT0pJz4KPHJlY3QgeD0nMzcwLjIzJyB5PSc0Ny4xNycgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIwLjM2JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IGZpbGw6ICNEOUQ5RDk7JyAvPgo8dGV4dCB4PSczODAuMDknIHk9JzU5LjgzJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc2LjQxcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+zpQ8L3RleHQ+Cjx0ZXh0IHg9JzM4Ni41MCcgeT0nNTkuODMnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjMUExQTFBOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzQ0Ljc3cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+IEFtcGxpdHVkZTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3lPRGd1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BORFl6TGpFemZEVXpOQzR3TW53ME55NHhOM3cyTnk0MU1nPT0nPgogICAgPHJlY3QgeD0nNDYzLjEzJyB5PSc0Ny4xNycgd2lkdGg9JzcwLjg5JyBoZWlnaHQ9JzIwLjM2JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRZekxqRXpmRFV6TkM0d01udzBOeTR4TjN3Mk55NDFNZz09KSc+CjxyZWN0IHg9JzQ2My4xMycgeT0nNDcuMTcnIHdpZHRoPSc3MC44OScgaGVpZ2h0PScyMC4zNicgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBmaWxsOiAjRDlEOUQ5OycgLz4KPHRleHQgeD0nNDY1LjAxJyB5PSc1OS44Mycgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICMxQTFBMUE7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nNi40MXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPs6UPC90ZXh0Pgo8dGV4dCB4PSc0NzEuNDInIHk9JzU5LjgzJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc2MC43M3B4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPiBEaXNwbGFjZW1lbnQ8L3RleHQ+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd5T0RndU1EQT0pJz4KPHRleHQgeD0nNDU3Ljc1JyB5PScyMzAuMDQnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzUuMzNweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wPC90ZXh0Pgo8dGV4dCB4PSc0NTcuNzUnIHk9JzE1NS4zNScgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTAuNjZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4xMDwvdGV4dD4KPHRleHQgeD0nNDU3Ljc1JyB5PSc4MC42NScgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTAuNjZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4yMDwvdGV4dD4KPHBvbHlsaW5lIHBvaW50cz0nNDYwLjE1LDIyNi42MSA0NjMuMTMsMjI2LjYxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ2MC4xNSwxNTEuOTIgNDYzLjEzLDE1MS45MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NjAuMTUsNzcuMjIgNDYzLjEzLDc3LjIyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzM2NC44NScgeT0nMjc2LjIxJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScyNy4xN3B4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPi0wLjAyNTwvdGV4dD4KPHRleHQgeD0nMzY0Ljg1JyB5PScyMjIuNzYnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzIzLjk4cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC4wMDA8L3RleHQ+Cjx0ZXh0IHg9JzM2NC44NScgeT0nMTY5LjMxJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScyMy45OHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDI1PC90ZXh0Pgo8dGV4dCB4PSczNjQuODUnIHk9JzExNS44NicgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjMuOThweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjA1MDwvdGV4dD4KPHBvbHlsaW5lIHBvaW50cz0nMzY3LjI0LDI3Mi43OCAzNzAuMjMsMjcyLjc4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM2Ny4yNCwyMTkuMzMgMzcwLjIzLDIxOS4zMyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNjcuMjQsMTY1Ljg4IDM3MC4yMywxNjUuODggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzY3LjI0LDExMi40MyAzNzAuMjMsMTEyLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzI1NS40MycgeT0nMjY4Ljk1JyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScyNy4xN3B4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPi0wLjAyNTwvdGV4dD4KPHRleHQgeD0nMjU1LjQzJyB5PScyMTcuMjQnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzIzLjk4cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC4wMDA8L3RleHQ+Cjx0ZXh0IHg9JzI1NS40MycgeT0nMTY1LjUyJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScyMy45OHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDI1PC90ZXh0Pgo8dGV4dCB4PScyNTUuNDMnIHk9JzExMy44MCcgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjMuOThweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjA1MDwvdGV4dD4KPHBvbHlsaW5lIHBvaW50cz0nMjU3LjgzLDI2NS41MiAyNjAuODEsMjY1LjUyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI1Ny44MywyMTMuODAgMjYwLjgxLDIxMy44MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNTcuODMsMTYyLjA4IDI2MC44MSwxNjIuMDggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjU3LjgzLDExMC4zNyAyNjAuODEsMTEwLjM3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzE0Ni4wMicgeT0nMjI5Ljk1JyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScyMS44NHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPi0wLjA2PC90ZXh0Pgo8dGV4dCB4PScxNDYuMDInIHk9JzE3My4zNScgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjEuODRweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4tMC4wMzwvdGV4dD4KPHRleHQgeD0nMTQ2LjAyJyB5PScxMTYuNzUnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE4LjY2cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC4wMDwvdGV4dD4KPHBvbHlsaW5lIHBvaW50cz0nMTQ4LjQxLDIyNi41MiAxNTEuNDAsMjI2LjUyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE0OC40MSwxNjkuOTIgMTUxLjQwLDE2OS45MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNDguNDEsMTEzLjMyIDE1MS40MCwxMTMuMzIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHRleHQgeD0nNDEuOTMnIHk9JzIyMi4yOCcgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjEuODRweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4tMC4xMDwvdGV4dD4KPHRleHQgeD0nNDEuOTMnIHk9JzE1MS40OScgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjEuODRweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4tMC4wNTwvdGV4dD4KPHRleHQgeD0nNDEuOTMnIHk9JzgwLjcxJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxOC42NnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDA8L3RleHQ+Cjxwb2x5bGluZSBwb2ludHM9JzQ0LjMyLDIxOC44NCA0Ny4zMSwyMTguODQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDQuMzIsMTQ4LjA2IDQ3LjMxLDE0OC4wNiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NC4zMiw3Ny4yNyA0Ny4zMSw3Ny4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8dGV4dCB0cmFuc2Zvcm09J3RyYW5zbGF0ZSgxNC41NywxNzQuNzcpIHJvdGF0ZSgtOTApJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiAxMi4wMHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE0Mi4wMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkNvbnRyYXN0IChBU1BEIC0gTkFSUEQpPC90ZXh0Pgo8cmVjdCB4PScxOTkuNzgnIHk9JzUuOTgnIHdpZHRoPScxODEuNzcnIGhlaWdodD0nMjkuMjQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjx0ZXh0IHg9JzIwNS43NicgeT0nMjQuODknIHN0eWxlPSdmb250LXNpemU6IDEyLjAwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nNTUuMzZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5TaWduaWZpY2FudDwvdGV4dD4KPHJlY3QgeD0nMjY3LjA5JyB5PScxMS45Nicgd2lkdGg9JzE3LjI4JyBoZWlnaHQ9JzE3LjI4JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7JyAvPgo8Y2lyY2xlIGN4PScyNzUuNzMnIGN5PScyMC42MCcgcj0nNC44OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMS43NzsgZmlsbDogI0ZGRkZGRjsnIC8+CjxyZWN0IHg9JzMyNi4yMCcgeT0nMTEuOTYnIHdpZHRoPScxNy4yOCcgaGVpZ2h0PScxNy4yOCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPGNpcmNsZSBjeD0nMzM0Ljg0JyBjeT0nMjAuNjAnIHI9JzQuODknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuNzc7IGZpbGw6ICNGQzhENjI7JyAvPgo8dGV4dCB4PScyOTAuMzUnIHk9JzI0LjAzJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjkuODhweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5GQUxTRTwvdGV4dD4KPHRleHQgeD0nMzQ5LjQ2JyB5PScyNC4wMycgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzI2LjExcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+VFJVRTwvdGV4dD4KPC9nPgo8L2c+Cjwvc3ZnPgo=" alt="plot of chunk contrast-plot" width="100%" /></p>
+<p>The contrast block reports the difference in each SSM parameter with
+its confidence interval. As with the observed contrast, an elevation or
+amplitude difference whose interval excludes zero is a difference in
+that parameter. The displacement difference is reported on the
+estimate’s angular branch. So its interval endpoints can legitimately
+fall outside ±180° near the boundary, while still containing the
+estimate.</p>
+</div>
+<div id="when-to-trust-it-limitations" class="section level2">
+<h2>4. When to trust it: limitations</h2>
+<p>The latent layer buys disattenuation at the price of a set of
+assumptions. The documentation states them, and the vignette should
+too.</p>
+<ul>
+<li><strong>Model-conditional.</strong> Every latent quantity is
+conditional on the fixed-angle model being adequate. Read the global fit
+first. Wendt et al.
+(2019) give a real-data benchmark. They reported RMSEA (a misfit index,
+where lower is better) between .075 and .111 across four large samples.
+Their model was the fixed-loading circumplex confirmatory factor
+analysis (CFA), and these values show a real but imperfect
+approximation. Their model targets the octants’ own latent structure,
+not an external measure’s profile. So the number is a benchmark, not a
+like-for-like comparison. The example fits here are of the same order
+(RMSEA around .12). They should likewise be read as approximations, not
+exact structure.</li>
+<li><strong>Fixed angles are theoretical.</strong> Departures from the
+theoretical geometry load into misfit, not into the angles. Use
+<code>cpm_fit()</code> to examine geometry.</li>
+<li><strong>The scaled tier assumes latent-plane stationarity and does
+not test it.</strong> That tier fixes the plane factors isotropic and
+orthogonal, so anisotropic latent dispersion surfaces only as global
+misfit. The strict tier frees the factor variances and covariances.</li>
+<li><strong>The scaled tier assumes the general factor is orthogonal to
+the plane.</strong> A true general-factor lean surfaces as misfit under
+the scaled tier. Use the strict tier to model it.</li>
+<li><strong>Displacement and fit have the disattenuated meanings of
+Section 6 of “SEM-Based SSM Analysis”</strong>, not the naive “angle in
+latent space” and “cosine-ness” readings.</li>
+<li><strong>Disattenuated correlations can be large.</strong> Removing
+attenuation moves correlations toward ±1. Values at or beyond 1 signal
+misspecification and are refused rather than summarized.</li>
+<li><strong>Invariance gating is a modeling decision</strong> with a
+default test, not an oracle. The observed contrast remains available and
+answers its own question. The secondary <code>dcfi</code> criterion
+gates nothing. It prints beside the nested test only for a two-group fit
+estimated by ML with a plain CFI. Even then it prints only when a rung
+has a <code>dcfi</code> value. Its .01 cutoff is validated only for
+two-group, ML, multivariate-normal fits, for Type I error only. The
+package withholds the verdict everywhere else rather than extrapolating
+it.</li>
+</ul>
+</div>
+<div id="relation-to-the-literature" class="section level2">
+<h2>5. Relation to the literature</h2>
+<p>The nearest published models are the confirmatory factor analyses of
+the interpersonal circumplex itself. Wendt et al. (2019) fit a
+three-factor circumplex CFA with fixed unit-cosine plane loadings, which
+is the shape of this package’s strict tier. They fit it across four
+large samples. They found the fully dimensional model competitive with
+categorical (types of people) and hybrid (types and dimensions together)
+alternatives. Their estimand, though, is the latent structure of the
+<em>octant scales</em> and persons’ factor scores, not an external
+measure’s disattenuated profile. Their model is context for the strict
+tier, not a validation target for the SSM estimand.</p>
+<p>At the level of a single disattenuated correlation, Moss (2026)
+showed the following. Treating reliability as a <em>known</em> constant
+collapses interval coverage (to roughly .35 in one scenario).
+Propagating reliability uncertainty instead restores nominal coverage.
+That is exactly the logic behind fitting the model and propagating its
+full covariance, rather than plugging in reliability point estimates.
+One estimand caveat applies. Moss’s disattenuated correlation corrects
+<em>both</em> variables for unreliability. The latent SSM here corrects
+only the <em>scale</em> side, and the external measure remains an
+observed variable. So the two are relatives, not the same quantity.</p>
+<p>Finally, the two model families in this package meet at a single
+point. At that point the general factor is orthogonal to the plane, the
+saturations are equal, and the angles are equally spaced. At that point,
+the fixed-loading circumplex CFA coincides with the one-harmonic,
+equal-communality version of Browne’s (1992) circumplex model that
+<code>cpm_fit()</code> estimates. The SEM-based SSM sits on the
+fixed-angle side of that boundary. To cross to freely estimated angles,
+use <code>cpm_fit()</code>.</p>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap-up</h2>
+<p><code>ssm_sem()</code> computes a latent group contrast only when the
+invariance ladder supports it. When the ladder does not, it returns each
+group’s separate profile with a verdict. A contrast of two measures
+within one group needs no invariance gate. The next page to read is
+“Axes Reliability”, which asks how reliably an instrument measures its
+two axes.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li><p>Browne, M. W. (1992). Circumplex models for correlation matrices.
+<em>Psychometrika, 57</em>(4), 469–497.</p></li>
+<li><p>Cheung, G. W., &amp; Rensvold, R. B. (2002). Evaluating
+goodness-of-fit indexes for testing measurement invariance.
+<em>Structural Equation Modeling, 9</em>(2), 233–255.</p></li>
+<li><p>Moss, J. (2026). Inference for disattenuated correlations.
+<em>Applied Psychological Measurement</em>. Advance online publication.
+<a href="https://doi.org/10.1177/01466216261440511" class="uri">https://doi.org/10.1177/01466216261440511</a></p></li>
+<li><p>Wendt, L. P., Wright, A. G. C., Pilkonis, P. A., Nolte, T.,
+Fonagy, P., Montague, P. R., Benecke, C., Krieger, T., &amp; Zimmermann,
+J. (2019). The latent structure of interpersonal problems: Validity of
+dimensional, categorical, and hybrid models. <em>Journal of Abnormal
+Psychology, 128</em>(8), 823–839.</p></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

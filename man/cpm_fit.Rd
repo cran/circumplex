@@ -17,7 +17,8 @@ cpm_fit(
   interval = 0.95,
   ci_method = c("bootstrap", "analytic"),
   boots = 2000,
-  listwise = TRUE
+  listwise = TRUE,
+  check_lower = TRUE
 )
 }
 \arguments{
@@ -25,9 +26,12 @@ cpm_fit(
 path). Supply exactly one of \code{data} or \code{cormat}.}
 
 \item{scales}{For the raw-data path, a character vector of column names (or a
-numeric vector of column indexes) selecting the circumplex scales. For the
-\code{cormat} path, optional labels for the variables (defaults to the matrix
-dimnames, or \code{V1}, \code{V2}, ...).}
+numeric vector of column indexes) selecting the circumplex scales; it must
+not select one column twice, hold a number below 1, or name a column whose
+name occurs more than once in \code{data}. For the \code{cormat} path, optional
+labels for the variables (defaults to the matrix dimnames, or \code{V1}, \code{V2},
+...); each label, given or taken from the dimnames, must appear only once,
+and \code{NA} at most once.}
 
 \item{angles}{A numeric vector of the theoretical angular displacement of
 each scale, in degrees, used both as the reference/identifying angle and as
@@ -77,8 +81,10 @@ goal is reproducing published CIRCUM/CircE results. The fitted
 \code{VarRatio} column (the ratio of reproduced to input variance); they carry
 no confidence interval. The analytic intervals for the remaining parameters
 follow the same sample-size caution as the default family: their coverage
-regime was measured (the free-family coverage oracle) to match it, so
-\code{summary()} cautions below \code{n = 2000} and in near-boundary fits. The input
+regime was measured (the free-family coverage oracle, on fits with a
+defined standard error) to match it, so \code{summary()} cautions below
+\code{n = 2000}, and from \code{n = 2000} up to but not including \code{n = 50000} in
+fits that show a boundary or weak-identification marker. The input
 is still a correlation matrix (unit diagonal).}
 
 \item{reference}{The index into \code{scales} of the variable whose angle is fixed
@@ -99,6 +105,14 @@ information matrix. On the \code{cormat} path only \code{"analytic"} is availabl
 
 \item{listwise}{Whether to handle missing values by listwise deletion. Only
 listwise deletion is supported in this release (default = TRUE).}
+
+\item{check_lower}{Whether to run the extra starts described in "Which
+solution is reported" and note a lower discrepancy they reach (default =
+TRUE). The check runs only for \code{model = "quasi-circumplex"} with
+\code{scaling = "unit"}, and only on the fit itself, never on bootstrap
+resamples. Its cost grows with about the square of the number of scales,
+as the number of extra starts does, so set it to FALSE to skip it when
+fitting many models.}
 }
 \value{
 A \code{circumplex_cpm} object: a list with \code{results} (a data frame of
@@ -116,6 +130,70 @@ point on a circle at an estimated angle, with a communality index and a
 shared correlation function; the fit of that structure is summarized with the
 usual covariance-structure indices (chi-square, RMSEA, SRMR, CFI, TLI).
 }
+\section{Which solution is reported}{
+
+The engine minimizes the discrepancy function from a fixed set of starts.
+For the free-angle models (\code{"quasi-circumplex"} and
+\code{"equal-communality"}), the starts are the theoretical \code{angles}, their
+mirror image about the reference scale, and four fixed patterns of 15- and
+30-degree offsets from them. For the fixed-angle models
+(\code{"constrained-angles"} and \code{"circulant"}), the angles stay at their
+theoretical values, and the starts are one start and three fixed
+rescalings of its communality indices. In both cases the communality-index
+and weight starts are computed from the sample correlation matrix. With
+\code{scaling = "free"}, one more run starts from the \code{"unit"} solution. The
+estimate is the solution with the lowest discrepancy that these runs
+reach: the maximum-likelihood solution in the basin they reach. (When a
+correlation-function weight of that solution is near zero, the harmonic
+can be removed and the reduced model, which has more degrees of freedom,
+is refit from it and reported instead.)
+
+That solution is not always the global minimum. A configuration with a
+lower discrepancy can exist that these runs do not reach, for example with
+more scales at or near a communality index of 1 or with scales in other
+positions on the circle. Two checks compare these runs only, so neither
+of them signals such a configuration: the reproduction part of the
+convergence acceptance criterion, which requires at least two independent
+starts to reach the lowest discrepancy, and the "competing near-tied
+optima" note. The lower-discrepancy check below is the one that can.
+Where one exists, the reported chi-square statistic is larger than at the
+lower discrepancy. At the same degrees of freedom, its p-value is then
+smaller and its RMSEA and CFI are no better.
+
+With \code{check_lower = TRUE} (the default), a fixed set of extra runs then
+follows, most of them from the reported solution: with each communality
+index in turn, and then all of them, set near the upper bound (0.99);
+with each free
+angle shifted by 90, -90 and 180 degrees; with each pair of free angles
+swapped, alone and with either swapped scale's communality index near the
+bound; and, from the theoretical start, with each communality index in
+turn near the bound. If one of these runs reaches a discrepancy lower than
+the reported one by more than 0.01 on the chi-square scale, \code{print()} and
+\code{summary()} print a note. It gives that difference, the degrees of
+freedom of the lower solution when they differ, whether the lower
+solution keeps the scales' order around the circle, and how many more or
+fewer communality indices it has above 0.995. The reported solution, its
+fit indices and its confidence intervals do not change: in the package's
+simulations of normal data at two eight-scale truths with three
+harmonics, the lower solutions these runs reached estimated the true
+angles and weights worse on average than the reported one, though not on
+every fit. The extra runs do not find every lower discrepancy, so a fit
+with no note can still have one. If the check cannot finish (every extra
+run fails, or it stops with an error), a note says so, and the fit itself
+is unaffected. The check uses no random numbers, and it runs only for
+\code{model = "quasi-circumplex"} with \code{scaling = "unit"} on a fit that meets
+the convergence acceptance criterion: the model, scaling and fits those
+simulations covered.
+
+\code{details$lower_check} holds the check's record: \code{checked} (whether it
+ran), \code{found} (whether it found a lower discrepancy; \code{NA} when it stopped
+with an error), \code{gap} (the difference on the chi-square scale, after the
+lower solution's weight polish), \code{df} (the lower solution's degrees of
+freedom), \code{order_changed}, \code{more_wall} (the change in the number of
+communality indices above 0.995), \code{failed_starts}, \code{n_starts} and
+\code{error}.
+}
+
 \section{Confidence intervals}{
 
 The bootstrap (the raw-data default) refits the model to each resampled
@@ -124,12 +202,24 @@ percentile intervals; angle replicates are pooled with the package's
 circular quantile machinery, so an angle interval that straddles the
 0/360 boundary is reported wrapped (its lower limit numerically exceeds
 its upper limit, as with displacement intervals in \code{\link[=ssm_analyze]{ssm_analyze()}}).
-Resamples with a degenerate (non-positive-definite) correlation matrix or
-a refit failing the convergence acceptance criterion are excluded with a
-warning reporting how many; the intervals are then conditional on
-estimability. Analytic (Wald) intervals are asymptotically valid but can
-materially mis-cover at field-typical sample sizes; \code{summary()} prints a
-caution below \code{n = 2000}. Analytic angle intervals are reported on the
+Resamples with a degenerate (NA or non-positive-definite) correlation
+matrix, or whose refit fails the convergence acceptance criterion or
+stops with an error, are excluded with a warning reporting how many; the
+intervals are then conditional on estimability. The count of refits
+failing the criterion, also stored as \code{details$boots_nonconvergent},
+includes refits that stopped with an error. Analytic (Wald) intervals are
+asymptotically valid but can materially mis-cover at field-typical sample
+sizes. For
+\code{ci_method = "analytic"}, \code{summary()} prints a caution whenever the
+sample size N is below 2000, and for 2000 <= N < 50000 when the fit shows
+a boundary or weak-identification marker (Heywood communality, boundary
+harmonic removed, small correlation-function weight, ill-conditioned
+Hessian, or competing near-tied optima); at N >= 50000 it prints none. A
+correlation-function weight counts as small below 0.10. The coverage behind these thresholds was measured on fits
+with a defined analytic standard error. Analytic intervals come from the
+normal-theory information matrix, so they assume multivariate-normal
+data; on the \code{cormat} path, where they are the only choice, the data
+cannot be resampled to avoid that. Analytic angle intervals are reported on the
 unwrapped branch of the estimate (endpoints may fall outside [0, 360)
 near the boundary).
 }
@@ -146,15 +236,21 @@ same intervals regardless of how many replicates are later excluded.
 }
 
 \examples{
-# Raw-data path on the eight IIP-SC octant scales (bootstrap CIs; a small
-# `boots` keeps the example fast -- the default is 2000)
 data("jz2017")
 scales <- c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO")
+
+\donttest{
+# Raw-data path on the eight IIP-SC octant scales (bootstrap CIs; a small
+# `boots` keeps the example short -- the default is 2000)
 set.seed(12345)
 fit <- cpm_fit(jz2017, scales = scales, boots = 100)
 fit
+}
 
-# Matrix-input path (supply the sample size; analytic CIs)
+# Matrix-input path (supply the sample size; CIs are analytic). This fit
+# reaches a boundary (a communality at its upper limit), and its Hessian is
+# also ill-conditioned, so the call warns and reports no usable intervals;
+# vignette("cpm-boundary-fits", package = "circumplex") explains both.
 R <- cor(jz2017[scales])
 cpm_fit(cormat = R, scales = scales, n = nrow(jz2017))
 

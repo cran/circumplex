@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Structure Tests and Ipsatization</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Structure Tests and Ipsatization</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(circumplex)</span></code></pre></div>
+<p><strong>Level:</strong> Intermediate. Read “Confidence Interval
+Accuracy” first.</p>
+<div id="overview" class="section level2">
+<h2>1. Overview</h2>
+<p>This vignette asks the exploratory version of the structure question
+and shows what ipsatizing removes from a profile. Section 2, “Does the
+instrument have circumplex structure at all?”, runs the five tests of
+<code>fit_structure()</code> and says where their cutoffs come from. It
+then reads their classifications beside a CPM fit. Section 3,
+“Ipsatization and what it costs”, shows what <code>ipsatize()</code>
+removes from an SSM profile. The examples use the <code>jz2017</code>
+dataset that “Evaluating Circumplex Structure” describes. The Wrap-up
+lists what the page covered and names the next pages, and the References
+list the sources cited.</p>
+</div>
+<div id="does-the-instrument-have-circumplex-structure-at-all" class="section level2">
+<h2>2. Does the instrument have circumplex structure at all?</h2>
+<p>The confirmatory model of “Evaluating Circumplex Structure”
+(<code>cpm_fit()</code>) fits one theory-driven circular model and asks
+how well it fits. A complementary, more exploratory question is whether
+the scales’ correlations show circumplex structure <em>at all</em>,
+without committing to the theoretical angles. Are the scales spread
+evenly around a circle, with comparable communalities? Or do they
+cluster into a small number of independent clusters (simple structure)?
+Acton and Revelle (A&amp;R, 2004) evaluated ten such criteria by
+simulation. <code>fit_structure()</code> implements four of them:
+Fisher, Gap, VT2, and Rotation. It leaves out a variance-test variant
+that A&amp;R found ineffective (VT1). It also leaves out MT, a criterion
+so highly correlated with the Rotation Test (RT) as to be redundant. In
+their Table 1, MT has r = .99 with RT. A fifth test, RANDALL, is not one
+of A&amp;R’s ten at all. It is an independent order-correspondence test
+(Hubert &amp; Arabie, 1987, and Tracey, 1997). A&amp;R excluded it from
+their own simulation because, unlike their criteria, its null
+distribution is known analytically rather than needing simulated cutoffs
+(their footnote 3).</p>
+<div id="the-five-tests" class="section level3">
+<h3>The five tests</h3>
+<p><code>fit_structure()</code> extracts the first two unrotated
+principal-axis factors of the scales’ correlation matrix (Acton &amp;
+Revelle, 2004, p. 13). It computes four criteria from that two-factor
+solution, plus a fifth test that works directly on the correlations:</p>
+<ul>
+<li><strong>Fisher Test</strong> (equal axes). Are the scales’
+communalities on the two-factor solution comparable, rather than one
+axis dominating? The statistic is the coefficient of variation of the
+scales’ vector lengths <span class="math inline">\(\sqrt{h^2}\)</span>.</li>
+<li><strong>Gap Test</strong> (equal spacing). Are the scales evenly
+distributed in angle around the circle, rather than bunched together?
+The statistic is the variance of the angular gaps between angularly
+adjacent scales. It includes the gap that wraps from the last scale back
+around to the first.</li>
+<li><strong>Variance Test (VT2)</strong> and <strong>Rotation
+Test</strong> (interstitiality). Both ask whether the scales sit
+<em>between</em> a small number of dominant axes rather than on them.
+That is the signature of a genuine circumplex, as opposed to simple
+structure. Each takes a criterion computed at many rotations of the
+two-factor solution, and summarizes it as a coefficient of variation
+across rotations. A true circumplex is indifferent to rotation, so both
+criteria stay low.</li>
+<li><strong>RANDALL</strong> (Hubert &amp; Arabie, 1987, and Tracey,
+1997). Does the <em>hypothesized circular order</em> that you supplied
+(the order of <code>scales</code>) match the observed correlations? Here
+a match means that closer-together scales correlate more strongly.
+Unlike the other four, this is a genuine randomization test. Its null
+distribution (scales randomly relabeled onto the hypothesized positions)
+is enumerated exactly for up to nine scales. For more scales, it is
+estimated by Monte Carlo relabeling. So the test returns an exact or
+Monte Carlo p value rather than a simulated cutoff.</li>
+</ul>
+<p>The four factor-analytic criteria are Fisher, Gap, VT2 and Rotation.
+They have the most power to detect simple structure when there is no
+large general factor across the scales. <em>Deviation scoring</em>
+centers each respondent on their own mean across the selected scales,
+which is exactly what <code>ipsatize()</code> does. It approximates
+removing that general factor (Acton &amp; Revelle, 2004, p. 9), so it is
+<code>fit_structure()</code>’s default. Pass
+<code>scoring = &quot;raw&quot;</code> to analyze the scores as given. Each of the
+two scorings carries its own set of cutoffs (next subsection), matched
+automatically.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">fit_structure</span>(jz2017, <span class="at">scales =</span> <span class="fu">PANO</span>())</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>res</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; Circumplex Structure Tests (Acton &amp; Revelle, 2004)</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Scales (nv):  8</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Scoring:      deviation (row-mean centered)</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; # Exploratory criteria</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;  Test     Statistic</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;  Fisher   0.102    </span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt;  Gap      0.152    </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt;  Variance 0.180    </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt;  Rotation 0.325    </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt;  Interpretation                                           </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt;  equal axes: at least 3x as likely as the alternative     </span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt;  equal spacing: at least 3x as likely as the alternative  </span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;  interstitiality: almost certain                          </span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt;  interstitiality: at least 3x as likely as the alternative</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; # Order hypothesis (RANDALL)</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt;   Correspondence index = 0.868, p = 0.000397 (exact, 5040 relabelings)</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;   Interpretations are heuristic likelihood classifications from simulation,</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;   not significance tests (Acton &amp; Revelle, 2004). RANDALL&#39;s p-value is exact.</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">summary</span>(res)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; Circumplex Structure Tests (Acton &amp; Revelle, 2004)</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; Scales (nv):  8</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; Scoring:      deviation (row-mean centered)</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Ridge:        0</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; # Exploratory criteria</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  Test     Statistic Almost Thrice Twice Verdict       </span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  Fisher   0.102     0.07   0.12   0.15  3x+ likely    </span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  Gap      0.152     0.15   0.40   0.46  3x+ likely    </span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  Variance 0.180     0.19   0.59   0.64  almost certain</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;  Rotation 0.325     0.32   0.64   0.67  3x+ likely    </span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; # Estimated scale geometry</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;  Scale Angle   Communality</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;  PA    339.635 0.642      </span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;  BC    359.858 0.571      </span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;  DE     48.584 0.500      </span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;  FG     81.337 0.522      </span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;  HI    161.662 0.690      </span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;  JK    183.339 0.713      </span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;  LM    215.503 0.388      </span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;  NO    287.119 0.474      </span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; # Order hypothesis (RANDALL)</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;   Correspondence index = 0.868, p = 0.000397 (exact, 5040 relabelings)</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;   Interpretations are heuristic likelihood classifications from simulation,</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;   not significance tests (Acton &amp; Revelle, 2004). RANDALL&#39;s p-value is exact.</span></span></code></pre></div>
+<p><code>summary()</code> adds the numeric cutoffs behind each
+classification. It also adds the estimated angle and communality of
+every scale on the two-factor solution, the same geometry that the plot
+below draws. A clean circumplex shows scales at roughly the theoretical
+octant spacing, with broadly similar communalities. <code>Fisher</code>
+measures departures in communality, and <code>Gap</code> measures
+departures in even angular spacing. <code>Variance</code> (VT2) and
+<code>Rotation</code> test interstitiality.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">plot</span>(res)</span></code></pre></div>
+<p><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnID8+CjxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB4bWxuczp4bGluaz0naHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluaycgd2lkdGg9JzUwNC4wMHB0JyBoZWlnaHQ9JzMyNC4wMHB0JyB2aWV3Qm94PScwIDAgNTA0LjAwIDMyNC4wMCc+CjxnIGNsYXNzPSdzdmdsaXRlJz4KPGRlZnM+CiAgPHN0eWxlIHR5cGU9J3RleHQvY3NzJz48IVtDREFUQVsKICAgIC5zdmdsaXRlIGxpbmUsIC5zdmdsaXRlIHBvbHlsaW5lLCAuc3ZnbGl0ZSBwb2x5Z29uLCAuc3ZnbGl0ZSBwYXRoLCAuc3ZnbGl0ZSByZWN0LCAuc3ZnbGl0ZSBjaXJjbGUgewogICAgICBmaWxsOiBub25lOwogICAgICBzdHJva2U6ICMwMDAwMDA7CiAgICAgIHN0cm9rZS1saW5lY2FwOiByb3VuZDsKICAgICAgc3Ryb2tlLWxpbmVqb2luOiByb3VuZDsKICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwLjAwOwogICAgfQogICAgLnN2Z2xpdGUgdGV4dCB7CiAgICAgIHdoaXRlLXNwYWNlOiBwcmU7CiAgICB9CiAgICAuc3ZnbGl0ZSBnLmdseXBoZ3JvdXAgcGF0aCB7CiAgICAgIGZpbGw6IGluaGVyaXQ7CiAgICAgIHN0cm9rZTogbm9uZTsKICAgIH0KICBdXT48L3N0eWxlPgo8L2RlZnM+CjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIHN0eWxlPSdzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7Jy8+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNQzR3TUh3MU1EUXVNREI4TUM0d01Id3pNalF1TURBPSc+CiAgICA8cmVjdCB4PScwLjAwJyB5PScwLjAwJyB3aWR0aD0nNTA0LjAwJyBoZWlnaHQ9JzMyNC4wMCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTURRdU1EQjhNQzR3TUh3ek1qUXVNREE9KSc+CjwvZz4KPGRlZnM+CiAgPGNsaXBQYXRoIGlkPSdjcE5Ua3VNako4TkRRMExqYzRmREF1TURCOE16STBMakF3Jz4KICAgIDxyZWN0IHg9JzU5LjIyJyB5PScwLjAwJyB3aWR0aD0nMzg1LjU2JyBoZWlnaHQ9JzMyNC4wMCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE5Ua3VNako4TkRRMExqYzRmREF1TURCOE16STBMakF3KSc+CjxyZWN0IHg9JzU5LjIyJyB5PScwLjAwJyB3aWR0aD0nMzg1LjU2JyBoZWlnaHQ9JzMyNC4wMCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU1EUXVNREI4TUM0d01Id3pNalF1TURBPSknPgo8cG9seWxpbmUgcG9pbnRzPScyMjEuMjIsMTYyLjAwIDIyMS4yMiwxNjIuMDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNDQ0NDQ0M7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjUyLjQzLDE2Mi4wMCAyNTIuMjgsMTU4Ljk5IDI1MS44NCwxNTYuMDAgMjUxLjEyLDE1My4wOCAyNTAuMTIsMTUwLjIzIDI0OC44NSwxNDcuNTAgMjQ3LjMyLDE0NC45MCAyNDUuNTUsMTQyLjQ2IDI0My41NSwxNDAuMjAgMjQxLjM0LDEzOC4xNSAyMzguOTUsMTM2LjMyIDIzNi4zOSwxMzQuNzMgMjMzLjY4LDEzMy4zOSAyMzAuODYsMTMyLjMyIDIyNy45NSwxMzEuNTMgMjI0Ljk4LDEzMS4wMiAyMjEuOTcsMTMwLjgwIDIxOC45NiwxMzAuODggMjE1Ljk3LDEzMS4yNCAyMTMuMDIsMTMxLjg5IDIxMC4xNiwxMzIuODIgMjA3LjM5LDEzNC4wMyAyMDQuNzYsMTM1LjQ5IDIwMi4yNywxMzcuMjEgMTk5Ljk3LDEzOS4xNSAxOTcuODYsMTQxLjMxIDE5NS45OCwxNDMuNjYgMTk0LjMyLDE0Ni4xOCAxOTIuOTIsMTQ4Ljg1IDE5MS43OSwxNTEuNjQgMTkwLjkyLDE1NC41MyAxOTAuMzQsMTU3LjQ5IDE5MC4wNSwxNjAuNDkgMTkwLjA1LDE2My41MSAxOTAuMzQsMTY2LjUxIDE5MC45MiwxNjkuNDcgMTkxLjc5LDE3Mi4zNiAxOTIuOTIsMTc1LjE1IDE5NC4zMiwxNzcuODIgMTk1Ljk4LDE4MC4zNCAxOTcuODYsMTgyLjY5IDE5OS45NywxODQuODUgMjAyLjI3LDE4Ni43OSAyMDQuNzYsMTg4LjUxIDIwNy4zOSwxODkuOTcgMjEwLjE2LDE5MS4xOCAyMTMuMDIsMTkyLjExIDIxNS45NywxOTIuNzYgMjE4Ljk2LDE5My4xMiAyMjEuOTcsMTkzLjIwIDIyNC45OCwxOTIuOTggMjI3Ljk1LDE5Mi40NyAyMzAuODYsMTkxLjY4IDIzMy42OCwxOTAuNjEgMjM2LjM5LDE4OS4yNyAyMzguOTUsMTg3LjY4IDI0MS4zNCwxODUuODUgMjQzLjU1LDE4My44MCAyNDUuNTUsMTgxLjU0IDI0Ny4zMiwxNzkuMTAgMjQ4Ljg1LDE3Ni41MCAyNTAuMTIsMTczLjc3IDI1MS4xMiwxNzAuOTIgMjUxLjg0LDE2OC4wMCAyNTIuMjgsMTY1LjAxIDI1Mi40MywxNjIuMDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNDQ0NDQ0M7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjgzLjYzLDE2Mi4wMCAyODMuNTMsMTU4LjQ0IDI4My4yMiwxNTQuODkgMjgyLjcyLDE1MS4zNiAyODIuMDEsMTQ3Ljg2IDI4MS4xMCwxNDQuNDIgMjgwLjAwLDE0MS4wMyAyNzguNzEsMTM3LjcxIDI3Ny4yMywxMzQuNDYgMjc1LjU2LDEzMS4zMSAyNzMuNzIsMTI4LjI2IDI3MS43MSwxMjUuMzIgMjY5LjUzLDEyMi40OSAyNjcuMjAsMTE5LjgwIDI2NC43MiwxMTcuMjQgMjYyLjA5LDExNC44MyAyNTkuMzMsMTEyLjU4IDI1Ni40NSwxMTAuNDggMjUzLjQ1LDEwOC41NiAyNTAuMzQsMTA2LjgwIDI0Ny4xNSwxMDUuMjMgMjQzLjg2LDEwMy44NCAyNDAuNTEsMTAyLjY1IDIzNy4wOSwxMDEuNjQgMjMzLjYxLDEwMC44MyAyMzAuMTAsMTAwLjIzIDIyNi41Niw5OS44MiAyMjMuMDAsOTkuNjIgMjE5LjQ0LDk5LjYyIDIxNS44OCw5OS44MiAyMTIuMzQsMTAwLjIzIDIwOC44MywxMDAuODMgMjA1LjM2LDEwMS42NCAyMDEuOTQsMTAyLjY1IDE5OC41OCwxMDMuODQgMTk1LjMwLDEwNS4yMyAxOTIuMTAsMTA2LjgwIDE4OC45OSwxMDguNTYgMTg1Ljk5LDExMC40OCAxODMuMTEsMTEyLjU4IDE4MC4zNSwxMTQuODMgMTc3LjczLDExNy4yNCAxNzUuMjQsMTE5LjgwIDE3Mi45MSwxMjIuNDkgMTcwLjczLDEyNS4zMiAxNjguNzIsMTI4LjI2IDE2Ni44OCwxMzEuMzEgMTY1LjIyLDEzNC40NiAxNjMuNzMsMTM3LjcxIDE2Mi40NCwxNDEuMDMgMTYxLjM0LDE0NC40MiAxNjAuNDMsMTQ3Ljg2IDE1OS43MywxNTEuMzYgMTU5LjIyLDE1NC44OSAxNTguOTEsMTU4LjQ0IDE1OC44MSwxNjIuMDAgMTU4LjkxLDE2NS41NiAxNTkuMjIsMTY5LjExIDE1OS43MywxNzIuNjQgMTYwLjQzLDE3Ni4xNCAxNjEuMzQsMTc5LjU4IDE2Mi40NCwxODIuOTcgMTYzLjczLDE4Ni4yOSAxNjUuMjIsMTg5LjU0IDE2Ni44OCwxOTIuNjkgMTY4LjcyLDE5NS43NCAxNzAuNzMsMTk4LjY4IDE3Mi45MSwyMDEuNTEgMTc1LjI0LDIwNC4yMCAxNzcuNzMsMjA2Ljc2IDE4MC4zNSwyMDkuMTcgMTgzLjExLDIxMS40MiAxODUuOTksMjEzLjUyIDE4OC45OSwyMTUuNDQgMTkyLjEwLDIxNy4yMCAxOTUuMzAsMjE4Ljc3IDE5OC41OCwyMjAuMTYgMjAxLjk0LDIyMS4zNSAyMDUuMzYsMjIyLjM2IDIwOC44MywyMjMuMTcgMjEyLjM0LDIyMy43NyAyMTUuODgsMjI0LjE4IDIxOS40NCwyMjQuMzggMjIzLjAwLDIyNC4zOCAyMjYuNTYsMjI0LjE4IDIzMC4xMCwyMjMuNzcgMjMzLjYxLDIyMy4xNyAyMzcuMDksMjIyLjM2IDI0MC41MSwyMjEuMzUgMjQzLjg2LDIyMC4xNiAyNDcuMTUsMjE4Ljc3IDI1MC4zNCwyMTcuMjAgMjUzLjQ1LDIxNS40NCAyNTYuNDUsMjEzLjUyIDI1OS4zMywyMTEuNDIgMjYyLjA5LDIwOS4xNyAyNjQuNzIsMjA2Ljc2IDI2Ny4yMCwyMDQuMjAgMjY5LjUzLDIwMS41MSAyNzEuNzEsMTk4LjY4IDI3My43MiwxOTUuNzQgMjc1LjU2LDE5Mi42OSAyNzcuMjMsMTg5LjU0IDI3OC43MSwxODYuMjkgMjgwLjAwLDE4Mi45NyAyODEuMTAsMTc5LjU4IDI4Mi4wMSwxNzYuMTQgMjgyLjcyLDE3Mi42NCAyODMuMjIsMTY5LjExIDI4My41MywxNjUuNTYgMjgzLjYzLDE2Mi4wMCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0NDQ0NDQzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczMTQuODMsMTYyLjAwIDMxNC43NSwxNTguMDUgMzE0LjUwLDE1NC4xMSAzMTQuMDksMTUwLjE5IDMxMy41MSwxNDYuMjggMzEyLjc2LDE0Mi40MSAzMTEuODUsMTM4LjU3IDMxMC43OSwxMzQuNzcgMzA5LjU2LDEzMS4wMSAzMDguMTcsMTI3LjMyIDMwNi42MywxMjMuNjggMzA0Ljk0LDEyMC4xMiAzMDMuMTAsMTE2LjYyIDMwMS4xMiwxMTMuMjEgMjk4Ljk5LDEwOS44OSAyOTYuNzIsMTA2LjY2IDI5NC4zMiwxMDMuNTIgMjkxLjc5LDEwMC40OSAyODkuMTQsOTcuNTcgMjg2LjM2LDk0Ljc3IDI4My40Nyw5Mi4wOCAyODAuNDcsODkuNTIgMjc3LjM2LDg3LjA5IDI3NC4xNSw4NC43OSAyNzAuODUsODIuNjIgMjY3LjQ2LDgwLjYwIDI2My45OCw3OC43MiAyNjAuNDQsNzcuMDAgMjU2LjgyLDc1LjQyIDI1My4xNCw3My45OSAyNDkuNDAsNzIuNzMgMjQ1LjYxLDcxLjYyIDI0MS43OCw3MC42NyAyMzcuOTEsNjkuODkgMjM0LjAxLDY5LjI2IDIzMC4wOSw2OC44MSAyMjYuMTUsNjguNTIgMjIyLjIxLDY4LjM5IDIxOC4yNiw2OC40MyAyMTQuMzIsNjguNjQgMjEwLjM5LDY5LjAyIDIwNi40OCw2OS41NSAyMDIuNTksNzAuMjYgMTk4Ljc0LDcxLjEyIDE5NC45Myw3Mi4xNSAxOTEuMTcsNzMuMzQgMTg3LjQ2LDc0LjY5IDE4My44MSw3Ni4xOSAxODAuMjIsNzcuODQgMTc2LjcxLDc5LjY0IDE3My4yOCw4MS41OSAxNjkuOTMsODMuNjkgMTY2LjY4LDg1LjkyIDE2My41Miw4OC4yOSAxNjAuNDYsOTAuNzggMTU3LjUxLDkzLjQxIDE1NC42OCw5Ni4xNiAxNTEuOTYsOTkuMDIgMTQ5LjM3LDEwMS45OSAxNDYuOTAsMTA1LjA4IDE0NC41NywxMDguMjYgMTQyLjM3LDExMS41NCAxNDAuMzEsMTE0LjkxIDEzOC40MCwxMTguMzYgMTM2LjYzLDEyMS44OSAxMzUuMDIsMTI1LjQ5IDEzMy41NiwxMjkuMTYgMTMyLjI1LDEzMi44OCAxMzEuMTAsMTM2LjY2IDEzMC4xMSwxNDAuNDggMTI5LjI5LDE0NC4zNCAxMjguNjMsMTQ4LjIzIDEyOC4xMywxNTIuMTUgMTI3Ljc5LDE1Ni4wOCAxMjcuNjMsMTYwLjAzIDEyNy42MywxNjMuOTcgMTI3Ljc5LDE2Ny45MiAxMjguMTMsMTcxLjg1IDEyOC42MywxNzUuNzcgMTI5LjI5LDE3OS42NiAxMzAuMTEsMTgzLjUyIDEzMS4xMCwxODcuMzQgMTMyLjI1LDE5MS4xMiAxMzMuNTYsMTk0Ljg0IDEzNS4wMiwxOTguNTEgMTM2LjYzLDIwMi4xMSAxMzguNDAsMjA1LjY0IDE0MC4zMSwyMDkuMDkgMTQyLjM3LDIxMi40NiAxNDQuNTcsMjE1Ljc0IDE0Ni45MCwyMTguOTIgMTQ5LjM3LDIyMi4wMSAxNTEuOTYsMjI0Ljk4IDE1NC42OCwyMjcuODQgMTU3LjUxLDIzMC41OSAxNjAuNDYsMjMzLjIyIDE2My41MiwyMzUuNzEgMTY2LjY4LDIzOC4wOCAxNjkuOTMsMjQwLjMxIDE3My4yOCwyNDIuNDEgMTc2LjcxLDI0NC4zNiAxODAuMjIsMjQ2LjE2IDE4My44MSwyNDcuODEgMTg3LjQ2LDI0OS4zMSAxOTEuMTcsMjUwLjY2IDE5NC45MywyNTEuODUgMTk4Ljc0LDI1Mi44OCAyMDIuNTksMjUzLjc0IDIwNi40OCwyNTQuNDUgMjEwLjM5LDI1NC45OCAyMTQuMzIsMjU1LjM2IDIxOC4yNiwyNTUuNTcgMjIyLjIxLDI1NS42MSAyMjYuMTUsMjU1LjQ4IDIzMC4wOSwyNTUuMTkgMjM0LjAxLDI1NC43NCAyMzcuOTEsMjU0LjExIDI0MS43OCwyNTMuMzMgMjQ1LjYxLDI1Mi4zOCAyNDkuNDAsMjUxLjI3IDI1My4xNCwyNTAuMDEgMjU2LjgyLDI0OC41OCAyNjAuNDQsMjQ3LjAwIDI2My45OCwyNDUuMjggMjY3LjQ2LDI0My40MCAyNzAuODUsMjQxLjM4IDI3NC4xNSwyMzkuMjEgMjc3LjM2LDIzNi45MSAyODAuNDcsMjM0LjQ4IDI4My40NywyMzEuOTIgMjg2LjM2LDIyOS4yMyAyODkuMTQsMjI2LjQzIDI5MS43OSwyMjMuNTEgMjk0LjMyLDIyMC40OCAyOTYuNzIsMjE3LjM0IDI5OC45OSwyMTQuMTEgMzAxLjEyLDIxMC43OSAzMDMuMTAsMjA3LjM4IDMwNC45NCwyMDMuODggMzA2LjYzLDIwMC4zMiAzMDguMTcsMTk2LjY4IDMwOS41NiwxOTIuOTkgMzEwLjc5LDE4OS4yMyAzMTEuODUsMTg1LjQzIDMxMi43NiwxODEuNTkgMzEzLjUxLDE3Ny43MiAzMTQuMDksMTczLjgxIDMxNC41MCwxNjkuODkgMzE0Ljc1LDE2NS45NSAzMTQuODMsMTYyLjAwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM0Ni4wNCwxNjIuMDAgMzQ1Ljk3LDE1Ny43NiAzNDUuNzUsMTUzLjUzIDM0NS4zOSwxNDkuMzAgMzQ0Ljg5LDE0NS4xMCAzNDQuMjQsMTQwLjkxIDM0My40NiwxMzYuNzQgMzQyLjUzLDEzMi42MCAzNDEuNDYsMTI4LjUwIDM0MC4yNSwxMjQuNDQgMzM4LjkxLDEyMC40MiAzMzcuNDMsMTE2LjQ1IDMzNS44MiwxMTIuNTMgMzM0LjA3LDEwOC42NiAzMzIuMTksMTA0Ljg2IDMzMC4xOSwxMDEuMTMgMzI4LjA2LDk3LjQ2IDMyNS44MSw5My44NyAzMjMuNDMsOTAuMzYgMzIwLjk0LDg2LjkzIDMxOC4zMyw4My41OSAzMTUuNjEsODAuMzMgMzEyLjc5LDc3LjE4IDMwOS44NSw3NC4xMiAzMDYuODIsNzEuMTYgMzAzLjY4LDY4LjMwIDMwMC40Niw2NS41NiAyOTcuMTMsNjIuOTIgMjkzLjczLDYwLjQwIDI5MC4yNCw1OC4wMCAyODYuNjYsNTUuNzEgMjgzLjAyLDUzLjU1IDI3OS4zMCw1MS41MiAyNzUuNTEsNDkuNjEgMjcxLjY3LDQ3LjgzIDI2Ny43Niw0Ni4xOCAyNjMuODAsNDQuNjcgMjU5Ljc5LDQzLjI5IDI1NS43NCw0Mi4wNSAyNTEuNjUsNDAuOTUgMjQ3LjUyLDM5Ljk4IDI0My4zNiwzOS4xNiAyMzkuMTcsMzguNDggMjM0Ljk3LDM3Ljk0IDIzMC43NSwzNy41NSAyMjYuNTIsMzcuMjkgMjIyLjI4LDM3LjE5IDIxOC4wNCwzNy4yMiAyMTMuODEsMzcuNDAgMjA5LjU4LDM3LjczIDIwNS4zNywzOC4xOSAyMDEuMTcsMzguODAgMTk3LjAwLDM5LjU1IDE5Mi44Niw0MC40NSAxODguNzQsNDEuNDggMTg0LjY3LDQyLjY1IDE4MC42NCw0My45NiAxNzYuNjUsNDUuNDEgMTcyLjcyLDQ2Ljk5IDE2OC44NCw0OC43MCAxNjUuMDMsNTAuNTUgMTYxLjI4LDUyLjUyIDE1Ny41OSw1NC42MiAxNTMuOTgsNTYuODQgMTUwLjQ1LDU5LjE4IDE0Ny4wMCw2MS42NSAxNDMuNjMsNjQuMjIgMTQwLjM2LDY2LjkyIDEzNy4xOCw2OS43MiAxMzQuMDksNzIuNjIgMTMxLjExLDc1LjYzIDEyOC4yMyw3OC43NCAxMjUuNDUsODEuOTUgMTIyLjc5LDg1LjI1IDEyMC4yNCw4OC42MyAxMTcuODEsOTIuMTEgMTE1LjQ5LDk1LjY2IDExMy4zMCw5OS4yOSAxMTEuMjMsMTAyLjk5IDEwOS4yOSwxMDYuNzUgMTA3LjQ4LDExMC41OSAxMDUuODAsMTE0LjQ4IDEwNC4yNiwxMTguNDMgMTAyLjg0LDEyMi40MiAxMDEuNTcsMTI2LjQ3IDEwMC40MywxMzAuNTUgOTkuNDMsMTM0LjY3IDk4LjU3LDEzOC44MiA5Ny44NiwxNDMuMDAgOTcuMjgsMTQ3LjIwIDk2Ljg1LDE1MS40MSA5Ni41NiwxNTUuNjQgOTYuNDIsMTU5Ljg4IDk2LjQyLDE2NC4xMiA5Ni41NiwxNjguMzYgOTYuODUsMTcyLjU5IDk3LjI4LDE3Ni44MCA5Ny44NiwxODEuMDAgOTguNTcsMTg1LjE4IDk5LjQzLDE4OS4zMyAxMDAuNDMsMTkzLjQ1IDEwMS41NywxOTcuNTMgMTAyLjg0LDIwMS41OCAxMDQuMjYsMjA1LjU3IDEwNS44MCwyMDkuNTIgMTA3LjQ4LDIxMy40MSAxMDkuMjksMjE3LjI1IDExMS4yMywyMjEuMDEgMTEzLjMwLDIyNC43MSAxMTUuNDksMjI4LjM0IDExNy44MSwyMzEuODkgMTIwLjI0LDIzNS4zNyAxMjIuNzksMjM4Ljc1IDEyNS40NSwyNDIuMDUgMTI4LjIzLDI0NS4yNiAxMzEuMTEsMjQ4LjM3IDEzNC4wOSwyNTEuMzggMTM3LjE4LDI1NC4yOCAxNDAuMzYsMjU3LjA4IDE0My42MywyNTkuNzggMTQ3LjAwLDI2Mi4zNSAxNTAuNDUsMjY0LjgyIDE1My45OCwyNjcuMTYgMTU3LjU5LDI2OS4zOCAxNjEuMjgsMjcxLjQ4IDE2NS4wMywyNzMuNDUgMTY4Ljg0LDI3NS4zMCAxNzIuNzIsMjc3LjAxIDE3Ni42NSwyNzguNTkgMTgwLjY0LDI4MC4wNCAxODQuNjcsMjgxLjM1IDE4OC43NCwyODIuNTIgMTkyLjg2LDI4My41NSAxOTcuMDAsMjg0LjQ1IDIwMS4xNywyODUuMjAgMjA1LjM3LDI4NS44MSAyMDkuNTgsMjg2LjI3IDIxMy44MSwyODYuNjAgMjE4LjA0LDI4Ni43OCAyMjIuMjgsMjg2LjgxIDIyNi41MiwyODYuNzEgMjMwLjc1LDI4Ni40NSAyMzQuOTcsMjg2LjA2IDIzOS4xNywyODUuNTIgMjQzLjM2LDI4NC44NCAyNDcuNTIsMjg0LjAyIDI1MS42NSwyODMuMDUgMjU1Ljc0LDI4MS45NSAyNTkuNzksMjgwLjcxIDI2My44MCwyNzkuMzMgMjY3Ljc2LDI3Ny44MiAyNzEuNjcsMjc2LjE3IDI3NS41MSwyNzQuMzkgMjc5LjMwLDI3Mi40OCAyODMuMDIsMjcwLjQ1IDI4Ni42NiwyNjguMjkgMjkwLjI0LDI2Ni4wMCAyOTMuNzMsMjYzLjYwIDI5Ny4xMywyNjEuMDggMzAwLjQ2LDI1OC40NCAzMDMuNjgsMjU1LjcwIDMwNi44MiwyNTIuODQgMzA5Ljg1LDI0OS44OCAzMTIuNzksMjQ2LjgyIDMxNS42MSwyNDMuNjcgMzE4LjMzLDI0MC40MSAzMjAuOTQsMjM3LjA3IDMyMy40MywyMzMuNjQgMzI1LjgxLDIzMC4xMyAzMjguMDYsMjI2LjU0IDMzMC4xOSwyMjIuODcgMzMyLjE5LDIxOS4xNCAzMzQuMDcsMjE1LjM0IDMzNS44MiwyMTEuNDcgMzM3LjQzLDIwNy41NSAzMzguOTEsMjAzLjU4IDM0MC4yNSwxOTkuNTYgMzQxLjQ2LDE5NS41MCAzNDIuNTMsMTkxLjQwIDM0My40NiwxODcuMjYgMzQ0LjI0LDE4My4wOSAzNDQuODksMTc4LjkwIDM0NS4zOSwxNzQuNzAgMzQ1Ljc1LDE3MC40NyAzNDUuOTcsMTY2LjI0IDM0Ni4wNCwxNjIuMDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjE2OyBzdHJva2U6ICNDQ0NDQ0M7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjIxLjIyLDE2Mi4wMCAyMjQuMDcsMTU4Ljc3IDIyNi45MiwxNTUuNTQgMjI5Ljc2LDE1Mi4zMiAyMzIuNjEsMTQ5LjA5IDIzNS40NiwxNDUuODYgMjM4LjMwLDE0Mi42MyAyNDEuMTUsMTM5LjQxIDI0NC4wMCwxMzYuMTggMjQ2Ljg1LDEzMi45NSAyNDkuNjksMTI5LjcyIDI1Mi41NCwxMjYuNTAgMjU1LjM5LDEyMy4yNyAyNTguMjMsMTIwLjA0IDI2MS4wOCwxMTYuODEgMjYzLjkzLDExMy41OCAyNjYuNzgsMTEwLjM2IDI2OS42MiwxMDcuMTMgMjcyLjQ3LDEwMy45MCAyNzUuMzIsMTAwLjY3IDI3OC4xNyw5Ny40NSAyODEuMDEsOTQuMjIgMjgzLjg2LDkwLjk5IDI4Ni43MSw4Ny43NiAyODkuNTUsODQuNTMgMjkyLjQwLDgxLjMxIDI5NS4yNSw3OC4wOCAyOTguMTAsNzQuODUgMzAwLjk0LDcxLjYyIDMwMy43OSw2OC40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0NDQ0NDQzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMjEuMjIsMTYyLjAwIDIyMS44NywxNTcuNzUgMjIyLjUyLDE1My40OSAyMjMuMTcsMTQ5LjI0IDIyMy44MSwxNDQuOTggMjI0LjQ2LDE0MC43MyAyMjUuMTEsMTM2LjQ3IDIyNS43NiwxMzIuMjIgMjI2LjQxLDEyNy45NiAyMjcuMDYsMTIzLjcxIDIyNy43MCwxMTkuNDUgMjI4LjM1LDExNS4yMCAyMjkuMDAsMTEwLjk0IDIyOS42NSwxMDYuNjkgMjMwLjMwLDEwMi40MyAyMzAuOTQsOTguMTggMjMxLjU5LDkzLjkyIDIzMi4yNCw4OS42NyAyMzIuODksODUuNDEgMjMzLjU0LDgxLjE2IDIzNC4xOSw3Ni45MCAyMzQuODMsNzIuNjUgMjM1LjQ4LDY4LjM5IDIzNi4xMyw2NC4xNCAyMzYuNzgsNTkuODggMjM3LjQzLDU1LjYzIDIzOC4wOCw1MS4zNyAyMzguNzIsNDcuMTIgMjM5LjM3LDQyLjg2IDI0MC4wMiwzOC42MSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0NDQ0NDQzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMjEuMjIsMTYyLjAwIDIxNy4xNCwxNjAuNjUgMjEzLjA1LDE1OS4yOSAyMDguOTYsMTU3Ljk0IDIwNC44OCwxNTYuNTggMjAwLjc5LDE1NS4yMyAxOTYuNzEsMTUzLjg4IDE5Mi42MiwxNTIuNTIgMTg4LjU0LDE1MS4xNyAxODQuNDUsMTQ5LjgxIDE4MC4zNywxNDguNDYgMTc2LjI4LDE0Ny4xMCAxNzIuMTksMTQ1Ljc1IDE2OC4xMSwxNDQuNDAgMTY0LjAyLDE0My4wNCAxNTkuOTQsMTQxLjY5IDE1NS44NSwxNDAuMzMgMTUxLjc3LDEzOC45OCAxNDcuNjgsMTM3LjYzIDE0My42MCwxMzYuMjcgMTM5LjUxLDEzNC45MiAxMzUuNDMsMTMzLjU2IDEzMS4zNCwxMzIuMjEgMTI3LjI1LDEzMC44NSAxMjMuMTcsMTI5LjUwIDExOS4wOCwxMjguMTUgMTE1LjAwLDEyNi43OSAxMTAuOTEsMTI1LjQ0IDEwNi44MywxMjQuMDggMTAyLjc0LDEyMi43MyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMTY7IHN0cm9rZTogI0NDQ0NDQzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMjEuMjIsMTYyLjAwIDIxNi45MiwxNjIuMjUgMjEyLjYzLDE2Mi41MCAyMDguMzMsMTYyLjc1IDIwNC4wMywxNjMuMDAgMTk5Ljc0LDE2My4yNSAxOTUuNDQsMTYzLjUwIDE5MS4xNCwxNjMuNzUgMTg2Ljg1LDE2NC4wMSAxODIuNTUsMTY0LjI2IDE3OC4yNSwxNjQuNTEgMTczLjk2LDE2NC43NiAxNjkuNjYsMTY1LjAxIDE2NS4zNiwxNjUuMjYgMTYxLjA3LDE2NS41MSAxNTYuNzcsMTY1Ljc2IDE1Mi40NywxNjYuMDEgMTQ4LjE4LDE2Ni4yNiAxNDMuODgsMTY2LjUxIDEzOS41OCwxNjYuNzYgMTM1LjI5LDE2Ny4wMSAxMzAuOTksMTY3LjI2IDEyNi42OSwxNjcuNTEgMTIyLjQwLDE2Ny43NyAxMTguMTAsMTY4LjAyIDExMy44MCwxNjguMjcgMTA5LjUwLDE2OC41MiAxMDUuMjEsMTY4Ljc3IDEwMC45MSwxNjkuMDIgOTYuNjEsMTY5LjI3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIyMS4yMiwxNjIuMDAgMjE3LjcyLDE2NC41MCAyMTQuMjEsMTY3LjAwIDIxMC43MSwxNjkuNTAgMjA3LjIxLDE3Mi4wMCAyMDMuNzAsMTc0LjUwIDIwMC4yMCwxNzcuMDAgMTk2LjY5LDE3OS41MCAxOTMuMTksMTgyLjAwIDE4OS42OSwxODQuNTAgMTg2LjE4LDE4Ny4wMCAxODIuNjgsMTg5LjQ5IDE3OS4xNywxOTEuOTkgMTc1LjY3LDE5NC40OSAxNzIuMTcsMTk2Ljk5IDE2OC42NiwxOTkuNDkgMTY1LjE2LDIwMS45OSAxNjEuNjUsMjA0LjQ5IDE1OC4xNSwyMDYuOTkgMTU0LjY1LDIwOS40OSAxNTEuMTQsMjExLjk5IDE0Ny42NCwyMTQuNDkgMTQ0LjE0LDIxNi45OSAxNDAuNjMsMjE5LjQ5IDEzNy4xMywyMjEuOTkgMTMzLjYyLDIyNC40OSAxMzAuMTIsMjI2Ljk5IDEyNi42MiwyMjkuNDkgMTIzLjExLDIzMS45OSAxMTkuNjEsMjM0LjQ5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIyMS4yMiwxNjIuMDAgMjIyLjQ5LDE2Ni4xMSAyMjMuNzUsMTcwLjIzIDIyNS4wMiwxNzQuMzQgMjI2LjI5LDE3OC40NSAyMjcuNTYsMTgyLjU3IDIyOC44MiwxODYuNjggMjMwLjA5LDE5MC43OSAyMzEuMzYsMTk0LjkxIDIzMi42MiwxOTkuMDIgMjMzLjg5LDIwMy4xMyAyMzUuMTYsMjA3LjI1IDIzNi40MiwyMTEuMzYgMjM3LjY5LDIxNS40NyAyMzguOTYsMjE5LjU5IDI0MC4yMywyMjMuNzAgMjQxLjQ5LDIyNy44MSAyNDIuNzYsMjMxLjkzIDI0NC4wMywyMzYuMDQgMjQ1LjI5LDI0MC4xNSAyNDYuNTYsMjQ0LjI3IDI0Ny44MywyNDguMzggMjQ5LjA5LDI1Mi40OSAyNTAuMzYsMjU2LjYxIDI1MS42MywyNjAuNzIgMjUyLjg5LDI2NC44MyAyNTQuMTYsMjY4Ljk1IDI1NS40MywyNzMuMDYgMjU2LjcwLDI3Ny4xNyAyNTcuOTYsMjgxLjI5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIyMS4yMiwxNjIuMDAgMjI1LjI2LDE2My41MCAyMjkuMjksMTY1LjAwIDIzMy4zMywxNjYuNDkgMjM3LjM2LDE2Ny45OSAyNDEuNDAsMTY5LjQ5IDI0NS40MywxNzAuOTkgMjQ5LjQ3LDE3Mi40OCAyNTMuNTAsMTczLjk4IDI1Ny41NCwxNzUuNDggMjYxLjU3LDE3Ni45OCAyNjUuNjEsMTc4LjQ4IDI2OS42NCwxNzkuOTcgMjczLjY4LDE4MS40NyAyNzcuNzEsMTgyLjk3IDI4MS43NSwxODQuNDcgMjg1Ljc4LDE4NS45NyAyODkuODIsMTg3LjQ2IDI5My44NSwxODguOTYgMjk3Ljg5LDE5MC40NiAzMDEuOTIsMTkxLjk2IDMwNS45NiwxOTMuNDUgMzA5Ljk5LDE5NC45NSAzMTQuMDMsMTk2LjQ1IDMxOC4wNiwxOTcuOTUgMzIyLjEwLDE5OS40NSAzMjYuMTMsMjAwLjk0IDMzMC4xNywyMDIuNDQgMzM0LjIwLDIwMy45NCAzMzguMjQsMjA1LjQ0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIyMS4yMiwxNjIuMDAgMjI1LjUyLDE2Mi4wMSAyMjkuODMsMTYyLjAyIDIzNC4xMywxNjIuMDMgMjM4LjQ0LDE2Mi4wNCAyNDIuNzQsMTYyLjA1IDI0Ny4wNSwxNjIuMDYgMjUxLjM1LDE2Mi4wNyAyNTUuNjUsMTYyLjA5IDI1OS45NiwxNjIuMTAgMjY0LjI2LDE2Mi4xMSAyNjguNTcsMTYyLjEyIDI3Mi44NywxNjIuMTMgMjc3LjE3LDE2Mi4xNCAyODEuNDgsMTYyLjE1IDI4NS43OCwxNjIuMTYgMjkwLjA5LDE2Mi4xNyAyOTQuMzksMTYyLjE4IDI5OC42OSwxNjIuMTkgMzAzLjAwLDE2Mi4yMCAzMDcuMzAsMTYyLjIxIDMxMS42MSwxNjIuMjIgMzE1LjkxLDE2Mi4yNCAzMjAuMjEsMTYyLjI1IDMyNC41MiwxNjIuMjYgMzI4LjgyLDE2Mi4yNyAzMzMuMTMsMTYyLjI4IDMzNy40MywxNjIuMjkgMzQxLjczLDE2Mi4zMCAzNDYuMDQsMTYyLjMxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4xNjsgc3Ryb2tlOiAjQ0NDQ0NDOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxjaXJjbGUgY3g9JzI5Ni4zOScgY3k9JzE4OS45MCcgcj0nMy41OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NzsgZmlsbDogIzY2QzJBNTsnIC8+CjxjaXJjbGUgY3g9JzI5Mi40NScgY3k9JzE2Mi4xOCcgcj0nMy41OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NzsgZmlsbDogI0ZDOEQ2MjsnIC8+CjxjaXJjbGUgY3g9JzI2Mi40OCcgY3k9JzExNS4yMycgcj0nMy41OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NzsgZmlsbDogIzhEQTBDQjsnIC8+CjxjaXJjbGUgY3g9JzIzMS4wMycgY3k9Jzk3LjYxJyByPSczLjU5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc3OyBmaWxsOiAjRTc4QUMzOycgLz4KPGNpcmNsZSBjeD0nMTM5LjQxJyBjeT0nMTM0Ljg4JyByPSczLjU5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc3OyBmaWxsOiAjQTZEODU0OycgLz4KPGNpcmNsZSBjeD0nMTMyLjQxJyBjeT0nMTY3LjE4JyByPSczLjU5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc3OyBmaWxsOiAjRkZEOTJGOycgLz4KPGNpcmNsZSBjeD0nMTgxLjc3JyBjeT0nMTkwLjE0JyByPSczLjU5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc3OyBmaWxsOiAjRTVDNDk0OycgLz4KPGNpcmNsZSBjeD0nMjM4LjY0JyBjeT0nMjE4LjU0JyByPSczLjU5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc3OyBmaWxsOiAjQjNCM0IzOycgLz4KPHRleHQgeD0nMzA1LjA5JyB5PSc2NS4yMicgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzNweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5ERTwvdGV4dD4KPHRleHQgeD0nMjQxLjg0JyB5PSczMy4zMycgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzNweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5GRzwvdGV4dD4KPHRleHQgeD0nOTcuODgnIHk9JzEyMy4zOScgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nOS41OXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkhJPC90ZXh0Pgo8dGV4dCB4PSc5MS4yNScgeT0nMTczLjIyJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMS4yMHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkpLPC90ZXh0Pgo8dGV4dCB4PScxMTYuNDcnIHk9JzI0My4wNCcgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5MTTwvdGV4dD4KPHRleHQgeD0nMjYxLjY2JyB5PScyOTMuMTUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE0LjM5cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Tk88L3RleHQ+Cjx0ZXh0IHg9JzM0Mi45MCcgeT0nMjExLjk0JyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4wOXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPlBBPC90ZXh0Pgo8dGV4dCB4PSczNTEuNDInIHk9JzE2NS43Nycgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzNweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5CQzwvdGV4dD4KPHJlY3QgeD0nMjIyLjI2JyB5PScxNTIuODknIHdpZHRoPScyMC42NScgaGVpZ2h0PSc4Ljg2JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjc1OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7IGZpbGwtb3BhY2l0eTogMC43NTsnIC8+CjxyZWN0IHg9JzIwNS45NicgeT0nMTI2LjI4JyB3aWR0aD0nMjAuNjUnIGhlaWdodD0nOC44Nicgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOyBmaWxsLW9wYWNpdHk6IDAuNzU7JyAvPgo8cmVjdCB4PScxODkuNjYnIHk9Jzk5LjY3JyB3aWR0aD0nMjAuNjUnIGhlaWdodD0nOC44Nicgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOyBmaWxsLW9wYWNpdHk6IDAuNzU7JyAvPgo8cmVjdCB4PScxNzMuMzUnIHk9JzczLjA3JyB3aWR0aD0nMjAuNjUnIGhlaWdodD0nOC44Nicgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOyBmaWxsLW9wYWNpdHk6IDAuNzU7JyAvPgo8cmVjdCB4PScxNTcuMDUnIHk9JzQ2LjQ2JyB3aWR0aD0nMjAuNjUnIGhlaWdodD0nOC44Nicgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43NTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOyBmaWxsLW9wYWNpdHk6IDAuNzU7JyAvPgo8dGV4dCB4PScyMjMuMjYnIHk9JzE2MC43NScgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTguNjZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjAwPC90ZXh0Pgo8dGV4dCB4PScyMDYuOTYnIHk9JzEzNC4xNCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTguNjZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjI1PC90ZXh0Pgo8dGV4dCB4PScxOTAuNjUnIHk9JzEwNy41NCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTguNjZweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjUwPC90ZXh0Pgo8dGV4dCB4PScxNzQuMzUnIHk9JzgwLjkzJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxOC42NnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuNzU8L3RleHQ+Cjx0ZXh0IHg9JzE1OC4wNCcgeT0nNTQuMzMnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE4LjY2cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MS4wMDwvdGV4dD4KPHRleHQgeD0nMzk1LjE4JyB5PSc5NC4xOScgc3R5bGU9J2ZvbnQtc2l6ZTogMTIuMDBweDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSczMC4wMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPlNjYWxlPC90ZXh0Pgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxMTAuMDcnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICM2NkMyQTU7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxMjcuMzUnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNGQzhENjI7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxNDQuNjMnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICM4REEwQ0I7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxNjEuOTEnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNFNzhBQzM7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxNzkuMTknIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNBNkQ4NTQ7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScxOTYuNDcnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNGRkQ5MkY7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScyMTMuNzUnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNFNUM0OTQ7JyAvPgo8Y2lyY2xlIGN4PSc0MDMuODInIGN5PScyMzEuMDMnIHI9JzMuNTknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzc7IGZpbGw6ICNCM0IzQjM7JyAvPgo8dGV4dCB4PSc0MTguNDMnIHk9JzExMy41MCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjA5cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+UEE8L3RleHQ+Cjx0ZXh0IHg9JzQxOC40MycgeT0nMTMwLjc4JyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzNweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5CQzwvdGV4dD4KPHRleHQgeD0nNDE4LjQzJyB5PScxNDguMDYnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMy4zM3B4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkRFPC90ZXh0Pgo8dGV4dCB4PSc0MTguNDMnIHk9JzE2NS4zNCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEzLjMzcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Rkc8L3RleHQ+Cjx0ZXh0IHg9JzQxOC40MycgeT0nMTgyLjYyJyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nOS41OXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkhJPC90ZXh0Pgo8dGV4dCB4PSc0MTguNDMnIHk9JzE5OS45MCcgc3R5bGU9J2ZvbnQtc2l6ZTogOS42MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzExLjIwcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Sks8L3RleHQ+Cjx0ZXh0IHg9JzQxOC40MycgeT0nMjE3LjE4JyBzdHlsZT0nZm9udC1zaXplOiA5LjYwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTMuMzFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5MTTwvdGV4dD4KPHRleHQgeD0nNDE4LjQzJyB5PScyMzQuNDYnIHN0eWxlPSdmb250LXNpemU6IDkuNjBweDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxNC4zOXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPk5PPC90ZXh0Pgo8L2c+CjwvZz4KPC9zdmc+Cg==" alt="plot of chunk fit_structure_plot" width="100%" /></p>
+<p>For the IIP-SC octants, the picture agrees with the CPM fit in
+“Evaluating Circumplex Structure”. The scales keep their theoretical
+circular <em>ordering</em>, with comparable communalities and roughly
+even spacing. The Fisher, Gap, and interstitiality criteria all classify
+the configuration as consistent with (or close to) a circumplex under
+deviation scoring. One caveat applies when reading the angles. The
+two-factor solution is <em>unrotated</em>, so its absolute orientation
+is arbitrary. The scales’ ordering and relative spacing agree with
+theory, not their absolute angles. (This is why <code>summary()</code>
+places PA well away from its nominal 90°.) RANDALL’s p value confirms
+the hypothesized circular order directly, independent of the
+factor-analytic criteria.</p>
+</div>
+<div id="where-the-cutoffs-come-from" class="section level3">
+<h3>Where the cutoffs come from</h3>
+<p>The four factor-analytic criteria are only as good as the thresholds
+used to classify them. This is where the published article cannot be
+used as-is. Acton and Revelle calibrated their cutoffs by simulation at
+64 and 128 variables. They reported (their p. 18) that the Gap Test’s
+cutoffs shift sharply with the number of scales. The shift is far too
+sharp to reuse the cutoffs at the eight scales that a typical circumplex
+instrument has. This package’s development process re-derived every
+cutoff at <span class="math inline">\(n_v = 8\)</span> (eight scales)
+under Acton and Revelle’s own generating model (their Eqs. 11.1–11.3).
+The script is committed at
+<code>data-raw/structure-test-cutoffs.R</code>. It first reproduced
+their published 64/128-variable design, as a sanity gate on the
+simulation machinery. Then it reran the same design at <span class="math inline">\(n_v = 8\)</span> to derive the constants that
+<code>fit_structure()</code> actually uses. The effect of <span class="math inline">\(n_v\)</span> that the re-derivation found is
+large. The raw-scored Gap Test’s “almost certain” cutoff (a category
+that the next subsection defines) moves from .01 at <span class="math inline">\(n_v = 64/128\)</span> to .35 at <span class="math inline">\(n_v = 8\)</span>. That is exactly why
+<code>fit_structure()</code> refuses to interpret any scale count it has
+not calibrated. At any <span class="math inline">\(n_v \ne 8\)</span>,
+the statistics are still reported, but the classification column prints
+a dash rather than guessing.</p>
+<p>RANDALL needs no such calibration. Its p value comes from enumerating
+(or Monte Carlo sampling) the randomization null directly on your data.
+So it is available at any scale count of four or more.</p>
+</div>
+<div id="reading-the-classifications" class="section level3">
+<h3>Reading the classifications</h3>
+<p>The classification categories describe where a statistic falls among
+the simulated distributions for competing structures (circumplex
+vs. simple structure). There are four categories:</p>
+<ul>
+<li>“almost certain”: below the 1st percentile of the competing
+distribution.</li>
+<li>“at least 3x as likely as the alternative”: the criterion’s
+structure is at least three times as likely as its competitor at that
+statistic value.</li>
+<li>“at least 2x as likely as the alternative”: the criterion’s
+structure is at least two times as likely as its competitor at that
+statistic value.</li>
+<li>“not clearly supported”.</li>
+</ul>
+<p>Those ratios are <em>likelihood ratios</em>, not posterior
+probabilities or p values. The classifications are <strong>heuristic
+classifications read off simulated distributions, not significance
+tests</strong>. <code>fit_structure()</code>’s
+<code>print()</code>/<code>summary()</code> output repeats that caveat
+every time an interpretation is shown. Treat a “not clearly supported”
+classification (<code>summary()</code> prints “unsupported”) as a
+caution, not as a rejection of any specific hypothesis. The caution is
+to inspect the loading configuration (the plot above) and the CPM fit in
+“Evaluating Circumplex Structure” together.</p>
+</div>
+<div id="how-this-complements-the-cpm-fit" class="section level3">
+<h3>How this complements the CPM fit</h3>
+<p><code>cpm_fit()</code> (in “Evaluating Circumplex Structure”) and
+<code>fit_structure()</code> ask related but different questions.
+<code>cpm_fit()</code> fits a circular process model and tests goodness
+of fit against it. Its default quasi-circumplex model estimates each
+scale’s communality and every angle except the <code>reference</code>
+scale’s, which stays at its theoretical value to fix the rotation.
+<code>model = &quot;constrained-angles&quot;</code> fixes all the angles at their
+theoretical values. A good overall RMSEA/CFI can still hide unequal
+spacing or a dominant general factor, and <code>fit_structure()</code>
+is built to detect both. Conversely, <code>fit_structure()</code>’s
+exploratory criteria say nothing about how well the scales match
+<em>your</em> theoretical angles. Only RANDALL, via the order you
+supply, references a hypothesis at all. Even that is an order
+hypothesis, not the specific angles that <code>cpm_fit()</code>
+estimates. Running both is more informative than either alone. Agreement
+between a good CPM fit and circumplex-supporting
+<code>fit_structure()</code> classifications is stronger evidence than
+either result on its own. Disagreement points to exactly which aspect of
+circumplex structure to examine further. An example of disagreement is
+adequate CPM fit alongside a Fisher Test flagging unequal axes.</p>
+</div>
+</div>
+<div id="ipsatization-and-what-it-costs" class="section level2">
+<h2>3. Ipsatization and what it costs</h2>
+<p>Ipsatizing is a common preprocessing step in circumplex work. It
+subtracts each respondent’s own mean across the octant scales from each
+of their scale scores (<code>ipsatize()</code>). It is used to remove
+individual differences in overall endorsement before examining profile
+shape.</p>
+<p>For SSM analyses, its main cost is simple to state:
+<strong>ipsatizing discards elevation.</strong> After row-centering,
+every respondent’s octant scores sum to zero. So a group’s mean profile
+has zero mean by construction. For the same reason, the covariances
+between the ipsatized scales and any external measure sum to exactly
+zero. This forces the mean correlation toward zero, regardless of how
+strongly the construct relates to the instrument’s general factor
+(Zimmermann &amp; Wright, 2017, p. 4).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">45678</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>res_raw <span class="ot">&lt;-</span> <span class="fu">ssm_analyze</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  jz2017,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">scales =</span> <span class="fu">PANO</span>(),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">angles =</span> <span class="fu">octants</span>(),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">measures =</span> <span class="st">&quot;PARPD&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">boots =</span> <span class="dv">100</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>jz_ips <span class="ot">&lt;-</span> <span class="fu">ipsatize</span>(jz2017, <span class="at">items =</span> <span class="fu">PANO</span>())</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">45678</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>res_ips <span class="ot">&lt;-</span> <span class="fu">ssm_analyze</span>(</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  jz_ips,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  <span class="at">scales =</span> <span class="fu">paste0</span>(<span class="fu">PANO</span>(), <span class="st">&quot;_i&quot;</span>),</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  <span class="at">angles =</span> <span class="fu">octants</span>(),</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  <span class="at">measures =</span> <span class="st">&quot;PARPD&quot;</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  <span class="at">boots =</span> <span class="dv">100</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>)</span></code></pre></div>
+<p>The table below puts the elevation, amplitude and displacement
+estimates of the two analyses side by side, rounded to three decimals.
+Its rows are <code>raw</code> and <code>ipsatized</code>. (The code that
+builds the table is omitted.)</p>
+<pre><code>#&gt;           e_est a_est   d_est
+#&gt; raw       0.250 0.150 128.945
+#&gt; ipsatized 0.007 0.113 132.949</code></pre>
+<p>The raw-score elevation collapses to near zero after ipsatizing. (The
+raw value matches the value that Zimmermann and Wright report for this
+scale in their Table 4.) The displacement stays close to its raw-score
+value. The amplitude stays broadly similar, though not identical,
+because ipsatizing also changes the scales’ variances and
+intercorrelations. So shape parameters shift somewhat too. Guidance:</p>
+<ul>
+<li>If elevation carries meaning in your application, analyze raw scores
+and let the SSM separate elevation from shape. (For interpersonal
+problems, elevation indexes association with generalized interpersonal
+distress.) That separation is exactly what the model is for.</li>
+<li>If you receive data that were already ipsatized, do not interpret
+the elevation row, and say so in the write-up. Amplitude and
+displacement remain interpretable.</li>
+<li>Do not describe an ipsatized profile’s near-zero elevation as
+evidence that a construct is “not generally interpersonal”. The
+preprocessing made that value uninformative.</li>
+</ul>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap-up</h2>
+<p><code>fit_structure()</code> asks whether the scales show circumplex
+structure at all, without committing to the theoretical angles, and
+<code>ipsatize()</code> removes elevation before any profile is
+computed. Two pages follow this one. “Advanced Circumplex Visualization”
+builds circumplex figures from <code>ggplot2</code> components.
+“SEM-Based SSM Analysis” fits a latent version of the SSM. It corrects a
+measure’s profile for scale unreliability, both its average level and
+its differences across scales.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li><p>Acton, G. S., &amp; Revelle, W. (2004). Evaluation of ten
+psychometric criteria for circumplex structure. <em>Methods of
+Psychological Research Online, 9</em>(1), 1–27.</p></li>
+<li><p>Hubert, L., &amp; Arabie, P. (1987). Evaluating order hypotheses
+within proximity matrices. <em>Psychological Bulletin, 102</em>(1),
+172–178.</p></li>
+<li><p>Tracey, T. J. G. (1997). RANDALL: A Microsoft FORTRAN program for
+a randomization test of hypothesized order relations. <em>Educational
+and Psychological Measurement, 57</em>(1), 164–168.</p></li>
+<li><p>Zimmermann, J., &amp; Wright, A. G. C. (2017). Beyond description
+in interpersonal construct validation: Methodological advances in the
+circumplex Structural Summary Approach. <em>Assessment, 24</em>(1),
+3–23.</p></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

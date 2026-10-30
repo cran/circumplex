@@ -506,19 +506,48 @@ axes_colnames <- function(sel, data) {
   if (is.numeric(sel)) colnames(data)[sel] else as.character(sel)
 }
 
+# Refuse an `items` selection that axes_colnames() would resolve to the wrong
+# columns: the three forms check_scales_selection() refuses, and a number that
+# reaches a column whose name repeats. axes_colnames() turns that number into
+# the name, and every later step selects by name, so it would use the first
+# column with that name.
+axes_check_items <- function(data, sel, where) {
+  # axes_colnames() reads a factor as its labels, so judge it as names, not
+  # by its integer codes
+  if (is.factor(sel)) sel <- as.character(sel)
+  check_scales_selection(data, sel, "items", where)
+  if (is.numeric(sel)) {
+    data_names <- colnames(data)
+    dup_names <- data_names[!is.na(data_names) & duplicated(data_names)]
+    keys <- seq_len(ncol(data))[sel]
+    hit <- which(!is.na(keys) & data_names[keys] %in% dup_names)
+    if (length(hit) > 0) {
+      stop("`items` selects position ", keys[[hit[[1]]]], ", whose name \"",
+           data_names[[keys[[hit[[1]]]]]], "\" occurs more than once in ",
+           where, "; axes_reliability() reaches items by name, and the name ",
+           "does not say which of those columns is meant.", call. = FALSE)
+    }
+  }
+  invisible(sel)
+}
+
 # Normalize the two input forms to one internal map: a list of per-scale item
 # column-name vectors, the matching per-scale angles (degrees), and scale labels.
 # Instrument form (parallel to score()): `items` is ALL item columns in
 # item-number order and the instrument's Scales$Items are 1-based indices into
 # it. Explicit form: `items` is a list of per-scale item-column vectors and
 # `angles` the per-scale angles.
-axes_resolve_map <- function(data, items, angles, instrument) {
+#
+# `where` names `data` to the user: "`data`", or "`cormat`" on the matrix path.
+axes_resolve_map <- function(data, items, angles, instrument,
+                             where = "`data`") {
   if (!is.null(instrument)) {
     stopifnot(inherits(instrument, "circumplex_instrument"))
     stopifnot(is_var(items))
     if (!is.null(angles)) {
       stop("Supply either `instrument` or `angles`, not both.", call. = FALSE)
     }
+    axes_check_items(data, items, where)
     all_cols <- axes_colnames(items, data)
     key <- instrument$Scales
     item_list <- lapply(seq_len(nrow(key)), function(i) {
@@ -546,6 +575,18 @@ axes_resolve_map <- function(data, items, angles, instrument) {
       )
     }
     stopifnot(is.numeric(angles), length(angles) == length(items))
+    for (sel in items) axes_check_items(data, sel, where)
+    # Each scale's own repeats are refused above, so a name reached twice
+    # here sits under two scales. The duplicated column makes the item
+    # correlation matrix singular, which used to stop the fit with a
+    # positive-definiteness error that did not name the item.
+    reached <- unlist(lapply(items, axes_colnames, data = data))
+    reached <- reached[!is.na(reached) & reached %in% colnames(data)]
+    across <- anyDuplicated(reached)
+    if (across > 0) {
+      stop("`items` lists the column \"", reached[[across]],
+           "\" under more than one scale.", call. = FALSE)
+    }
     labels <- names(items)
     if (is.null(labels)) labels <- sprintf("Scale%d", seq_along(items))
     list(
@@ -728,7 +769,18 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #' below the floor, all but one committed counterexample estimate around
 #' `1e-11` and compute. A fit whose worst estimate exceeds the target, or that
 #' the check cannot price at all, is refused as `"uncertified"`, and its warning
-#' names that same worst estimate. The three are read as one because both
+#' names that same worst estimate. At a severely ill-conditioned fit that
+#' estimate is a property of the fit as computed on the machine that ran it,
+#' not of the data alone: the numbers being checked are dominated by rounding
+#' there. The one counterexample above shows this. It is the three-variable
+#' matrix saved in the package sources as
+#' `tests/testthat/fixtures/rb18-counterexample-b.rds`. Three variables are too
+#' few scales for `axes_reliability()` itself, so the check was run on it
+#' through the package's internal functions. Given that same matrix, the worst
+#' estimate differed between macOS (arm64, R's reference BLAS and LAPACK) and
+#' Linux (arm64, OpenBLAS), and both machines refused it as `"uncertified"`.
+#' The standard-error, scaling-factor and FIML-ratio estimates are read as one
+#' because both
 #' surfaces refuse as a unit, so a fit on any path can be refused on the FIML
 #' ratio's estimate even where that ratio is not part of what it reports. That `1e-5` in the floor is not itself the tolerance: it is the
 #' accuracy target `1e-4`, the largest relative error a reported standard
@@ -756,7 +808,14 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #' when the per-fit check could not
 #' place this fit's numbers inside the accuracy target -- roundoff-level
 #' negativity, exact singularity and severe ill-conditioning all arrive here
-#' (a numerical caution). Either way the corrected standard errors and the four
+#' (a numerical caution). The check is also consulted at a fit the floor
+#' admits whose information matrix is nearly singular (reciprocal condition
+#' estimate below `sqrt(.Machine$double.eps)`); every such fit of a kind this
+#' function can produce that the package's sweep measured passed it, and a
+#' fit the floor admits but that
+#' this function refuses at its door (fewer than four scales) can be refused
+#' `"uncertified"` at the internal helpers
+#' where it used to compute. Either way the corrected standard errors and the four
 #' scaled statistics go `NA` together (each with its own warning naming that
 #' reason) rather than one surface refusing while the other silently scales.
 #' The standard-error surface additionally applies the same criterion to the
@@ -1014,7 +1073,11 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #' @param items Item selection. With `instrument`, a character vector of column
 #'   names (or numeric indices) giving **all** items in item-number order, as in
 #'   [score()]. Without `instrument`, a list with one element per scale, each a
-#'   character vector (or numeric indices) of that scale's item columns.
+#'   character vector (or numeric indices) of that scale's item columns. In
+#'   either form, `items` must not select one column twice (in the list form,
+#'   within a scale or across two scales), hold a number below 1, or name a
+#'   column whose name occurs more than once in `data` (or in `cormat`). Items
+#'   are matched by name, so a number must not reach such a column either.
 #' @param angles A numeric vector of the scales' angles in degrees (one per
 #'   scale), required for the explicit map and forbidden with `instrument`
 #'   (which supplies its own). Must be equally spaced around the circle, at any
@@ -1058,7 +1121,10 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #'   `NA` -- notably the shared degeneracy criterion's two literals
 #'   (evaluated on `cov2cor()` of the fitted covariance matrix; the eigenvalue
 #'   floor `sqrt(p * .Machine$double.eps / 1e-5)` decides which fits are
-#'   *checked* by the per-fit accuracy check rather than which are refused,
+#'   *checked* by the per-fit accuracy check rather than which are refused
+#'   (a fit the floor admits is also checked when its information matrix's
+#'   reciprocal condition estimate falls below `sqrt(.Machine$double.eps)`,
+#'   a near-singularity in the derivative structure the floor cannot see),
 #'   where the `1e-5` is the `1e-4` accuracy target
 #'   divided by the floor's factor-of-`10` calibration ceiling, and the
 #'   target's noise-dominance reading is calibrated for `n` up to about
@@ -1078,7 +1144,10 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #'   pricing (`"singular"`, `"unidentified"`, `"indefinite"`, and
 #'   `"ill_conditioned"` -- the raw arm is refused by the floor itself and
 #'   never reaches the per-fit check, so this is the one field on which that
-#'   literal still appears); it is
+#'   literal still appears, and it inverts at R's default `solve()`
+#'   tolerance, so at a fitted matrix whose information matrix sits near
+#'   machine precision this field can differ across platforms while every
+#'   reported field does not); it is
 #'   deliberately silent -- no warning or printed note accompanies it --
 #'   `fit_uncorrected`, the six fit statistics as
 #'   lavaan reports them
@@ -1103,7 +1172,7 @@ axes_resolve_blocks <- function(blocks, src, all_cols) {
 #'   dropping rows with no observed item, and the `n` you supplied on the
 #'   correlation-matrix path. It is the N to divide `n_moments` by when locating
 #'   a fit on the calibration table in
-#'   \code{vignette("axes-reliability")}. `n_total` is the number of rows
+#'   \code{vignette("axes-reliability-caveats")}. `n_total` is the number of rows
 #'   supplied before any of that, and `n_complete` the number answering every
 #'   item. `n_complete` and `min_coverage` are
 #'   present on every path so that a caller can read them unconditionally, and
@@ -1153,7 +1222,7 @@ axes_reliability <- function(data = NULL, items, angles = NULL,
   missing <- match.arg(missing)
 
   # Exactly one of data / cormat, and `n` only with cormat -- the house pattern
-  # cpm_fit() already uses for its CircE-style matrix path (R/cpm_fit.R:1583).
+  # cpm_fit() already uses for its CircE-style matrix path (R/cpm_fit.R).
   has_data <- !is.null(data)
   has_cormat <- !is.null(cormat)
   if (has_data == has_cormat) {
@@ -1206,7 +1275,8 @@ axes_reliability <- function(data = NULL, items, angles = NULL,
   # axes_resolve_map() reads only colnames(), so the correlation matrix serves
   # as the column source on the cormat path exactly as the data frame does.
   map <- axes_resolve_map(if (has_data) data else cormat, items, angles,
-                          instrument)
+                          instrument,
+                          where = if (has_data) "`data`" else "`cormat`")
   item_cols <- map$items
   angles_deg <- map$angles
   n_scales <- length(item_cols)
@@ -1946,7 +2016,7 @@ axes_reliability <- function(data = NULL, items, angles = NULL,
       # The count of distinct analyzed moments, p* = p(p+1)/2 (M70). Reported
       # rather than left to the caller because `p*/N` -- with `n` above as the
       # N, the one lavaan was actually handed -- is what the calibration table
-      # in vignette("axes-reliability") is indexed by, and recomputing it off
+      # in vignette("axes-reliability-caveats") is indexed by, and recomputing it off
       # `n_items` invites reading `n_total` or `n_complete` as the denominator.
       n_moments = p * (p + 1) / 2,
       angles = angles_deg, labels = map$labels, sd = sd,
@@ -2041,15 +2111,24 @@ axes_reliability <- function(data = NULL, items, angles = NULL,
       #
       # Three of them are worth naming, for what the M89/M90 re-cuts left:
       #
-      #   "unidentified"  fires when Delta'V Delta is singular. One measured
-      #                   route remains: a degenerate Delta (a one-scale map
-      #                   makes zeta1 identical to the all-ones xi2), which no
-      #                   conditioning test of Sigma-hat can see. The re-cut
-      #                   closed the other measured route (an ordinary map at a
-      #                   correlation-degenerate Sigma-hat): the criterion now
-      #                   prices cov2cor(Sigma-hat) -- the metric everything
-      #                   below computes in -- so that shape is refused at the
-      #                   door (RR18).
+      #   "unidentified"  fires on exactly three EXACT grounds since M147
+      #                   (D-062): a pair of bit-identical component
+      #                   derivative matrices (a one-scale map makes zeta1
+      #                   identical to the all-ones xi2), a component matrix
+      #                   identical to the identity (one item per scale or
+      #                   per block with that component fitted), or an
+      #                   inversion of Delta'V Delta that is non-finite or
+      #                   that LAPACK reports exactly singular under
+      #                   `tol = 0`. Until M147 it also fired wherever the
+      #                   default solve() tolerance refused -- a condition
+      #                   estimate below eps -- which RR22 measured as a
+      #                   platform fact at one committed matrix; such a fit
+      #                   now goes to the certificate (see "uncertified"
+      #                   above), whether or not the floor fired. None of the
+      #                   three grounds is a conditioning test of Sigma-hat,
+      #                   and the re-cut's second route (an ordinary map at a
+      #                   correlation-degenerate Sigma-hat) stays closed at
+      #                   the door (RR18).
       #   "saturated"     fires on df = 0 (M90, RR18 BC4), ahead of every
       #                   matrix computation. Before the guard, the measured
       #                   p = 3 saturated construction (the only p where q can

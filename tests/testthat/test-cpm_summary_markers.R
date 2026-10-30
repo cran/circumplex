@@ -1,15 +1,25 @@
 # M94: the bootstrap fired-marker line in summary(), and its fences.
 #
-# Byte-identity fences (AC3): the analytic-path summary() output and the
-# bootstrap print() output must be byte-identical to the merge-base commit of
-# the m94 branch. The snapshots under _snaps/cpm_summary_markers.md were
-# captured at that commit; to regenerate the merge-base capture at review,
-# check out `git merge-base master m94-bootstrap-marker-list`, copy this file
-# and its helper fixtures in, run it, and diff the snapshot file — it must not
-# differ from the committed one. Analytic fits use the deterministic cormat
-# path (no RNG); expect_snapshot() does not run on CRAN by design.
+# Snapshot fences (AC3 of M94): the analytic-path summary() output and the
+# bootstrap print() output are pinned as snapshots. M94 captured them
+# byte-identical to the merge-base of its branch. M133 re-captured them after
+# shortening the results-table headers, so they now pin the M133 layout, and
+# expect_cpm_table_one_block() checks that the table's values are unchanged.
+# Analytic fits use the deterministic cormat path (no RNG); expect_snapshot()
+# does not run on CRAN by design.
+
+# The lower-discrepancy check has its own tests (test-cpm_lower_check.R); it is
+# turned off for this file, whose fits do not need it, except in the analytic
+# snapshot test, whose Heywood fixture fires it.
+real_lower_check <- cpm_lower_check
+local_mocked_bindings(cpm_lower_check = function(engine, R, N) {
+  cpm_lower_not_run()
+})
 
 m94_labels <- function() c("PA", "BC", "DE", "FG", "HI", "JK", "LM", "NO")
+
+# Eight scale names of exactly 16 characters (M146 width fixture).
+m146_long_names <- function() sprintf("LongScaleName_%s", m94_labels())
 
 # Analytic fixtures, mirroring the calibration tests in test-cpm_api.R.
 m94_clean_P0 <- function() {
@@ -71,16 +81,17 @@ m94_boot_clean <- local({
   }
 })
 
-# ---- AC3: analytic path byte-identical to merge-base ------------------------
+# ---- AC3: analytic path snapshot fence ---------------------------------------
 
-test_that("analytic summary() output is byte-identical to merge-base (four regimes)", {
-  # Byte-identity is a same-machine claim: the committed baselines were
-  # captured on the authoring machine at the merge-base, and PR #123's CI
+test_that("analytic summary() output matches its snapshot (four regimes)", {
+  local_mocked_bindings(cpm_lower_check = real_lower_check)
+  # The snapshot is a same-machine claim: the committed baselines were
+  # captured on the authoring machine, and PR #123's CI
   # measured the cross-platform deltas directly — a third-decimal communality
   # (0.562 vs 0.563 on ubuntu/windows) and the residual tie-break pair of the
   # saturated free fit — while macOS matched. covr perturbs optimizer results
   # the same way (M59). So this fence runs where its baseline was captured,
-  # like the bootstrap print() fence below; regenerate per the file header.
+  # like the bootstrap print() fence below.
   skip_on_ci()
   skip_on_cran()
   skip_on_covr()
@@ -89,20 +100,24 @@ test_that("analytic summary() output is byte-identical to merge-base (four regim
   # (1) clean N >= 2000
   clean <- cpm_fit(cormat = P0, scales = paste0("V", 1:8), angles = tr$angles,
                    n = 5000, m = 3)
+  expect_cpm_table_one_block(clean, summary)
   expect_snapshot(summary(clean))
   # (2) marker-firing N >= 2000 (Heywood): warnings at fit time, not display time
   voc <- cpm_oracle_voc()
   hey <- suppressWarnings(cpm_fit(cormat = voc$R, scales = voc$names,
                                   angles = voc$th_start, n = 5000, m = 2))
   expect_true(cpm_boundary_proximity(hey))
+  expect_cpm_table_one_block(hey, summary)
   expect_snapshot(summary(hey))
   # (3) N < 2000
   small <- cpm_fit(cormat = P0, scales = paste0("V", 1:8), angles = tr$angles,
                    n = 300, m = 3)
+  expect_cpm_table_one_block(small, summary)
   expect_snapshot(summary(small))
   # (4) free-scaling N >= 2000
   free <- cpm_fit(cormat = P0, scales = paste0("V", 1:8), angles = tr$angles,
                   n = 5000, m = 3, scaling = "free")
+  expect_cpm_table_one_block(free, summary)
   expect_snapshot(summary(free))
 })
 
@@ -121,25 +136,110 @@ test_that("an analytic marker-firing fit names each fired label exactly once", {
   }
 })
 
+test_that("the analytic caution follows its two sample-size thresholds", {
+  # The cpm_fit() help page states the rule this pins (M167): for an
+  # analytic fit, the small-N note prints whenever N < 2000, and the marker
+  # note prints for 2000 <= N < 50000 only when a marker fires. Each side of
+  # each threshold is checked on a fit whose markers are known. It runs on
+  # CRAN: the fits are analytic on fixed correlation matrices (no RNG), and
+  # it asserts which note prints, not digits.
+  notes <- function(fit) {
+    out <- gsub("\\s+", " ", paste(capture.output(summary(fit)),
+                                   collapse = " "))
+    c(small_n = grepl("mis-cover at this sample size", out, fixed = TRUE),
+      marker = grepl("near a parameter boundary or weakly identified", out,
+                     fixed = TRUE))
+  }
+  tr <- cpm_clean_truth()
+  P0 <- m94_clean_P0()
+  clean_at <- function(n) {
+    cpm_fit(cormat = P0, scales = paste0("V", 1:8), angles = tr$angles,
+            n = n, m = 3)
+  }
+  expect_length(cpm_boundary_markers(clean_at(2000)), 0L)
+  expect_identical(notes(clean_at(1999)), c(small_n = TRUE, marker = FALSE))
+  expect_identical(notes(clean_at(2000)), c(small_n = FALSE, marker = FALSE))
+  expect_identical(notes(clean_at(50000)), c(small_n = FALSE, marker = FALSE))
+  voc <- cpm_oracle_voc()
+  hey_at <- function(n) {
+    suppressWarnings(cpm_fit(cormat = voc$R, scales = voc$names,
+                             angles = voc$th_start, n = n, m = 2))
+  }
+  expect_true(cpm_marker_labels()[["heywood"]] %in%
+                cpm_boundary_markers(hey_at(49999)))
+  expect_identical(notes(hey_at(1999)), c(small_n = TRUE, marker = FALSE))
+  expect_identical(notes(hey_at(2000)), c(small_n = FALSE, marker = TRUE))
+  expect_identical(notes(hey_at(49999)), c(small_n = FALSE, marker = TRUE))
+  expect_identical(notes(hey_at(50000)), c(small_n = FALSE, marker = FALSE))
+})
+
 # ---- AC1/AC2: the bootstrap fired-marker note -------------------------------
 
-# The note's variable sentence is wrapped at emission time, so label and
-# prefix assertions run on the whitespace-normalized block; the fixed caveat
-# lines are additionally pinned raw (they are literals in the code).
+# The whole note now wraps to the reader's console width, so where its line
+# breaks fall depends on that width and no assertion may depend on them. The
+# block is located and returned with its whitespace collapsed, and every
+# assertion below runs on that. This pins the words and their order, which is
+# what the note promises, and it makes the negative assertions stronger: a
+# banned phrase broken across two lines is now found, where a raw search
+# would have missed it.
+#
+# Some assertions still read the raw output. Five of them check a property of
+# the layout, which collapsing whitespace would erase: the note sits in the
+# Diagnostics section, no blank line is doubled, the header and the note are
+# separated by exactly one blank line, no fired marker label is split across a
+# line break, and every line of the trailing caveat keeps its two-space
+# continuation leader (m94_expect_caveat_indent(), added by M131). Two others read raw output for a different reason. The
+# snapshot records the whole rendering, and the no-note check looks for the
+# absence of the note's opening clause, which never splits because it is
+# handed to wrap_prose() as one atomic unit.
 m94_marker_block <- function(out) {
+  flat <- gsub("\\s+", " ", out)
   start_pat <- "Note: boundary/weak-identification markers fired:"
   end_pat <- "'When a fit sits at a boundary')."
-  start <- regexpr(start_pat, out, fixed = TRUE)
-  end <- regexpr(end_pat, out, fixed = TRUE)
+  start <- regexpr(start_pat, flat, fixed = TRUE)
+  end <- regexpr(end_pat, flat, fixed = TRUE)
   if (start < 0 || end < 0) return(NA_character_)
-  substr(out, start, end + nchar(end_pat) - 1L)
+  substr(flat, start, end + nchar(end_pat) - 1L)
 }
 
-m94_caveat_raw <- paste0(
-  "  What has been measured about these markers covers analytic intervals\n",
-  "  only, and not every marker was measured; they are not validated as\n",
-  "  predictors of the bootstrap intervals shown here (see the vignette\n",
-  "  section 'When a fit sits at a boundary')."
+# Raw-output check: every line of the caveat carries the two-space continuation
+# leader. Collapsing whitespace erases indentation, so m94_caveat_words cannot
+# see this and nothing outside the snapshots pinned it (M131 review, O9). The
+# leader is what keeps the caveat inside the note it belongs to, and
+# wrap_prose() counts it against the width rather than adding it on top, so a
+# lost leader is a real layout change, not a cosmetic one.
+m94_expect_caveat_indent <- function(out) {
+  lines <- unlist(strsplit(out, "\n", fixed = TRUE))
+  first <- grep("What has been measured about these markers", lines, fixed = TRUE)
+  expect_length(first, 1L)
+  # The caveat's end is found by consuming lines until they carry all of its
+  # words, because its closing phrase straddles a line break at most widths
+  # and matching it raw would find nothing.
+  squash <- function(x) paste(unlist(strsplit(x, "[ \t]+")), collapse = " ")
+  caveat <- character(0)
+  for (i in seq(first[[1]], length(lines))) {
+    caveat <- c(caveat, lines[[i]])
+    if (grepl(m94_caveat_words, squash(paste(caveat, collapse = " ")),
+              fixed = TRUE)) {
+      break
+    }
+  }
+  expect_match(squash(paste(caveat, collapse = " ")), m94_caveat_words,
+               fixed = TRUE)
+  expect_gte(length(caveat), 2L)
+  for (line in caveat) {
+    expect_match(
+      line, "^  [^ ]",
+      info = paste0("caveat line lost its leader: ", line)
+    )
+  }
+}
+
+m94_caveat_words <- paste(
+  "What has been measured about these markers covers analytic intervals",
+  "only, and not every marker was measured; they are not validated as",
+  "predictors of the bootstrap intervals shown here (see the vignette",
+  "section 'When a fit sits at a boundary')."
 )
 
 # The note must sit inside the `# Diagnostics` section — including on fits
@@ -186,7 +286,8 @@ test_that("bootstrap summary() prints the fired-marker note: >= 2 markers, N < 2
   for (lab in fired) {
     expect_match(out, lab, fixed = TRUE)
   }
-  expect_match(out, m94_caveat_raw, fixed = TRUE)
+  expect_match(block, m94_caveat_words, fixed = TRUE)
+  m94_expect_caveat_indent(out)
 })
 
 test_that("bootstrap summary() prints the fired-marker note: exactly 1 marker, N >= 2000", {
@@ -218,7 +319,8 @@ test_that("bootstrap summary() prints the fired-marker note: exactly 1 marker, N
   for (lab in fired) {
     expect_match(out, lab, fixed = TRUE)
   }
-  expect_match(out, m94_caveat_raw, fixed = TRUE)
+  expect_match(block, m94_caveat_words, fixed = TRUE)
+  m94_expect_caveat_indent(out)
 })
 
 test_that("the marker note claims no interval consequence (banned phrases absent)", {
@@ -243,9 +345,9 @@ test_that("a bootstrap fit with no fired marker prints no marker note", {
                      out, fixed = TRUE))
 })
 
-# ---- AC3: bootstrap print() byte-identical to merge-base --------------------
+# ---- AC3: bootstrap print() snapshot fence ----------------------------------
 
-test_that("print() on a bootstrap marker-firing fit is byte-identical to merge-base", {
+test_that("print() on a bootstrap marker-firing fit matches its snapshot", {
   # Bootstrap CI endpoints differ across platforms at the 3rd decimal (BLAS),
   # so this snapshot is a local-only regression pin, per the test-cpm_api.R
   # bootstrap-render precedent.
@@ -253,5 +355,158 @@ test_that("print() on a bootstrap marker-firing fit is byte-identical to merge-b
   skip_on_cran()
   jz <- m94_boot_jz()
   expect_gt(length(cpm_boundary_markers(jz)), 0)
+  expect_cpm_table_one_block(jz, print)
   expect_snapshot(print(jz))
+})
+
+# ---- M133: one-block results table for every fixture in this file -----------
+
+test_that("print() and summary() show the results table as one block for every fixture", {
+  # The check compares the printed table with the same object's rounded
+  # results, so it does not depend on platform numerics and runs on CI.
+  skip_on_cran()
+  tr <- cpm_clean_truth()
+  P0 <- m94_clean_P0()
+  voc <- cpm_oracle_voc()
+  fits <- list(
+    clean = cpm_fit(cormat = P0, scales = paste0("V", 1:8),
+                    angles = tr$angles, n = 5000, m = 3),
+    hey = suppressWarnings(cpm_fit(cormat = voc$R, scales = voc$names,
+                                   angles = voc$th_start, n = 5000, m = 2)),
+    small = cpm_fit(cormat = P0, scales = paste0("V", 1:8),
+                    angles = tr$angles, n = 300, m = 3),
+    free = cpm_fit(cormat = P0, scales = paste0("V", 1:8),
+                   angles = tr$angles, n = 5000, m = 3, scaling = "free"),
+    # M146: eight 16-character names, free scaling, analytic intervals. With
+    # Communality printed this table reached 84 columns and split at 77.
+    free_long = cpm_fit(cormat = P0, scales = m146_long_names(),
+                        angles = tr$angles, n = 5000, m = 3,
+                        scaling = "free", ci_method = "analytic"),
+    boot_jz = m94_boot_jz(),
+    boot_big = m94_boot_big(),
+    boot_clean = m94_boot_clean()
+  )
+  # The long-name fixture is the width case only if its names are 16
+  # characters and its intervals are computed, so both are asserted here.
+  long <- fits$free_long
+  expect_true(all(nchar(long$results$Scale) == 16))
+  free_rows <- seq_len(nrow(long$results)) != long$details$reference
+  expect_true(all(is.finite(long$results$Angle_lci[free_rows])))
+  expect_true(all(is.finite(long$results$Zeta_lci)))
+  for (nm in names(fits)) {
+    for (printer in list(print = print, summary = summary)) {
+      expect_cpm_table_one_block(fits[[nm]], printer)
+    }
+  }
+})
+
+# ---- M146: the Heywood clause and the marker note at every width -------------
+#
+# The Heywood sweep runs over the file's two Heywood fixtures: the analytic
+# cpm_oracle_voc() fit and m94_boot_jz(). The marker sweep runs over its two
+# marker-firing bootstrap fixtures: m94_boot_jz(), which fires three markers,
+# and m94_boot_big(), which fires one. Both fire "small correlation-function
+# weight", the longest label. Both notes are swept over widths 30 to 120.
+
+test_that("the Heywood note never breaks inside its zeta clause (30 to 120)", {
+  skip_on_cran()
+  voc <- cpm_oracle_voc()
+  fits <- list(
+    hey = suppressWarnings(cpm_fit(cormat = voc$R, scales = voc$names,
+                                   angles = voc$th_start, n = 5000, m = 2)),
+    boot_jz = m94_boot_jz()
+  )
+  unit <- "(ζ > 0.995,"
+  old <- options(width = 80)
+  on.exit(options(old), add = TRUE)
+  for (nm in names(fits)) {
+    fit <- fits[[nm]]
+    expect_true(isTRUE(fit$details$heywood), info = nm)
+    for (w in 30:120) {
+      options(width = w)
+      for (printer in list(print, summary)) {
+        out <- capture.output(printer(fit))
+        expect_true(any(grepl(unit, out, fixed = TRUE)),
+                    info = paste(nm, "width", w))
+      }
+    }
+  }
+})
+
+test_that("the marker note stays inside the width except for a lone label", {
+  skip_on_cran()
+  fits <- list(boot_jz = m94_boot_jz(), boot_big = m94_boot_big())
+  old <- options(width = 80)
+  on.exit(options(old), add = TRUE)
+  for (nm in names(fits)) {
+    fit <- fits[[nm]]
+    expect_identical(fit$details$ci_method, "bootstrap", info = nm)
+    fired <- cpm_boundary_markers(fit)
+    expect_true("small correlation-function weight" %in% fired, info = nm)
+    labels <- c(paste0(fired, ";"), paste0(fired, "."))
+    for (w in 30:120) {
+      options(width = w)
+      info <- paste(nm, "width", w)
+      out <- capture.output(summary(fit))
+      # "Note:" may end the line before this word at narrow widths.
+      first <- grep("boundary/weak-identification", out, fixed = TRUE)
+      if (length(first) == 1 && !grepl("Note:", out[first], fixed = TRUE)) {
+        first <- first - 1L
+      }
+      last <- grep("What has been measured", out, fixed = TRUE)
+      expect_length(first, 1)
+      expect_length(last, 1)
+      block <- out[first:(last - 1L)]
+      wide <- block[nchar(block, type = "width") > w]
+      # A line may pass the width only when it holds one whole marker label.
+      expect_true(all(trimws(wide) %in% labels), info = info)
+      # The opening clause breaks between words once it cannot fit whole.
+      if (w < 51) {
+        expect_false(any(grepl(
+          "Note: boundary/weak-identification markers fired:", out,
+          fixed = TRUE
+        )), info = info)
+      }
+    }
+  }
+})
+
+# The marker list a help page gives: the parenthetical after "weak-identification
+# marker". man/ in the dev tree, Rd_db() once installed (the dual-source
+# pattern of test-cpm_boundary_vignette.R), so the check runs under both
+# devtools::test() and R CMD check.
+help_marker_list <- function(page) {
+  rd <- test_path("..", "..", "man", paste0(page, ".Rd"))
+  txt <- if (file.exists(rd)) {
+    readLines(rd, warn = FALSE, encoding = "UTF-8")
+  } else {
+    as.character(tools::Rd_db("circumplex")[[paste0(page, ".Rd")]])
+  }
+  txt <- gsub("\\s+", " ", paste(txt, collapse = " "))
+  m <- regmatches(txt, gregexpr("weak-identification marker \\([^)]*\\)", txt))[[1]]
+  expect_length(m, 1L)
+  m
+}
+
+test_that("the help pages list every marker label summary() prints", {
+  for (page in c("cpm_fit", "summary.circumplex_cpm")) {
+    list_text <- help_marker_list(page)
+    for (lab in cpm_marker_labels()) {
+      expect_true(grepl(lab, list_text, fixed = TRUE),
+                  info = paste0(page, ": ", lab))
+    }
+  }
+})
+
+test_that("the cpm_fit() matrix example on jz2017 warns at a boundary fit", {
+  skip_on_cran()
+  local_mocked_bindings(cpm_lower_check = real_lower_check)
+  e <- new.env()
+  data("jz2017", package = "circumplex", envir = e)
+  R <- cor(e$jz2017[m94_labels()])
+  expect_warning(
+    fit <- cpm_fit(cormat = R, scales = m94_labels(), n = nrow(e$jz2017)),
+    "CPM Hessian is ill-conditioned"
+  )
+  expect_true(fit$details$heywood)
 })

@@ -14,7 +14,12 @@ vignette: >
 library(circumplex)
 ```
 
-## 1. Generalizing the basic analyses
+**Level:** Intermediate. Read "Introduction to SSM Analysis" first.
+
+## 1. Overview
+This vignette extends the basic SSM analyses to more than one group or measure. Section 2, "Generalizing the basic analyses", adds the `grouping` and `measures` arguments of `ssm_analyze()`. Section 3, "Contrast analyses", adds the `contrast` argument and `ssm_plot_contrast()`. Section 4, "Taxonomy of analysis types", lists every analysis type and the arguments that select it. Section 5, "Working with SSM tables", customizes the output of `ssm_table()`. Section 6, "Working with SSM figures", exports figures with `ggsave()`. The Wrap-up lists what the page covered and names the next pages, and the References list the sources cited.
+
+## 2. Generalizing the basic analyses
 
 ### Generalizing to multiple means
 We've already seen how adding the `measures` argument can change `ssm_analyze()` from analyzing means to analyzing correlations. Similarly, we can change it from analyzing all observations as a single group to analyzing subgroups separately. This is done using the `grouping` argument. This argument needs to contain a single variable (name or column number) that specifies each observation's group. For instance, the `Gender` variable in the `jz2017` dataset is a factor with two levels: Female and Male. To analyze each gender separately, we need to add the `grouping = "Gender"` argument to the function call.
@@ -107,14 +112,14 @@ ssm_table(results)
 ssm_plot_circle(results)
 ```
 
-<img src="figures/intermediate-ssm-analysis-group_plot-1.png" alt="plot of chunk group_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-group_plot-1.svg" alt="plot of chunk group_plot" width="100%" />
 
 
 ``` r
 ssm_plot_curve(results)
 ```
 
-<img src="figures/intermediate-ssm-analysis-group_plot2-1.png" alt="plot of chunk group_plot2" width="100%" />
+<img src="figures/intermediate-ssm-analysis-group_plot2-1.svg" alt="plot of chunk group_plot2" width="100%" />
 
 Any number of groups can be analyzed in this way, and the output will contain additional profile blocks, the table will contain additional rows, and the figures will contain additional points or curves. The grouping variable just needs to contain more than one level (i.e., unique value).
 
@@ -206,14 +211,14 @@ ssm_table(results2)
 ssm_plot_circle(results2)
 ```
 
-<img src="figures/intermediate-ssm-analysis-measures_plot-1.png" alt="plot of chunk measures_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-measures_plot-1.svg" alt="plot of chunk measures_plot" width="100%" />
 
 
 ``` r
 ssm_plot_curve(results2)
 ```
 
-<img src="figures/intermediate-ssm-analysis-measures_plot2-1.png" alt="plot of chunk measures_plot2" width="100%" />
+<img src="figures/intermediate-ssm-analysis-measures_plot2-1.svg" alt="plot of chunk measures_plot2" width="100%" />
 
 ### Generalizing to multiple groups and multiple measures
 Finally, it is possible to analyze multiple measures within multiple groups. As you might expect, this requires providing both the `measures` and `grouping` arguments to the same function call. Again, any number of measures and groups is possible. The profiles in such an analysis will be named "Measure: Group" as below.
@@ -277,7 +282,8 @@ summary(results3)
 #> Amplitude         0.120      0.075      0.171
 #> Displacement    106.881     82.677    129.996
 #> Model Fit         0.648                      
-#>   Note: model fit is inadequate (R² < .70); interpret only the elevation parameter.
+#>   Note: model fit is inadequate (R² < .70); interpret only the elevation
+#>   parameter.
 #> 
 #> 
 #> # Profile [SCZPD: Male]:
@@ -300,8 +306,10 @@ summary(results3)
 #> Amplitude         0.047      0.013      0.101
 #> Displacement    142.345     68.178    218.702
 #> Model Fit         0.424                      
-#>   Note: model fit is inadequate (R² < .70); interpret only the elevation parameter.
-#>   Note: the amplitude CI lower bound is under 0.35 CI-widths above zero; the displacement is not interpretable.
+#>   Note: model fit is inadequate (R² < .70); interpret only the elevation
+#>   parameter.
+#>   Note: the amplitude CI lower bound is under 0.35 CI-widths above zero; the
+#>   displacement is not interpretable.
 ```
 
 ```r
@@ -386,7 +394,7 @@ ssm_table(results3)
 ssm_plot_circle(results3)
 ```
 
-<img src="figures/intermediate-ssm-analysis-general_plot-1.png" alt="plot of chunk general_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-general_plot-1.svg" alt="plot of chunk general_plot" width="100%" />
 
 Note that the borders for the "PARPD: Male" and "SZTPD: Male" blocks are dashed instead of solid. This indicates that these profiles have low fit (i.e., $R^2<.7$). We could alternatively hide these such profiles by adding `drop_lowfit = TRUE` as below (noting that the color guide may change as profiles are dropped).
 
@@ -395,23 +403,23 @@ Note that the borders for the "PARPD: Male" and "SZTPD: Male" blocks are dashed 
 ssm_plot_circle(results3, drop_lowfit = TRUE)
 ```
 
-<img src="figures/intermediate-ssm-analysis-general_plot2-1.png" alt="plot of chunk general_plot2" width="100%" />
+<img src="figures/intermediate-ssm-analysis-general_plot2-1.svg" alt="plot of chunk general_plot2" width="100%" />
 
 
 ``` r
 ssm_plot_curve(results3)
 ```
 
-<img src="figures/intermediate-ssm-analysis-general_plot3-1.png" alt="plot of chunk general_plot3" width="100%" />
+<img src="figures/intermediate-ssm-analysis-general_plot3-1.svg" alt="plot of chunk general_plot3" width="100%" />
 
 
 ``` r
 ssm_plot_curve(results3, drop_lowfit = TRUE)
 ```
 
-<img src="figures/intermediate-ssm-analysis-general_plot4-1.png" alt="plot of chunk general_plot4" width="100%" />
+<img src="figures/intermediate-ssm-analysis-general_plot4-1.svg" alt="plot of chunk general_plot4" width="100%" />
 
-## 2. Contrast analyses
+## 3. Contrast analyses
 The final argument to master in this vignette is `contrast`, which allows us to compare two groups or measures. Setting this argument to TRUE will first generate scores for each group (or measure), then estimate SSM parameters for these scores, and finally calculate the difference between the parameters. To keep the code simpler and to discourage "fishing expeditions," only two groups or measures can be compared at a time.
 
 ### Contrasts between groups' means
@@ -525,7 +533,7 @@ ssm_table(results4)
 ssm_plot_contrast(results4)
 ```
 
-<img src="figures/intermediate-ssm-analysis-model_plot-1.png" alt="plot of chunk model_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-model_plot-1.svg" alt="plot of chunk model_plot" width="100%" />
 
 ### Contrasts between measures in a group
 Comparing measures in a group is very similar. Again, all we need to do is add the `contrast` argument to the function call containing `measures`. Here we will use a parameter contrast to see what they look like.
@@ -636,7 +644,7 @@ ssm_table(results5)
 ssm_plot_contrast(results5)
 ```
 
-<img src="figures/intermediate-ssm-analysis-measure_contrast_plot-1.png" alt="plot of chunk measure_contrast_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-measure_contrast_plot-1.svg" alt="plot of chunk measure_contrast_plot" width="100%" />
 
 Here, instead of a circle plot, we see a contrast plot showing the difference between the two measures' SSM parameters and their 95% confidence intervals. Because the confidence interval for the elevation parameter does not include zero, this parameter is significantly different between the measures.
 
@@ -682,8 +690,10 @@ summary(results6)
 #> Amplitude         0.055      0.016      0.109
 #> Displacement     77.367     12.983    133.991
 #> Model Fit         0.500                      
-#>   Note: model fit is inadequate (R² < .70); interpret only the elevation parameter.
-#>   Note: the amplitude CI lower bound is under 0.35 CI-widths above zero; the displacement is not interpretable.
+#>   Note: model fit is inadequate (R² < .70); interpret only the elevation
+#>   parameter.
+#>   Note: the amplitude CI lower bound is under 0.35 CI-widths above zero; the
+#>   displacement is not interpretable.
 #> 
 #> 
 #> # Contrast [BORPD: Male - Female]:
@@ -752,9 +762,9 @@ ssm_table(results6)
 ssm_plot_contrast(results6)
 ```
 
-<img src="figures/intermediate-ssm-analysis-group_contrast_plot-1.png" alt="plot of chunk group_contrast_plot" width="100%" />
+<img src="figures/intermediate-ssm-analysis-group_contrast_plot-1.svg" alt="plot of chunk group_contrast_plot" width="100%" />
 
-## 3. Taxonomy of analysis types
+## 4. Taxonomy of analysis types
 Although all SSM analyses are based on the idea of decomposing circumplex scores into the parameters of a cosine curve, there are actually many different ways to implement it. Each of these implementations allows different questions to be explored. In the table below, a list of the SSM analysis types that are currently implemented in the `circumplex` package is provided. This table also provides the specific combination of arguments needed to implement each analysis using the `ssm_analyze()` function. Specifying which analysis to run is simply a matter of providing the correct arguments to the function; this allows a single function to essentially do the work of seven and makes for a more intuitive user experience.
 
 <table>
@@ -828,12 +838,12 @@ If yes, we must specify a `grouping` variable, and the output will contain resul
 
 1. **Do we want to contrast/compare two sets of results?** If yes, we must specify `contrast` as TRUE and ensure that we are only requesting two sets of results (i.e., two groups or two measures). If no, we must omit the `contrast` argument or set it to FALSE, and the results themselves will be output, rather than their contrast.
 
-## 4. Working with SSM tables
+## 5. Working with SSM tables
 
 ### Basic customizations of tables
 Additional arguments to the `ssm_table()` function can be explored using the `?ssm_table` command. Two useful options are the `drop_xy` argument, which shows or hides the x-value and y-value columns, and the `caption` argument which allows a custom string to be printed above the table. Note as well that the return object of this function is just a data frame, which can be easily edited to add, change, or remove text. To change the formatting of the table, see the `htmlTable` or `kableExtra` packages.
 
-## 5. Working with SSM figures
+## 6. Working with SSM figures
 
 ### Exporting figures as files
 All SSM plots are created using the `ggplot2` package, which is incredibly flexible and powerful. It also offers the `ggsave()` function to export figures to external files of various types. See the documentation for this function (`?ggsave`) to learn more, but some useful arguments are `filename`, `plot`, `width`, `height`, and `units`. We can save the figure as a raster image file (e.g., "png", "jpeg", "tiff"), a vector image file (e.g., "svg"), or a portable document (e.g., "pdf" or "tex"). We can also control the exact width and height of the image in different units (i.e., "in", "cm", or "mm"). Because the underlying graphics are vectorized in R, they can be easily scaled to any size without loss of quality and used in manuscripts, presentations, or posters.
@@ -844,7 +854,7 @@ ggsave("bordpd_gender.png", width = 7.5, height = 4, units = "in")
 ```
 
 ## Wrap-up
-In this vignette, we learned how to generalize the SSM analyses to multiple groups and measures, how to conduct contrast analyses, how to make basic customizations to tables and figures, and how to export tables and figures to external files. In the next vignette, "Advanced Circumplex Visualization," we learn how to build circumplex figures from scratch by composing the `ggcircumplex()` canvas, the `geom_ssm_point()` and `geom_ssm_arc()` layers, and the `scale_x_circumplex()` axis scale with any other `ggplot2` components.
+In this vignette, we learned how to generalize the SSM analyses to multiple groups and measures, how to conduct contrast analyses, how to make basic customizations to tables and figures, and how to export tables and figures to external files. Two pages follow this one. "Evaluating Circumplex Structure" asks whether an instrument fits a circumplex, and the pages after it ask whether its confidence intervals can be trusted. "Bayesian SSM Analysis" estimates the same parameters with a Bayesian model.
 
 ## References
 * Gurtman, M. B. (1992). Construct validity of interpersonal personality measures: The interpersonal circumplex as a nomological net. _Journal of Personality and Social Psychology, 63_(1), 105–118.

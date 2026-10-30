@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Confidence Interval Accuracy</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Confidence Interval Accuracy</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(circumplex)</span></code></pre></div>
+<p><strong>Level:</strong> Intermediate. Read “Evaluating Circumplex
+Structure” first.</p>
+<div id="overview" class="section level2">
+<h2>1. Overview</h2>
+<p>This vignette asks whether the confidence intervals of an SSM
+analysis can be trusted at your sample size and profile. Section 2,
+“What Zimmermann &amp; Wright (2017) found”, transcribes the published
+accuracy thresholds. Section 3, “Simulating coverage for your own
+analysis”, runs <code>ssm_ci_accuracy()</code> at your configuration and
+reads its report. Section 4, “When to trust SSM parameters”, puts the
+structure and accuracy checks into one checklist. The examples use the
+<code>jz2017</code> dataset that “Evaluating Circumplex Structure”
+describes. The Wrap-up lists what the page covered and names the next
+page, and the References list the sources cited.</p>
+</div>
+<div id="what-zimmermann-wright-2017-found" class="section level2">
+<h2>2. What Zimmermann &amp; Wright (2017) found</h2>
+<p>Zimmermann and Wright’s simulation studies (their Studies 1–4)
+evaluated the accuracy of 95% percentile bootstrap intervals for SSM
+parameters. This is the same interval type that
+<code>ssm_analyze()</code> reports. They judged an interval accurate
+when its empirical coverage stayed within Bradley’s (1978) liberal band
+of 92.5% to 97.5%. Their headline results:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Point estimate</th>
+<th>95% bootstrap CI accurate when…</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Elevation (<span class="math inline">\(e\)</span>)</td>
+<td>essentially unbiased</td>
+<td><span class="math inline">\(n \ge 50\)</span></td>
+</tr>
+<tr class="even">
+<td>X value / affiliation</td>
+<td>essentially unbiased</td>
+<td><span class="math inline">\(n \ge 50\)</span></td>
+</tr>
+<tr class="odd">
+<td>Y value / dominance</td>
+<td>essentially unbiased</td>
+<td><span class="math inline">\(n \ge 50\)</span></td>
+</tr>
+<tr class="even">
+<td>Amplitude (<span class="math inline">\(a\)</span>)</td>
+<td><strong>biased upward</strong>, strongly so when population
+amplitude is small</td>
+<td><span class="math inline">\(n \ge 75\)</span> (general-factor
+instrument) or <span class="math inline">\(n \ge 150\)</span> (no
+general factor), <em>given</em> population amplitude <span class="math inline">\(\ge .10\)</span></td>
+</tr>
+<tr class="odd">
+<td>Displacement (<span class="math inline">\(\delta\)</span>)</td>
+<td>unbiased but imprecise at low amplitude</td>
+<td><span class="math inline">\(n \ge 100\)</span> (general factor) or
+<span class="math inline">\(n &gt; 200\)</span> (no general factor),
+<em>given</em> population amplitude <span class="math inline">\(\ge
+.10\)</span></td>
+</tr>
+<tr class="even">
+<td>Fit (<span class="math inline">\(R^2\)</span>)</td>
+<td>biased downward</td>
+<td>population <span class="math inline">\(R^2 &lt; .9\)</span> only
+(unsuited near 1)</td>
+</tr>
+</tbody>
+</table>
+<p><em>(Transcribed from Zimmermann &amp; Wright, 2017, Studies 1–2,
+pp. 6–11.)</em></p>
+<p>Three implications are worth internalizing:</p>
+<ul>
+<li><strong>Amplitude overestimates differentiation.</strong> Across
+their conditions, the relative bias averaged 15.5% and reached 135.8%.
+With <span class="math inline">\(n = 50\)</span> and no general factor,
+the <em>expected</em> sample amplitude was about .15 when the population
+amplitude was exactly zero (their pp. 6–7). An amplitude of .15 is
+commonly read as “marked”. At small <span class="math inline">\(n\)</span>, it can be pure sampling artifact.</li>
+<li><strong>Displacement is only as stable as amplitude is
+large.</strong> The standard error of the displacement grows as
+amplitude shrinks. For example, it is roughly 50 degrees at <span class="math inline">\(n = 100\)</span> for a weakly differentiated
+profile (their p. 8). A displacement estimate from a flat profile has no
+meaningful direction.</li>
+<li><strong>The thresholds above are grid minima, not
+guarantees.</strong> They come from specific instruments, specific
+sample sizes, and population amplitudes of .10 or larger. Their Study 3
+quantified the frontier more finely. The minimum population
+affiliation/dominance component needed for accurate amplitude and
+displacement intervals is approximately <span class="math inline">\(2.95
+\cdot f_a \cdot n^{-0.587}\)</span>. Here <span class="math inline">\(f_a\)</span> is an instrument constant (their Eq.
+3). <span class="math inline">\(f_a\)</span> is about .55 for the IIP-C,
+.63 for the IIP-SC and .85 for the IAS. At <span class="math inline">\(n
+= 100\)</span> with an IIP-C-like instrument, that is a population
+component of about .11. That is larger than many real construct
+profiles.</li>
+</ul>
+</div>
+<div id="simulating-coverage-for-your-own-analysis" class="section level2">
+<h2>3. Simulating coverage for your own analysis</h2>
+<p>Published thresholds cover a coarse grid of conditions. Your analysis
+(your instrument, your <span class="math inline">\(n\)</span>, your
+group sizes, your profile, your number of bootstrap resamples) usually
+falls between or outside the grid points. <code>ssm_ci_accuracy()</code>
+answers the question directly at your configuration. It builds a
+population whose structure matches your fitted estimates (through the
+CPM by default). It simulates many datasets of your exact sample size
+from that population, and it replays your own CI procedure on each. Then
+it reports how often the intervals covered the known population
+values.</p>
+<p>To see it catch a real problem, we analyze two PD scales at a modest
+sample size. Paranoid PD has a well-differentiated interpersonal
+profile. Obsessive–compulsive PD has a profile that Zimmermann and
+Wright’s Table 4 showed to be nearly flat (amplitude .012 at full sample
+size). We use the first 250 participants. Many construct-validation
+studies would consider that sample size respectable.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">23456</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">ssm_analyze</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  jz2017[<span class="dv">1</span><span class="sc">:</span><span class="dv">250</span>, ],</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">scales =</span> <span class="fu">PANO</span>(),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">angles =</span> <span class="fu">octants</span>(),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">measures =</span> <span class="fu">c</span>(<span class="st">&quot;PARPD&quot;</span>, <span class="st">&quot;OCPD&quot;</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">boots =</span> <span class="dv">500</span> <span class="co"># reduced from the default 2000 to keep the vignette quick;</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="co"># the diagnostic below replays whatever procedure this object used</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">summary</span>(res)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Statistical Basis:    Correlation Scores </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Bootstrap Resamples:  500 </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Confidence Level:     0.95 </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Listwise Deletion:    TRUE </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; Scale Displacements:  90 135 180 225 270 315 360 45 </span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; # Profile [PARPD]:</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; Elevation         0.258      0.169      0.338</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; X-Value          -0.095     -0.160     -0.028</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; Y-Value           0.055     -0.017      0.122</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.110      0.054      0.185</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; Displacement    149.667    111.480    190.360</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.725                      </span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt; # Profile [OCPD]:</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt;                Estimate   Lower CI   Upper CI</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; Elevation         0.218      0.123      0.302</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; X-Value          -0.021     -0.084      0.037</span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="co">#&gt; Y-Value          -0.003     -0.068      0.063</span></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="co">#&gt; Amplitude         0.021      0.009      0.096</span></span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co">#&gt; Displacement    188.695     29.052    335.755</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="co">#&gt; Model Fit         0.150                      </span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="co">#&gt;   Note: model fit is inadequate (R² &lt; .70); interpret only the elevation</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co">#&gt;   parameter.</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt;   Note: the amplitude CI lower bound is under 0.35 CI-widths above zero; the</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt;   displacement is not interpretable.</span></span></code></pre></div>
+<p>Note the guardrail in the printed output. When a profile’s amplitude
+CI lower bound sits less than 0.35 CI-widths above zero,
+<code>ssm_analyze()</code> marks the displacement as uninterpretable,
+rather than certifying its direction. That rule is scale-free. It
+compares the lower bound to the interval’s own width, so it means the
+same thing on any score metric. It also does not depend on the display
+precision. The diagnostic below measures, among other things, how well
+that certification rule performs at your configuration.</p>
+<p>We again use reduced settings to keep the vignette fast:
+<code>reps = 200</code>, a short amplitude ladder, and the smaller
+<code>boots</code> above. The ladder is a set of scaling factors applied
+to the estimated amplitude (1 = as estimated), explained below. The
+defaults are <code>reps = 1000</code> and four ladder rungs, on an
+object built with the default <code>boots = 2000</code>. They give a
+Monte Carlo standard error under one percentage point for coverage near
+the nominal level, and they are recommended in practice. The
+<code>parallel</code>/<code>ncpus</code> arguments speed up real runs
+without changing results for a given seed. The CPM fit inside the
+diagnostic prints the same ill-conditioned Hessian warning that “CPM
+Fits at a Boundary” explains.</p>
+<p><code>print()</code> shows the short report: one block of verdicts
+per profile.</p>
+<!-- precompute:volatile-numbers start -- ssm_ci_accuracy() refits an
+     ill-conditioned CPM, whose solution moves in the third digit across
+     BLAS implementations; every simulated replication moves with it, so
+     this chunk's printed numbers are not reproducible across machines. -->
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">34567</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>acc <span class="ot">&lt;-</span> <span class="fu">ssm_ci_accuracy</span>(res, <span class="at">reps =</span> <span class="dv">200</span>, <span class="at">amplitude_factors =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.5</span>, <span class="dv">0</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; Warning: CPM Hessian is ill-conditioned (condition number 9.24e+16): angles</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; may be clustered or parameters weakly determined.</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">print</span>(acc)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; SSM CI accuracy, simulated at your n and settings (200 replications per</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; condition; bootstrap intervals with 500 replicates at level 0.95)</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;   # Profile [PARPD] (n = 250; 95% bootstrap CIs, 500 replicates):</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;     Elevation      coverage 93.0%: borderline</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;     Amplitude      coverage 94.5%: borderline</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;     Displacement   coverage 89.1% when certified: borderline</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;     Guardrail      under a truly zero amplitude, displacement would be</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;                    certified 1.0% of the time (user-expectation benchmark</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;                    2.5%)</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;   Verdict: BORDERLINE. Elevation, amplitude, and certified displacement</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;   coverage rates are borderline at this number of replications; a larger</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   `reps` would sharpen the verdict.</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;   # Profile [OCPD] (n = 250; 95% bootstrap CIs, 500 replicates):</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;     Elevation      coverage 95.0%: borderline</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;     Amplitude      coverage 83.0%: INADEQUATE (under-coverage; misses are</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;                    almost all below the interval: the amplitude CI tends to</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;                    sit above the truth)</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;     Displacement   coverage 50.0% when certified: INADEQUATE (under-coverage)</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;     Guardrail      under a truly zero amplitude, displacement would be</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;                    certified 1.0% of the time (user-expectation benchmark</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;                    2.5%)</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;   Verdict: </span><span class="al">CAUTION</span><span class="co">. Amplitude CIs are less reliable than nominal at this</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;   sample size and displacement CIs mis-cover even when certified. Elevation</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;   coverage is borderline at this number of replications; a larger `reps`</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;   would sharpen the verdict. Consider a larger sample or treat near-zero</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;   amplitudes as inconclusive rather than absent.</span></span></code></pre></div>
+<!-- precompute:volatile-numbers end -->
+<p>How to read this output. Each profile’s lines classify its coverage
+at the amplitude it was estimated to have. Coverage is how often your CI
+procedure covered the truth in the simulated replications. The
+diagnostic compares it with the nominal level, using the Wilson interval
+(an interval around the estimated coverage) and the Bradley band.</p>
+<ul>
+<li><strong>Elevation, Amplitude and Displacement</strong> give the
+coverage of each parameter and its class. Displacement coverage counts
+only the replications in which the profile was <em>certified</em>. A
+certified profile has its amplitude CI lower bound at least 0.35
+CI-widths above zero.</li>
+<li><strong>Guardrail</strong> gives the rate at which a profile whose
+true amplitude is zero would still be certified. Any such certification
+is a false certification. The line prints a caution when that rate is
+materially above the rate that a user would expect from the interval
+level. This is a measured property of the shipped display rule, not a
+hypothesis test.</li>
+<li><strong>Verdict</strong> states the overall conclusion for the
+profile.</li>
+</ul>
+<p>The two profiles tell usefully different stories. Paranoid PD is
+certified. Its amplitude CI lower bound clears the 0.35-CI-width margin,
+so the printed output adds no displacement note. None of its coverage
+rates clearly leaves the Bradley band at the as-estimated amplitude.
+Obsessive–compulsive PD is <em>not</em> certified. Its amplitude (about
+.02 here) is far too close to zero relative to its CI width. So the
+printed output still shows its displacement and interval, but with a
+note that the displacement is not interpretable. The
+<code>ssm_analyze()</code> result flags this on its own, before any
+coverage question is asked. On top of that, the diagnostic shows that
+its amplitude and displacement CIs under-cover badly at this sample
+size. Almost all amplitude misses fall below the interval, so the
+amplitude CI tends to sit above the truth. So its verdict is a caution
+for a genuine reason. The intervals themselves are unreliable, not
+merely the point on the circle.</p>
+<p>The guardrail line confirms that the rule is doing its job. At this
+configuration (<span class="math inline">\(n = 250\)</span>, eight
+octant correlations), take a profile whose true amplitude is exactly
+zero. Its estimated certification rate does not clearly exceed the
+benchmark rate. That rate is roughly the one-sided error that a user
+reading the guardrail would expect. So no caution fires from the
+guardrail itself. This is the payoff of the scale-free rule. Unlike a
+fixed amplitude-unit cutoff, it keeps false-certification from clearly
+exceeding the benchmark, even in the near-zero regime that Zimmermann
+and Wright flagged. In that regime, a sample amplitude large enough to
+look non-zero is otherwise the <em>expected</em> outcome from a flat
+population.</p>
+<p>One reading note: at reduced <code>reps</code>, classes tend to print
+as <code>borderline</code>. This is because the Wilson interval around
+the estimated coverage is too wide to place it clearly inside or outside
+the Bradley band. That is the diagnostic being honest about its own
+Monte Carlo error. The default <code>reps = 1000</code> sharpens such
+classifications into <code>adequate</code> or
+<code>INADEQUATE</code>.</p>
+<div id="the-full-report" class="section level3">
+<h3>The full report</h3>
+<p><code>summary()</code> adds the settings, a note on the simulated
+population, and a table of coverage at every rung of the amplitude
+ladder:</p>
+<!-- precompute:volatile-numbers start -- the summary of the diagnostic run
+     above; its numbers move with that run across BLAS implementations. -->
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">summary</span>(acc)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Correlation scores; bootstrap, 500 replicates, level 0.95; 200 reps per</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; condition.</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; Population: Browne circular model (CPM); groups All = 250; elapsed 7.8s.</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Ladder c = 1, 0.5, 0, 2.077; certified if a_lci / (a_uci - a_lci) &gt;= 0.35.</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; Structure note: population simulated from a Browne circular model fit (m = 3,</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; RMSEA = 0.064, SRMR = 0.038).</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   The structure fits adequately (RMSEA &lt;= 0.08, Browne &amp; Cudeck, 1993; SRMR</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;   &lt;= 0.08, Hu &amp; Bentler, 1999), so the simulated population is a reasonable</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   stand-in for yours.</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;   Boundary markers: Heywood communality; small correlation-function weight;</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   ill-conditioned Hessian.</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; Near-zero regime: the amplitude estimate of profile [OCPD] is below half its</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; own CI width, so your analysis already sits in the amplitude-near-zero</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; regime; an absolute rung at the certification margin (c = 2.08, population</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; amplitude = the observed CI half-width) was added to the ladder.</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; Verdicts (c = 1, as estimated), Bradley (1978) liberal band, 95% Wilson CIs:</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt;   # Profile [PARPD] (n = 250; 95% bootstrap CIs, 500 replicates):</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;     Elevation      coverage 93.0%: borderline</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt;     Amplitude      coverage 94.5%: borderline</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt;     Displacement   coverage 89.1% when certified: borderline</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt;     Guardrail      under a truly zero amplitude, displacement would be</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt;                    certified 1.0% of the time (user-expectation benchmark</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt;                    2.5%)</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt;   Verdict: BORDERLINE. Elevation, amplitude, and certified displacement</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt;   coverage rates are borderline at this number of replications; a larger</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt;   `reps` would sharpen the verdict.</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt;   # Profile [OCPD] (n = 250; 95% bootstrap CIs, 500 replicates):</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;     Elevation      coverage 95.0%: borderline</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;     Amplitude      coverage 83.0%: INADEQUATE (under-coverage; misses are</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;                    almost all below the interval: the amplitude CI tends to</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;                    sit above the truth)</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt;     Displacement   coverage 50.0% when certified: INADEQUATE (under-coverage)</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt;     Guardrail      under a truly zero amplitude, displacement would be</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;                    certified 1.0% of the time (user-expectation benchmark</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt;                    2.5%)</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;   Verdict: </span><span class="al">CAUTION</span><span class="co">. Amplitude CIs are less reliable than nominal at this</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt;   sample size and displacement CIs mis-cover even when certified. Elevation</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt;   coverage is borderline at this number of replications; a larger `reps`</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt;   would sharpen the verdict. Consider a larger sample or treat near-zero</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt;   amplitudes as inconclusive rather than absent.</span></span>
+<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a><span class="co">#&gt; Coverage by condition (d_cert: d when certified; cert: certification rate):</span></span>
+<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a><span class="co">#&gt;  Profile Condition     e     x     y     a     d d_cert  cert Structural</span></span>
+<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a><span class="co">#&gt;    PARPD     1.000 0.930 0.940 0.930 0.945 0.920  0.891 0.735      FALSE</span></span>
+<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a><span class="co">#&gt;    PARPD     0.500 0.945 0.935 0.935 0.935 0.905  0.893 0.140      FALSE</span></span>
+<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a><span class="co">#&gt;    PARPD     0.000 0.940 0.935 0.950 0.000    NA     NA 0.010       TRUE</span></span>
+<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a><span class="co">#&gt;    PARPD     2.077 0.945 0.950 0.935 0.930 0.955  0.955 1.000      FALSE</span></span>
+<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a><span class="co">#&gt;     OCPD     1.000 0.950 0.945 0.965 0.830 0.830  0.500 0.040      FALSE</span></span>
+<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a><span class="co">#&gt;     OCPD     0.500 0.940 0.940 0.935 0.485 0.710  0.333 0.015      FALSE</span></span>
+<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a><span class="co">#&gt;     OCPD     0.000 0.920 0.955 0.945 0.000    NA     NA 0.010       TRUE</span></span>
+<span id="cb4-57"><a href="#cb4-57" tabindex="-1"></a><span class="co">#&gt;     OCPD     2.077 0.930 0.915 0.945 0.930 0.885  0.833 0.090      FALSE</span></span>
+<span id="cb4-58"><a href="#cb4-58" tabindex="-1"></a><span class="co">#&gt;   Note: amplitude coverage on rows flagged Structural is structurally 0 (a</span></span>
+<span id="cb4-59"><a href="#cb4-59" tabindex="-1"></a><span class="co">#&gt;   percentile interval of strictly positive amplitude replicates cannot</span></span>
+<span id="cb4-60"><a href="#cb4-60" tabindex="-1"></a><span class="co">#&gt;   contain a zero truth). This is a theorem, not a measurement; the</span></span>
+<span id="cb4-61"><a href="#cb4-61" tabindex="-1"></a><span class="co">#&gt;   informative near-zero rungs are the small c &gt; 0 ones.</span></span></code></pre></div>
+<!-- precompute:volatile-numbers end -->
+<p>How to read the additions:</p>
+<ul>
+<li><strong>The structure note</strong> describes the population the
+replications were drawn from, with its fit indices and any boundary
+markers from the CPM fit.</li>
+<li><strong>The coverage table</strong> reports coverage for each
+parameter at each rung of the ladder (<code>Condition = 1</code> is the
+amplitude as estimated). The <code>d_cert</code> column is displacement
+coverage when certified.</li>
+<li><strong>The amplitude ladder</strong> (<code>Condition</code>
+column) matters because your estimated amplitude is biased upward. The
+population that generated your data plausibly has <em>less</em>
+differentiation than your estimate. The rungs below 1 show what happens
+to coverage in that direction. For paranoid PD, no coverage rate clearly
+leaves the Bradley band with the population amplitude halved either. The
+0 rung shows the degenerate flat-profile case. There, displacement has
+no true value at all, and the amplitude interval cannot cover the
+boundary truth. (Its printed zero coverage is structural, and the table
+flags it.) When a profile’s estimated amplitude is smaller than half its
+own CI width, the diagnostic adds one more rung at a scaling factor
+above 1. This is the case for obsessive–compulsive PD here. That rung is
+the amplitude at which the population would sit exactly at the observed
+CI half-width.</li>
+<li><strong>The <code>cert</code> column</strong> reports how often
+profiles were certified at each rung. The <code>Guardrail</code> line of
+the short report is this rate at the 0 rung.</li>
+<li><strong>The lines under
+<code>Verdicts (c = 1, as estimated)</code></strong> are the verdict
+blocks that <code>print()</code> shows.</li>
+</ul>
+<p>For a visual summary across the ladder:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">plot</span>(acc)</span></code></pre></div>
+<p><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnID8+CjxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB4bWxuczp4bGluaz0naHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluaycgd2lkdGg9JzU0MC4wMHB0JyBoZWlnaHQ9JzM2MC4wMHB0JyB2aWV3Qm94PScwIDAgNTQwLjAwIDM2MC4wMCc+CjxnIGNsYXNzPSdzdmdsaXRlJz4KPGRlZnM+CiAgPHN0eWxlIHR5cGU9J3RleHQvY3NzJz48IVtDREFUQVsKICAgIC5zdmdsaXRlIGxpbmUsIC5zdmdsaXRlIHBvbHlsaW5lLCAuc3ZnbGl0ZSBwb2x5Z29uLCAuc3ZnbGl0ZSBwYXRoLCAuc3ZnbGl0ZSByZWN0LCAuc3ZnbGl0ZSBjaXJjbGUgewogICAgICBmaWxsOiBub25lOwogICAgICBzdHJva2U6ICMwMDAwMDA7CiAgICAgIHN0cm9rZS1saW5lY2FwOiByb3VuZDsKICAgICAgc3Ryb2tlLWxpbmVqb2luOiByb3VuZDsKICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwLjAwOwogICAgfQogICAgLnN2Z2xpdGUgdGV4dCB7CiAgICAgIHdoaXRlLXNwYWNlOiBwcmU7CiAgICB9CiAgICAuc3ZnbGl0ZSBnLmdseXBoZ3JvdXAgcGF0aCB7CiAgICAgIGZpbGw6IGluaGVyaXQ7CiAgICAgIHN0cm9rZTogbm9uZTsKICAgIH0KICBdXT48L3N0eWxlPgo8L2RlZnM+CjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIHN0eWxlPSdzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7Jy8+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSc+CiAgICA8cmVjdCB4PScwLjAwJyB5PScwLjAwJyB3aWR0aD0nNTQwLjAwJyBoZWlnaHQ9JzM2MC4wMCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTkRBdU1EQjhNQzR3TUh3ek5qQXVNREE9KSc+CjxyZWN0IHg9JzAuMDAwMDAwMDAwMDAwMDY0JyB5PScwLjAwMDAwMDAwMDAwMDA1Nycgd2lkdGg9JzU0MC4wMCcgaGVpZ2h0PSczNjAuMDAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0ZGRkZGRjsgZmlsbDogI0ZGRkZGRjsnIC8+CjwvZz4KPGRlZnM+CiAgPGNsaXBQYXRoIGlkPSdjcE5EQXVORFo4TWpBeExqUTVmREl5TGpRd2ZERXpOeTQ0TkE9PSc+CiAgICA8cmVjdCB4PSc0MC40NicgeT0nMjIuNDAnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRBdU5EWjhNakF4TGpRNWZESXlMalF3ZkRFek55NDROQT09KSc+CjxyZWN0IHg9JzQwLjQ2JyB5PScyMi40MCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDExOS40NyAyMDEuNDksMTE5LjQ3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDkzLjI0IDIwMS40OSw5My4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40Niw2Ny4wMCAyMDEuNDksNjcuMDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDAuNDYsNDAuNzYgMjAxLjQ5LDQwLjc2ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzY2LjE5LDEzNy44NCA2Ni4xOSwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMDAuOTIsMTM3Ljg0IDEwMC45MiwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMzUuNjYsMTM3Ljg0IDEzNS42NiwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxNzAuMzksMTM3Ljg0IDE3MC4zOSwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwxMzIuNTkgMjAxLjQ5LDEzMi41OSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwxMDYuMzUgMjAxLjQ5LDEwNi4zNSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40Niw4MC4xMiAyMDEuNDksODAuMTIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDAuNDYsNTMuODggMjAxLjQ5LDUzLjg4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDI3LjY0IDIwMS40OSwyNy42NCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0OC44MiwxMzcuODQgNDguODIsMjIuNDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODMuNTUsMTM3Ljg0IDgzLjU1LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzExOC4yOSwxMzcuODQgMTE4LjI5LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE1My4wMywxMzcuODQgMTUzLjAzLDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE4Ny43NiwxMzcuODQgMTg3Ljc2LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxyZWN0IHg9JzQwLjQ2JyB5PSczMC4yNycgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PSc1LjI1JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6IG5vbmU7IHN0cm9rZS1saW5lY2FwOiBidXR0OyBzdHJva2UtbGluZWpvaW46IG1pdGVyOyBmaWxsOiAjN0Y3RjdGOyBmaWxsLW9wYWNpdHk6IDAuMjA7JyAvPgo8bGluZSB4MT0nNDAuNDYnIHkxPSczMi44OScgeDI9JzIwMS40OScgeTI9JzMyLjg5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICM0RDRENEQ7IHN0cm9rZS1kYXNoYXJyYXk6IDUuNjksNS42OTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0OC44MiwzMy45NCA4My41NSwzMy40MiAxMTguMjksMzQuOTkgMTkzLjEzLDMzLjQyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ4LjgyLDM2LjA0IDgzLjU1LDMzLjk0IDExOC4yOSwzMi44OSAxOTMuMTMsMzQuOTkgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTE3LjI1LDMyLjA3IDExOS4zMywzMi4wNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMTguMjksMzIuMDcgMTE4LjI5LDM5LjYxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzExNy4yNSwzOS42MSAxMTkuMzMsMzkuNjEgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTE3LjI1LDMwLjUyIDExOS4zMywzMC41MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMTguMjksMzAuNTIgMTE4LjI5LDM3LjA1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzExNy4yNSwzNy4wNSAxMTkuMzMsMzcuMDUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMzAuOTAgODQuNjAsMzAuOTAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODMuNTUsMzAuOTAgODMuNTUsMzcuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMzcuNzAgODQuNjAsMzcuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMzEuMjggODQuNjAsMzEuMjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODMuNTUsMzEuMjggODMuNTUsMzguMzQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMzguMzQgODQuNjAsMzguMzQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsMzEuMjggNDkuODYsMzEuMjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDguODIsMzEuMjggNDguODIsMzguMzQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsMzguMzQgNDkuODYsMzguMzQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsMzIuODcgNDkuODYsMzIuODcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDguODIsMzIuODcgNDguODIsNDAuODcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsNDAuODcgNDkuODYsNDAuODcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTkyLjA5LDMwLjkwIDE5NC4xNywzMC45MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxOTMuMTMsMzAuOTAgMTkzLjEzLDM3LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE5Mi4wOSwzNy43MCAxOTQuMTcsMzcuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTkyLjA5LDMyLjA3IDE5NC4xNywzMi4wNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxOTMuMTMsMzIuMDcgMTkzLjEzLDM5LjYxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE5Mi4wOSwzOS42MSAxOTQuMTcsMzkuNjEgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nMTE4LjI5JyBjeT0nMzQuOTknIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzExOC4yOScgY3k9JzMyLjg5JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PSc4My41NScgY3k9JzMzLjQyJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSc4My41NScgY3k9JzMzLjk0JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PSc0OC44MicgY3k9JzMzLjk0JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSc0OC44MicgY3k9JzM2LjA0JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PScxOTMuMTMnIGN5PSczMy40Micgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRjg3NjZEOycgLz4KPGNpcmNsZSBjeD0nMTkzLjEzJyBjeT0nMzQuOTknIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxyZWN0IHg9JzQwLjQ2JyB5PScyMi40MCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsnIC8+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd6TmpBdU1EQT0pJz4KPC9nPgo8ZGVmcz4KICA8Y2xpcFBhdGggaWQ9J2NwTkRBdU5EWjhNakF4TGpRNWZERTJNQzR5Tkh3eU56VXVOamc9Jz4KICAgIDxyZWN0IHg9JzQwLjQ2JyB5PScxNjAuMjQnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRBdU5EWjhNakF4TGpRNWZERTJNQzR5Tkh3eU56VXVOamc9KSc+CjxyZWN0IHg9JzQwLjQ2JyB5PScxNjAuMjQnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwyNTcuMzEgMjAxLjQ5LDI1Ny4zMSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwyMzEuMDcgMjAxLjQ5LDIzMS4wNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwyMDQuODQgMjAxLjQ5LDIwNC44NCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MC40NiwxNzguNjAgMjAxLjQ5LDE3OC42MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc2Ni4xOSwyNzUuNjggNjYuMTksMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzEwMC45MiwyNzUuNjggMTAwLjkyLDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMzUuNjYsMjc1LjY4IDEzNS42NiwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTcwLjM5LDI3NS42OCAxNzAuMzksMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDI3MC40MyAyMDEuNDksMjcwLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDI0NC4xOSAyMDEuNDksMjQ0LjE5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDIxNy45NiAyMDEuNDksMjE3Ljk2ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDE5MS43MiAyMDEuNDksMTkxLjcyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQwLjQ2LDE2NS40OCAyMDEuNDksMTY1LjQ4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ4LjgyLDI3NS42OCA0OC44MiwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODMuNTUsMjc1LjY4IDgzLjU1LDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMTguMjksMjc1LjY4IDExOC4yOSwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTUzLjAzLDI3NS42OCAxNTMuMDMsMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE4Ny43NiwyNzUuNjggMTg3Ljc2LDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cmVjdCB4PSc0MC40NicgeT0nMTY4LjExJyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzUuMjUnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7IHN0cm9rZS1saW5lam9pbjogbWl0ZXI7IGZpbGw6ICM3RjdGN0Y7IGZpbGwtb3BhY2l0eTogMC4yMDsnIC8+CjxsaW5lIHgxPSc0MC40NicgeTE9JzE3MC43MycgeDI9JzIwMS40OScgeTI9JzE3MC43Mycgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjNEQ0RDREOyBzdHJva2UtZGFzaGFycmF5OiA1LjY5LDUuNjk7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDguODIsMjcwLjQzIDgzLjU1LDE3Mi4zMCAxMTguMjksMTcxLjI1IDE5My4xMywxNzIuODMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDguODIsMjcwLjQzIDgzLjU1LDIxOS41MyAxMTguMjksMTgzLjMyIDE5My4xMywxNzIuODMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTE3LjI1LDE2OC43MyAxMTkuMzMsMTY4LjczICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzExOC4yOSwxNjguNzMgMTE4LjI5LDE3NS41MyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMTcuMjUsMTc1LjUzIDExOS4zMywxNzUuNTMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTE3LjI1LDE3OC41MiAxMTkuMzMsMTc4LjUyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzExOC4yOSwxNzguNTIgMTE4LjI5LDE4OS40MyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxMTcuMjUsMTg5LjQzIDExOS4zMywxODkuNDMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMTY5LjUxIDg0LjYwLDE2OS41MSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc4My41NSwxNjkuNTEgODMuNTUsMTc2LjgyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzgyLjUxLDE3Ni44MiA4NC42MCwxNzYuODIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nODIuNTEsMjEyLjMwIDg0LjYwLDIxMi4zMCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc4My41NSwyMTIuMzAgODMuNTUsMjI2LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzgyLjUxLDIyNi43MCA4NC42MCwyMjYuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsMjY4LjQ1IDQ5Ljg2LDI2OC40NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0OC44MiwyNjguNDUgNDguODIsMjcwLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ3Ljc4LDI3MC40MyA0OS44NiwyNzAuNDMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDcuNzgsMjY4LjQ1IDQ5Ljg2LDI2OC40NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0OC44MiwyNjguNDUgNDguODIsMjcwLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ3Ljc4LDI3MC40MyA0OS44NiwyNzAuNDMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTkyLjA5LDE2OS45MSAxOTQuMTcsMTY5LjkxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE5My4xMywxNjkuOTEgMTkzLjEzLDE3Ny40NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxOTIuMDksMTc3LjQ1IDE5NC4xNywxNzcuNDUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTkyLjA5LDE2OS45MSAxOTQuMTcsMTY5LjkxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE5My4xMywxNjkuOTEgMTkzLjEzLDE3Ny40NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxOTIuMDksMTc3LjQ1IDE5NC4xNywxNzcuNDUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nMTE4LjI5JyBjeT0nMTcxLjI1JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PScxMTguMjknIGN5PScxODMuMzInIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxjaXJjbGUgY3g9JzgzLjU1JyBjeT0nMTcyLjMwJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSc4My41NScgY3k9JzIxOS41Mycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPGNpcmNsZSBjeD0nNDguODInIGN5PScyNzAuNDMnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzQ4LjgyJyBjeT0nMjcwLjQzJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PScxOTMuMTMnIGN5PScxNzIuODMnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzE5My4xMycgY3k9JzE3Mi44Mycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPHJlY3QgeD0nNDAuNDYnIHk9JzE2MC4yNCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsnIC8+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd6TmpBdU1EQT0pJz4KPC9nPgo8ZGVmcz4KICA8Y2xpcFBhdGggaWQ9J2NwTWpBMkxqazNmRE0yT0M0d01Yd3lNaTQwTUh3eE16Y3VPRFE9Jz4KICAgIDxyZWN0IHg9JzIwNi45NycgeT0nMjIuNDAnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTWpBMkxqazNmRE0yT0M0d01Yd3lNaTQwTUh3eE16Y3VPRFE9KSc+CjxyZWN0IHg9JzIwNi45NycgeT0nMjIuNDAnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGRkZGRkY7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMDYuOTcsMTE5LjQ3IDM2OC4wMSwxMTkuNDcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDkzLjI0IDM2OC4wMSw5My4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMDYuOTcsNjcuMDAgMzY4LjAxLDY3LjAwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45Nyw0MC43NiAzNjguMDEsNDAuNzYgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjMyLjcwLDEzNy44NCAyMzIuNzAsMjIuNDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjY3LjQ0LDEzNy44NCAyNjcuNDQsMjIuNDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzAyLjE3LDEzNy44NCAzMDIuMTcsMjIuNDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzM2LjkxLDEzNy44NCAzMzYuOTEsMjIuNDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDEzMi41OSAzNjguMDEsMTMyLjU5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45NywxMDYuMzUgMzY4LjAxLDEwNi4zNSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMDYuOTcsODAuMTIgMzY4LjAxLDgwLjEyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45Nyw1My44OCAzNjguMDEsNTMuODggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDI3LjY0IDM2OC4wMSwyNy42NCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMTUuMzMsMTM3Ljg0IDIxNS4zMywyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNTAuMDcsMTM3Ljg0IDI1MC4wNywyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyODQuODAsMTM3Ljg0IDI4NC44MCwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczMTkuNTQsMTM3Ljg0IDMxOS41NCwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNTQuMjgsMTM3Ljg0IDM1NC4yOCwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cmVjdCB4PScyMDYuOTcnIHk9JzMwLjI3JyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzUuMjUnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7IHN0cm9rZS1saW5lam9pbjogbWl0ZXI7IGZpbGw6ICM3RjdGN0Y7IGZpbGwtb3BhY2l0eTogMC4yMDsnIC8+CjxsaW5lIHgxPScyMDYuOTcnIHkxPSczMi44OScgeDI9JzM2OC4wMScgeTI9JzMyLjg5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICM0RDRENEQ7IHN0cm9rZS1kYXNoYXJyYXk6IDUuNjksNS42OTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMTUuMzMsMzQuNDcgMjUwLjA3LDM0LjQ3IDI4NC44MCwzMy45NCAzNTkuNjQsMzIuODkgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjE1LjMzLDMyLjM3IDI1MC4wNywzMy45NCAyODQuODAsMzMuNDIgMzU5LjY0LDM2LjU2ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4My43NiwzMS4yOCAyODUuODUsMzEuMjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjg0LjgwLDMxLjI4IDI4NC44MCwzOC4zNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyODMuNzYsMzguMzQgMjg1Ljg1LDM4LjM0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4My43NiwzMC45MCAyODUuODUsMzAuOTAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjg0LjgwLDMwLjkwIDI4NC44MCwzNy43MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyODMuNzYsMzcuNzAgMjg1Ljg1LDM3LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI0OS4wMywzMS42NyAyNTEuMTEsMzEuNjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjUwLjA3LDMxLjY3IDI1MC4wNywzOC45OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNDkuMDMsMzguOTggMjUxLjExLDM4Ljk4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI0OS4wMywzMS4yOCAyNTEuMTEsMzEuMjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjUwLjA3LDMxLjI4IDI1MC4wNywzOC4zNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNDkuMDMsMzguMzQgMjUxLjExLDM4LjM0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIxNC4yOSwzMS42NyAyMTYuMzcsMzEuNjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjE1LjMzLDMxLjY3IDIxNS4zMywzOC45OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMTQuMjksMzguOTggMjE2LjM3LDM4Ljk4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIxNC4yOSwzMC4xNSAyMTYuMzcsMzAuMTUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjE1LjMzLDMwLjE1IDIxNS4zMywzNi4zOSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMTQuMjksMzYuMzkgMjE2LjM3LDM2LjM5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM1OC42MCwzMC41MiAzNjAuNjksMzAuNTIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU5LjY0LDMwLjUyIDM1OS42NCwzNy4wNSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNTguNjAsMzcuMDUgMzYwLjY5LDM3LjA1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM1OC42MCwzMy4yOCAzNjAuNjksMzMuMjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU5LjY0LDMzLjI4IDM1OS42NCw0MS40OSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNTguNjAsNDEuNDkgMzYwLjY5LDQxLjQ5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxjaXJjbGUgY3g9JzI4NC44MCcgY3k9JzMzLjk0JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PScyODQuODAnIGN5PSczMy40Micgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPGNpcmNsZSBjeD0nMjUwLjA3JyBjeT0nMzQuNDcnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzI1MC4wNycgY3k9JzMzLjk0JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PScyMTUuMzMnIGN5PSczNC40Nycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRjg3NjZEOycgLz4KPGNpcmNsZSBjeD0nMjE1LjMzJyBjeT0nMzIuMzcnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxjaXJjbGUgY3g9JzM1OS42NCcgY3k9JzMyLjg5JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSczNTkuNjQnIGN5PSczNi41Nicgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPHJlY3QgeD0nMjA2Ljk3JyB5PScyMi40MCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsnIC8+CjwvZz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTUM0d01IdzFOREF1TURCOE1DNHdNSHd6TmpBdU1EQT0pJz4KPC9nPgo8ZGVmcz4KICA8Y2xpcFBhdGggaWQ9J2NwTWpBMkxqazNmRE0yT0M0d01Yd3hOakF1TWpSOE1qYzFMalk0Jz4KICAgIDxyZWN0IHg9JzIwNi45NycgeT0nMTYwLjI0JyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzExNS40NCcgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1qQTJMamszZkRNMk9DNHdNWHd4TmpBdU1qUjhNamMxTGpZNCknPgo8cmVjdCB4PScyMDYuOTcnIHk9JzE2MC4yNCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45NywyNTcuMzEgMzY4LjAxLDI1Ny4zMSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMDYuOTcsMjMxLjA3IDM2OC4wMSwyMzEuMDcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDIwNC44NCAzNjguMDEsMjA0Ljg0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45NywxNzguNjAgMzY4LjAxLDE3OC42MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMzIuNzAsMjc1LjY4IDIzMi43MCwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjY3LjQ0LDI3NS42OCAyNjcuNDQsMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzMwMi4xNywyNzUuNjggMzAyLjE3LDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczMzYuOTEsMjc1LjY4IDMzNi45MSwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDI3MC40MyAzNjguMDEsMjcwLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45NywyNDQuMTkgMzY4LjAxLDI0NC4xOSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMDYuOTcsMjE3Ljk2IDM2OC4wMSwyMTcuOTYgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjA2Ljk3LDE5MS43MiAzNjguMDEsMTkxLjcyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzIwNi45NywxNjUuNDggMzY4LjAxLDE2NS40OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyMTUuMzMsMjc1LjY4IDIxNS4zMywxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjUwLjA3LDI3NS42OCAyNTAuMDcsMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4NC44MCwyNzUuNjggMjg0LjgwLDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczMTkuNTQsMjc1LjY4IDMxOS41NCwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU0LjI4LDI3NS42OCAzNTQuMjgsMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxyZWN0IHg9JzIwNi45NycgeT0nMTY4LjExJyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzUuMjUnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7IHN0cm9rZS1saW5lam9pbjogbWl0ZXI7IGZpbGw6ICM3RjdGN0Y7IGZpbGwtb3BhY2l0eTogMC4yMDsnIC8+CjxsaW5lIHgxPScyMDYuOTcnIHkxPScxNzAuNzMnIHgyPSczNjguMDEnIHkyPScxNzAuNzMnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzRENEQ0RDsgc3Ryb2tlLWRhc2hhcnJheTogNS42OSw1LjY5OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI1MC4wNywxNzUuNDUgMjg0LjgwLDE3My44OCAzNTkuNjQsMTcwLjIwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI1MC4wNywxOTUuOTIgMjg0LjgwLDE4My4zMiAzNTkuNjQsMTc3LjU1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4My43NiwxNzAuNzEgMjg1Ljg1LDE3MC43MSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyODQuODAsMTcwLjcxIDI4NC44MCwxNzguNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjgzLjc2LDE3OC43MCAyODUuODUsMTc4LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4My43NiwxNzguNTIgMjg1Ljg1LDE3OC41MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyODQuODAsMTc4LjUyIDI4NC44MCwxODkuNDMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjgzLjc2LDE4OS40MyAyODUuODUsMTg5LjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI0OS4wMywxNzEuOTUgMjUxLjExLDE3MS45NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNTAuMDcsMTcxLjk1IDI1MC4wNywxODAuNTUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjQ5LjAzLDE4MC41NSAyNTEuMTEsMTgwLjU1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI0OS4wMywxODkuNzggMjUxLjExLDE4OS43OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScyNTAuMDcsMTg5Ljc4IDI1MC4wNywyMDIuODggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjQ5LjAzLDIwMi44OCAyNTEuMTEsMjAyLjg4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM1OC42MCwxNjcuOTkgMzYwLjY5LDE2Ny45OSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNTkuNjQsMTY3Ljk5IDM1OS42NCwxNzQuMjIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU4LjYwLDE3NC4yMiAzNjAuNjksMTc0LjIyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM1OC42MCwxNzMuNjUgMzYwLjY5LDE3My42NSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNTkuNjQsMTczLjY1IDM1OS42NCwxODIuOTcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU4LjYwLDE4Mi45NyAzNjAuNjksMTgyLjk3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxjaXJjbGUgY3g9JzI4NC44MCcgY3k9JzE3My44OCcgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRjg3NjZEOycgLz4KPGNpcmNsZSBjeD0nMjg0LjgwJyBjeT0nMTgzLjMyJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PScyNTAuMDcnIGN5PScxNzUuNDUnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzI1MC4wNycgY3k9JzE5NS45Micgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPGNpcmNsZSBjeD0nMzU5LjY0JyBjeT0nMTcwLjIwJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSczNTkuNjQnIGN5PScxNzcuNTUnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxyZWN0IHg9JzIwNi45NycgeT0nMTYwLjI0JyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzExNS40NCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNemN6TGpRNWZEVXpOQzQxTW53eU1pNDBNSHd4TXpjdU9EUT0nPgogICAgPHJlY3QgeD0nMzczLjQ5JyB5PScyMi40MCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNemN6TGpRNWZEVXpOQzQxTW53eU1pNDBNSHd4TXpjdU9EUT0pJz4KPHJlY3QgeD0nMzczLjQ5JyB5PScyMi40MCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxMTUuNDQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3My40OSwxMTkuNDcgNTM0LjUyLDExOS40NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksOTMuMjQgNTM0LjUyLDkzLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3My40OSw2Ny4wMCA1MzQuNTIsNjcuMDAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDQwLjc2IDUzNC41Miw0MC43NiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczOTkuMjEsMTM3Ljg0IDM5OS4yMSwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MzMuOTUsMTM3Ljg0IDQzMy45NSwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NjguNjksMTM3Ljg0IDQ2OC42OSwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MDMuNDIsMTM3Ljg0IDUwMy40MiwyMi40MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksMTMyLjU5IDUzNC41MiwxMzIuNTkgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDEwNi4zNSA1MzQuNTIsMTA2LjM1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3My40OSw4MC4xMiA1MzQuNTIsODAuMTIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDUzLjg4IDUzNC41Miw1My44OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksMjcuNjQgNTM0LjUyLDI3LjY0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM4MS44NSwxMzcuODQgMzgxLjg1LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQxNi41OCwxMzcuODQgNDE2LjU4LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MS4zMiwxMzcuODQgNDUxLjMyLDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ4Ni4wNiwxMzcuODQgNDg2LjA2LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUyMC43OSwxMzcuODQgNTIwLjc5LDIyLjQwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxyZWN0IHg9JzM3My40OScgeT0nMzAuMjcnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nNS4yNScgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiBub25lOyBzdHJva2UtbGluZWNhcDogYnV0dDsgc3Ryb2tlLWxpbmVqb2luOiBtaXRlcjsgZmlsbDogIzdGN0Y3RjsgZmlsbC1vcGFjaXR5OiAwLjIwOycgLz4KPGxpbmUgeDE9JzM3My40OScgeTE9JzMyLjg5JyB4Mj0nNTM0LjUyJyB5Mj0nMzIuODknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzRENEQ0RDsgc3Ryb2tlLWRhc2hhcnJheTogNS42OSw1LjY5OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM4MS44NSwzMi44OSA0MTYuNTgsMzQuNDcgNDUxLjMyLDM0Ljk5IDUyNi4xNiwzNC40NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczODEuODUsMzMuNDIgNDE2LjU4LDM0LjQ3IDQ1MS4zMiwzMS4zMiA1MjYuMTYsMzMuNDIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDUwLjI4LDMyLjA3IDQ1Mi4zNiwzMi4wNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NTEuMzIsMzIuMDcgNDUxLjMyLDM5LjYxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MC4yOCwzOS42MSA0NTIuMzYsMzkuNjEgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDUwLjI4LDI5LjQzIDQ1Mi4zNiwyOS40MyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NTEuMzIsMjkuNDMgNDUxLjMyLDM1LjA0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MC4yOCwzNS4wNCA0NTIuMzYsMzUuMDQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE1LjU0LDMxLjY3IDQxNy42MywzMS42NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MTYuNTgsMzEuNjcgNDE2LjU4LDM4Ljk4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQxNS41NCwzOC45OCA0MTcuNjMsMzguOTggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE1LjU0LDMxLjY3IDQxNy42MywzMS42NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MTYuNTgsMzEuNjcgNDE2LjU4LDM4Ljk4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQxNS41NCwzOC45OCA0MTcuNjMsMzguOTggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzgwLjgwLDMwLjUyIDM4Mi44OSwzMC41MiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczODEuODUsMzAuNTIgMzgxLjg1LDM3LjA1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM4MC44MCwzNy4wNSAzODIuODksMzcuMDUgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzgwLjgwLDMwLjkwIDM4Mi44OSwzMC45MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczODEuODUsMzAuOTAgMzgxLjg1LDM3LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM4MC44MCwzNy43MCAzODIuODksMzcuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNTI1LjEyLDMxLjY3IDUyNy4yMCwzMS42NyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MjYuMTYsMzEuNjcgNTI2LjE2LDM4Ljk4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUyNS4xMiwzOC45OCA1MjcuMjAsMzguOTggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNTI1LjEyLDMwLjkwIDUyNy4yMCwzMC45MCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MjYuMTYsMzAuOTAgNTI2LjE2LDM3LjcwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUyNS4xMiwzNy43MCA1MjcuMjAsMzcuNzAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nNDUxLjMyJyBjeT0nMzQuOTknIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzQ1MS4zMicgY3k9JzMxLjMyJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PSc0MTYuNTgnIGN5PSczNC40Nycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRjg3NjZEOycgLz4KPGNpcmNsZSBjeD0nNDE2LjU4JyBjeT0nMzQuNDcnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxjaXJjbGUgY3g9JzM4MS44NScgY3k9JzMyLjg5JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSczODEuODUnIGN5PSczMy40Micgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPGNpcmNsZSBjeD0nNTI2LjE2JyBjeT0nMzQuNDcnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzUyNi4xNicgY3k9JzMzLjQyJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8cmVjdCB4PSczNzMuNDknIHk9JzIyLjQwJyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzExNS40NCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOycgLz4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNemN6TGpRNWZEVXpOQzQxTW53eE5qQXVNalI4TWpjMUxqWTQnPgogICAgPHJlY3QgeD0nMzczLjQ5JyB5PScxNjAuMjQnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTXpjekxqUTVmRFV6TkM0MU1ud3hOakF1TWpSOE1qYzFMalk0KSc+CjxyZWN0IHg9JzM3My40OScgeT0nMTYwLjI0JyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzExNS40NCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDI1Ny4zMSA1MzQuNTIsMjU3LjMxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3My40OSwyMzEuMDcgNTM0LjUyLDIzMS4wNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksMjA0Ljg0IDUzNC41MiwyMDQuODQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDE3OC42MCA1MzQuNTIsMTc4LjYwICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM5OS4yMSwyNzUuNjggMzk5LjIxLDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MzMuOTUsMjc1LjY4IDQzMy45NSwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjUzOyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDY4LjY5LDI3NS42OCA0NjguNjksMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMC41Mzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUwMy40MiwyNzUuNjggNTAzLjQyLDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNTM7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksMjcwLjQzIDUzNC41MiwyNzAuNDMgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDI0NC4xOSA1MzQuNTIsMjQ0LjE5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3My40OSwyMTcuOTYgNTM0LjUyLDIxNy45NiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNzMuNDksMTkxLjcyIDUzNC41MiwxOTEuNzIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzczLjQ5LDE2NS40OCA1MzQuNTIsMTY1LjQ4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM4MS44NSwyNzUuNjggMzgxLjg1LDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MTYuNTgsMjc1LjY4IDQxNi41OCwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDUxLjMyLDI3NS42OCA0NTEuMzIsMTYwLjI0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRUJFQkVCOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ4Ni4wNiwyNzUuNjggNDg2LjA2LDE2MC4yNCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0VCRUJFQjsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MjAuNzksMjc1LjY4IDUyMC43OSwxNjAuMjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNFQkVCRUI7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHJlY3QgeD0nMzczLjQ5JyB5PScxNjguMTEnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nNS4yNScgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiBub25lOyBzdHJva2UtbGluZWNhcDogYnV0dDsgc3Ryb2tlLWxpbmVqb2luOiBtaXRlcjsgZmlsbDogIzdGN0Y3RjsgZmlsbC1vcGFjaXR5OiAwLjIwOycgLz4KPGxpbmUgeDE9JzM3My40OScgeTE9JzE3MC43MycgeDI9JzUzNC41MicgeTI9JzE3MC43Mycgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjNEQ0RDREOyBzdHJva2UtZGFzaGFycmF5OiA1LjY5LDUuNjk7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE2LjU4LDE3Ni43MyA0NTEuMzIsMTc2LjkxIDUyNi4xNiwxNzAuMjAgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE2LjU4LDIzNS40NSA0NTEuMzIsMjE3Ljk2IDUyNi4xNiwxODIuOTcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDUwLjI4LDE3Mi42MyA0NTIuMzYsMTcyLjYzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MS4zMiwxNzIuNjMgNDUxLjMyLDE4My4yNyAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NTAuMjgsMTgzLjI3IDQ1Mi4zNiwxODMuMjcgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDUwLjI4LDE4OC4wNyA0NTIuMzYsMTg4LjA3ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MS4zMiwxODguMDcgNDUxLjMyLDI0Ny44NCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0NTAuMjgsMjQ3Ljg0IDQ1Mi4zNiwyNDcuODQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE1LjU0LDE2OS4zOCA0MTcuNjMsMTY5LjM4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQxNi41OCwxNjkuMzggNDE2LjU4LDE5NC4wMiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MTUuNTQsMTk0LjAyIDQxNy42MywxOTQuMDIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE1LjU0LDE4Ny4yOCA0MTcuNjMsMTg3LjI4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQxNi41OCwxODcuMjggNDE2LjU4LDI2My45OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0MTUuNTQsMjYzLjk4IDQxNy42MywyNjMuOTggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNTI1LjEyLDE2Ny45OSA1MjcuMjAsMTY3Ljk5ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUyNi4xNiwxNjcuOTkgNTI2LjE2LDE3NC4yMiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MjUuMTIsMTc0LjIyIDUyNy4yMCwxNzQuMjIgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICNGODc2NkQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNTI1LjEyLDE3MS42MSA1MjcuMjAsMTcxLjYxICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMDBCRkM0OyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzUyNi4xNiwxNzEuNjEgNTI2LjE2LDIwNi42NCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc1MjUuMTIsMjA2LjY0IDUyNy4yMCwyMDYuNjQgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nNDUxLjMyJyBjeT0nMTc2LjkxJyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICNGODc2NkQ7JyAvPgo8Y2lyY2xlIGN4PSc0NTEuMzInIGN5PScyMTcuOTYnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogIzAwQkZDNDsnIC8+CjxjaXJjbGUgY3g9JzQxNi41OCcgY3k9JzE3Ni43Mycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRjg3NjZEOycgLz4KPGNpcmNsZSBjeD0nNDE2LjU4JyBjeT0nMjM1LjQ1JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6IG5vbmU7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8Y2lyY2xlIGN4PSc1MjYuMTYnIGN5PScxNzAuMjAnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogbm9uZTsgZmlsbDogI0Y4NzY2RDsnIC8+CjxjaXJjbGUgY3g9JzUyNi4xNicgY3k9JzE4Mi45Nycgcj0nMi40OScgc3R5bGU9J3N0cm9rZS13aWR0aDogMC43MTsgc3Ryb2tlOiBub25lOyBmaWxsOiAjMDBCRkM0OycgLz4KPHJlY3QgeD0nMzczLjQ5JyB5PScxNjAuMjQnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTE1LjQ0JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7JyAvPgo8L2c+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE1DNHdNSHcxTkRBdU1EQjhNQzR3TUh3ek5qQXVNREE9KSc+CjwvZz4KPGRlZnM+CiAgPGNsaXBQYXRoIGlkPSdjcE5EQXVORFo4TWpBeExqUTVmREUwTXk0ek1ud3hOakF1TWpRPSc+CiAgICA8cmVjdCB4PSc0MC40NicgeT0nMTQzLjMyJyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzE2LjkyJyAvPgogIDwvY2xpcFBhdGg+CjwvZGVmcz4KPGcgY2xpcC1wYXRoPSd1cmwoI2NwTkRBdU5EWjhNakF4TGpRNWZERTBNeTR6TW53eE5qQXVNalE9KSc+CjxyZWN0IHg9JzQwLjQ2JyB5PScxNDMuMzInIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzEyMC45NycgeT0nMTU0LjkzJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSczOS4xMXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkFtcGxpdHVkZTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNakEyTGprM2ZETTJPQzR3TVh3eE5ETXVNeko4TVRZd0xqSTAnPgogICAgPHJlY3QgeD0nMjA2Ljk3JyB5PScxNDMuMzInIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNakEyTGprM2ZETTJPQzR3TVh3eE5ETXVNeko4TVRZd0xqSTApJz4KPHJlY3QgeD0nMjA2Ljk3JyB5PScxNDMuMzInIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzI4Ny40OScgeT0nMTU0LjkzJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc1My4zMHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkRpc3BsYWNlbWVudDwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNemN6TGpRNWZEVXpOQzQxTW53eE5ETXVNeko4TVRZd0xqSTAnPgogICAgPHJlY3QgeD0nMzczLjQ5JyB5PScxNDMuMzInIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNemN6TGpRNWZEVXpOQzQxTW53eE5ETXVNeko4TVRZd0xqSTApJz4KPHJlY3QgeD0nMzczLjQ5JyB5PScxNDMuMzInIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzQ1NC4wMCcgeT0nMTU0LjkzJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc5Mi4zNnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkRpc3BsYWNlbWVudCAoY2VydGlmaWVkKTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BOREF1TkRaOE1qQXhMalE1ZkRVdU5EaDhNakl1TkRBPSc+CiAgICA8cmVjdCB4PSc0MC40NicgeT0nNS40OCcgd2lkdGg9JzE2MS4wNCcgaGVpZ2h0PScxNi45MicgLz4KICA8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0ndXJsKCNjcE5EQXVORFo4TWpBeExqUTVmRFV1TkRoOE1qSXVOREE9KSc+CjxyZWN0IHg9JzQwLjQ2JyB5PSc1LjQ4JyB3aWR0aD0nMTYxLjA0JyBoZWlnaHQ9JzE2LjkyJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IGZpbGw6ICNEOUQ5RDk7JyAvPgo8dGV4dCB4PScxMjAuOTcnIHk9JzE3LjA5JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzFBMUExQTsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSczNi4xOXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkVsZXZhdGlvbjwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNakEyTGprM2ZETTJPQzR3TVh3MUxqUTRmREl5TGpRdyc+CiAgICA8cmVjdCB4PScyMDYuOTcnIHk9JzUuNDgnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNakEyTGprM2ZETTJPQzR3TVh3MUxqUTRmREl5TGpRdyknPgo8cmVjdCB4PScyMDYuOTcnIHk9JzUuNDgnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzI4Ny40OScgeT0nMTcuMDknIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjMUExQTFBOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzI5LjgzcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+WC12YWx1ZTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8L2c+CjxkZWZzPgogIDxjbGlwUGF0aCBpZD0nY3BNemN6TGpRNWZEVXpOQzQxTW53MUxqUTRmREl5TGpRdyc+CiAgICA8cmVjdCB4PSczNzMuNDknIHk9JzUuNDgnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIC8+CiAgPC9jbGlwUGF0aD4KPC9kZWZzPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNemN6TGpRNWZEVXpOQzQxTW53MUxqUTRmREl5TGpRdyknPgo8cmVjdCB4PSczNzMuNDknIHk9JzUuNDgnIHdpZHRoPScxNjEuMDQnIGhlaWdodD0nMTYuOTInIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgZmlsbDogI0Q5RDlEOTsnIC8+Cjx0ZXh0IHg9JzQ1NC4wMCcgeT0nMTcuMDknIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjMUExQTFBOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzI5LjAycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+WS12YWx1ZTwvdGV4dD4KPC9nPgo8ZyBjbGlwLXBhdGg9J3VybCgjY3BNQzR3TUh3MU5EQXVNREI4TUM0d01Id3pOakF1TURBPSknPgo8cG9seWxpbmUgcG9pbnRzPSc0OC44MiwyNzguNDIgNDguODIsMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzgzLjU1LDI3OC40MiA4My41NSwyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMTE4LjI5LDI3OC40MiAxMTguMjksMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzE1My4wMywyNzguNDIgMTUzLjAzLDI3NS42OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPScxODcuNzYsMjc4LjQyIDE4Ny43NiwyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHRleHQgeD0nNDguODInIHk9JzI4Ni45MScgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTIuMjJweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjA8L3RleHQ+Cjx0ZXh0IHg9JzgzLjU1JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC41PC90ZXh0Pgo8dGV4dCB4PScxMTguMjknIHk9JzI4Ni45MScgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTIuMjJweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4xLjA8L3RleHQ+Cjx0ZXh0IHg9JzE1My4wMycgeT0nMjg2LjkxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4yMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjEuNTwvdGV4dD4KPHRleHQgeD0nMTg3Ljc2JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Mi4wPC90ZXh0Pgo8cG9seWxpbmUgcG9pbnRzPScyMTUuMzMsMjc4LjQyIDIxNS4zMywyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMjUwLjA3LDI3OC40MiAyNTAuMDcsMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzI4NC44MCwyNzguNDIgMjg0LjgwLDI3NS42OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczMTkuNTQsMjc4LjQyIDMxOS41NCwyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzU0LjI4LDI3OC40MiAzNTQuMjgsMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzIxNS4zMycgeT0nMjg2LjkxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4yMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDwvdGV4dD4KPHRleHQgeD0nMjUwLjA3JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC41PC90ZXh0Pgo8dGV4dCB4PScyODQuODAnIHk9JzI4Ni45MScgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTIuMjJweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4xLjA8L3RleHQ+Cjx0ZXh0IHg9JzMxOS41NCcgeT0nMjg2LjkxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4yMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjEuNTwvdGV4dD4KPHRleHQgeD0nMzU0LjI4JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Mi4wPC90ZXh0Pgo8cG9seWxpbmUgcG9pbnRzPSczODEuODUsMjc4LjQyIDM4MS44NSwyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNDE2LjU4LDI3OC40MiA0MTYuNTgsMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzQ1MS4zMiwyNzguNDIgNDUxLjMyLDI3NS42OCAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSc0ODYuMDYsMjc4LjQyIDQ4Ni4wNiwyNzUuNjggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nNTIwLjc5LDI3OC40MiA1MjAuNzksMjc1LjY4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzM4MS44NScgeT0nMjg2LjkxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4yMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDwvdGV4dD4KPHRleHQgeD0nNDE2LjU4JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC41PC90ZXh0Pgo8dGV4dCB4PSc0NTEuMzInIHk9JzI4Ni45MScgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTIuMjJweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4xLjA8L3RleHQ+Cjx0ZXh0IHg9JzQ4Ni4wNicgeT0nMjg2LjkxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxMi4yMnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjEuNTwvdGV4dD4KPHRleHQgeD0nNTIwLjc5JyB5PScyODYuOTEnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzEyLjIycHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+Mi4wPC90ZXh0Pgo8dGV4dCB4PSczNS41MicgeT0nMTM1Ljc0JyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxNy4xMXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuMDA8L3RleHQ+Cjx0ZXh0IHg9JzM1LjUyJyB5PScxMDkuNTAnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE3LjExcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC4yNTwvdGV4dD4KPHRleHQgeD0nMzUuNTInIHk9JzgzLjI3JyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxNy4xMXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuNTA8L3RleHQ+Cjx0ZXh0IHg9JzM1LjUyJyB5PSc1Ny4wMycgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTcuMTFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjc1PC90ZXh0Pgo8dGV4dCB4PSczNS41MicgeT0nMzAuNzknIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE3LjExcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MS4wMDwvdGV4dD4KPHBvbHlsaW5lIHBvaW50cz0nMzcuNzIsMTMyLjU5IDQwLjQ2LDEzMi41OSAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNy43MiwxMDYuMzUgNDAuNDYsMTA2LjM1ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3LjcyLDgwLjEyIDQwLjQ2LDgwLjEyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3LjcyLDUzLjg4IDQwLjQ2LDUzLjg4ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3LjcyLDI3LjY0IDQwLjQ2LDI3LjY0ICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjx0ZXh0IHg9JzM1LjUyJyB5PScyNzMuNTgnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE3LjExcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC4wMDwvdGV4dD4KPHRleHQgeD0nMzUuNTInIHk9JzI0Ny4zNCcgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTcuMTFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4wLjI1PC90ZXh0Pgo8dGV4dCB4PSczNS41MicgeT0nMjIxLjExJyB0ZXh0LWFuY2hvcj0nZW5kJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7ZmlsbDogIzRENEQ0RDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPScxNy4xMXB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPjAuNTA8L3RleHQ+Cjx0ZXh0IHg9JzM1LjUyJyB5PScxOTQuODcnIHRleHQtYW5jaG9yPSdlbmQnIHN0eWxlPSdmb250LXNpemU6IDguODBweDtmaWxsOiAjNEQ0RDREOyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzE3LjExcHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+MC43NTwvdGV4dD4KPHRleHQgeD0nMzUuNTInIHk9JzE2OC42MycgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4O2ZpbGw6ICM0RDRENEQ7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTcuMTFweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz4xLjAwPC90ZXh0Pgo8cG9seWxpbmUgcG9pbnRzPSczNy43MiwyNzAuNDMgNDAuNDYsMjcwLjQzICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3LjcyLDI0NC4xOSA0MC40NiwyNDQuMTkgJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHBvbHlsaW5lIHBvaW50cz0nMzcuNzIsMjE3Ljk2IDQwLjQ2LDIxNy45NiAnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzMzMzMzMzsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8cG9seWxpbmUgcG9pbnRzPSczNy43MiwxOTEuNzIgNDAuNDYsMTkxLjcyICcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjMzMzMzMzOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+Cjxwb2x5bGluZSBwb2ludHM9JzM3LjcyLDE2NS40OCA0MC40NiwxNjUuNDggJyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMzMzMzMzM7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPHRleHQgeD0nMjg3LjQ5JyB5PScyOTkuMzcnIHRleHQtYW5jaG9yPSdtaWRkbGUnIHN0eWxlPSdmb250LXNpemU6IDExLjAwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMTQ5LjI4cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+UG9wdWxhdGlvbiBhbXBsaXR1ZGUgZmFjdG9yIChjKTwvdGV4dD4KPHRleHQgdHJhbnNmb3JtPSd0cmFuc2xhdGUoMTMuMzYsMTQ5LjA0KSByb3RhdGUoLTkwKScgdGV4dC1hbmNob3I9J21pZGRsZScgc3R5bGU9J2ZvbnQtc2l6ZTogMTEuMDBweDsgZm9udC1mYW1pbHk6ICJBcmlhbCI7JyB0ZXh0TGVuZ3RoPSc5My41NnB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPkVtcGlyaWNhbCBjb3ZlcmFnZTwvdGV4dD4KPHJlY3QgeD0nMjEwLjYxJyB5PSczMTIuNjUnIHdpZHRoPScxNTMuNzUnIGhlaWdodD0nMjguMjQnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+Cjx0ZXh0IHg9JzIxNi4wOScgeT0nMzMwLjcxJyBzdHlsZT0nZm9udC1zaXplOiAxMS4wMHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzMxLjE5cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+UHJvZmlsZTwvdGV4dD4KPHJlY3QgeD0nMjUyLjc2JyB5PSczMTguMTMnIHdpZHRoPScxNy4yOCcgaGVpZ2h0PScxNy4yOCcgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiBub25lOyBmaWxsOiAjRkZGRkZGOycgLz4KPGxpbmUgeDE9JzI1NC40OScgeTE9JzMyNi43NycgeDI9JzI2OC4zMScgeTI9JzMyNi43Nycgc3R5bGU9J3N0cm9rZS13aWR0aDogMS4wNzsgc3Ryb2tlOiAjRjg3NjZEOyBzdHJva2UtbGluZWNhcDogYnV0dDsnIC8+CjxsaW5lIHgxPScyNTQuNDknIHkxPSczMjYuNzcnIHgyPScyNjguMzEnIHkyPSczMjYuNzcnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogI0Y4NzY2RDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8Y2lyY2xlIGN4PScyNjEuNDAnIGN5PSczMjYuNzcnIHI9JzIuNDknIHN0eWxlPSdzdHJva2Utd2lkdGg6IDAuNzE7IHN0cm9rZTogI0Y4NzY2RDsgZmlsbDogI0Y4NzY2RDsnIC8+CjxyZWN0IHg9JzMxMC42OScgeT0nMzE4LjEzJyB3aWR0aD0nMTcuMjgnIGhlaWdodD0nMTcuMjgnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogbm9uZTsgZmlsbDogI0ZGRkZGRjsnIC8+CjxsaW5lIHgxPSczMTIuNDEnIHkxPSczMjYuNzcnIHgyPSczMjYuMjQnIHkyPSczMjYuNzcnIHN0eWxlPSdzdHJva2Utd2lkdGg6IDEuMDc7IHN0cm9rZTogIzAwQkZDNDsgc3Ryb2tlLWxpbmVjYXA6IGJ1dHQ7JyAvPgo8bGluZSB4MT0nMzEyLjQxJyB5MT0nMzI2Ljc3JyB4Mj0nMzI2LjI0JyB5Mj0nMzI2Ljc3JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAxLjA3OyBzdHJva2U6ICMwMEJGQzQ7IHN0cm9rZS1saW5lY2FwOiBidXR0OycgLz4KPGNpcmNsZSBjeD0nMzE5LjMzJyBjeT0nMzI2Ljc3JyByPScyLjQ5JyBzdHlsZT0nc3Ryb2tlLXdpZHRoOiAwLjcxOyBzdHJva2U6ICMwMEJGQzQ7IGZpbGw6ICMwMEJGQzQ7JyAvPgo8dGV4dCB4PScyNzUuNTInIHk9JzMyOS45Micgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzI5LjY5cHgnIGxlbmd0aEFkanVzdD0nc3BhY2luZ0FuZEdseXBocyc+UEFSUEQ8L3RleHQ+Cjx0ZXh0IHg9JzMzMy40NScgeT0nMzI5LjkyJyBzdHlsZT0nZm9udC1zaXplOiA4LjgwcHg7IGZvbnQtZmFtaWx5OiAiQXJpYWwiOycgdGV4dExlbmd0aD0nMjUuNDRweCcgbGVuZ3RoQWRqdXN0PSdzcGFjaW5nQW5kR2x5cGhzJz5PQ1BEPC90ZXh0Pgo8dGV4dCB4PSc1MzQuNTInIHk9JzM1Mi42NycgdGV4dC1hbmNob3I9J2VuZCcgc3R5bGU9J2ZvbnQtc2l6ZTogOC44MHB4OyBmb250LWZhbWlseTogIkFyaWFsIjsnIHRleHRMZW5ndGg9JzM5MS40NHB4JyBsZW5ndGhBZGp1c3Q9J3NwYWNpbmdBbmRHbHlwaHMnPk9wZW4gc3ltYm9sOiBzdHJ1Y3R1cmFsbHkgemVybyBjb3ZlcmFnZSAoYSBwZXJjZW50aWxlIGFtcGxpdHVkZSBpbnRlcnZhbCBjYW5ub3QgY29udGFpbiBhIHplcm8gdHJ1dGgpLjwvdGV4dD4KPC9nPgo8L2c+Cjwvc3ZnPgo=" alt="plot of chunk accuracy_plot" width="100%" /></p>
+<p>Two settings are worth knowing. First,
+<code>structure = &quot;observed&quot;</code> rebuilds the population from the
+pooled observed correlations instead of the CPM. If the two structures
+yield different verdicts, that disagreement is itself informative:
+structure uncertainty is material for your data. Second, the embedded
+CPM fit is returned as <code>acc$cpm</code>, for inspection with the
+tools from “Evaluating Circumplex Structure”.</p>
+<p>The diagnostic itself was validated against Zimmermann and Wright’s
+published results. Configured to their transcribed simulation
+conditions, it reproduces their accuracy classifications. It gives
+coverage inside the Bradley band at conditions they found accurate. It
+gives the same one-sided under-coverage at conditions they found
+inaccurate.</p>
+</div>
+</div>
+<div id="when-to-trust-ssm-parameters" class="section level2">
+<h2>4. When to trust SSM parameters</h2>
+<p>Putting “Evaluating Circumplex Structure” and this page together into
+a checklist:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Structure first.</strong> Fit <code>cpm_fit()</code> to your
+instrument in your sample. If the octant ordering fails or communalities
+are very low, stop, because SSM positions mean little.</li>
+<li><strong>Elevation is the robust parameter.</strong> It is
+essentially unbiased, and its intervals were accurate from <span class="math inline">\(n \ge 50\)</span> in every published and
+package-run condition. (On the correlation path, elevation is also the
+parameter that ipsatizing destroys. See “Structure Tests and
+Ipsatization”.)</li>
+<li><strong>Treat amplitude as optimistic.</strong> It cannot go below
+zero, so it overshoots when true differentiation is weak. Before
+interpreting a “marked” amplitude at modest <span class="math inline">\(n\)</span>, run <code>ssm_ci_accuracy()</code> and
+look at the sub-1 ladder rungs in its <code>summary()</code> or
+<code>plot()</code>.</li>
+<li><strong>Only interpret displacement when amplitude is
+credible.</strong> When the amplitude CI lower bound sits less than 0.35
+CI-widths above zero, the printed output notes that the displacement is
+not interpretable. The diagnostic tells you how reliable that
+certification is at your configuration.</li>
+<li><strong>Do not build claims on the fit parameter’s
+interval.</strong> Zimmermann and Wright found bootstrap <span class="math inline">\(R^2\)</span> intervals accurate only when
+population fit was mediocre. Near-perfect prototypicality cannot be
+bracketed from below. Report <span class="math inline">\(R^2\)</span>
+descriptively.</li>
+<li><strong>Remember what the diagnostic conditions on.</strong> It asks
+“would my CI procedure work in a population <em>like my estimates</em>”,
+under multivariate normality, with complete data. It is a strong check,
+not a certificate.</li>
+</ol>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap-up</h2>
+<p>Interval accuracy depends on the sample size, the instrument and how
+differentiated the profile really is, and <code>ssm_ci_accuracy()</code>
+measures it at your own configuration. The next page is “Structure Tests
+and Ipsatization”. It asks the exploratory version of the structure
+question and shows what ipsatizing removes from a profile.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li><p>Bradley, J. V. (1978). Robustness? <em>British Journal of
+Mathematical and Statistical Psychology, 31</em>(2), 144–152.</p></li>
+<li><p>Zimmermann, J., &amp; Wright, A. G. C. (2017). Beyond description
+in interpersonal construct validation: Methodological advances in the
+circumplex Structural Summary Approach. <em>Assessment, 24</em>(1),
+3–23.</p></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

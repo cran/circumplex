@@ -2175,7 +2175,11 @@ test_that("M61 review F4: nb_reason carries every reason that applies", {
   expect_setequal(res$details$nb_reason, c("cormat", "single_item"))
   expect_true(all(is.na(res$results$nb_reliability)))
   expect_false(any(is.nan(res$results$nb_reliability)))
-  out <- paste(utils::capture.output(print(res)), collapse = "\n")
+  # Whitespace is collapsed: the note wraps to the reader's width, so a
+  # phrase falls across a line break at one width and not at another.
+  out <- gsub(
+    "\\s+", " ", paste(utils::capture.output(print(res)), collapse = "\n")
+  )
   expect_match(out, "correlation-matrix path")
   expect_match(out, "undefined for a scale carrying only one item")
 
@@ -3110,9 +3114,9 @@ test_that("AC2: the vignette's calibration table and its object pointer travel t
   # guard would never have run on CRAN or CI. The installed copy under
   # inst/doc is the fallback, exactly as the Rd guard above falls back to
   # tools::Rd_db().
-  vig <- test_path("..", "..", "vignettes", "axes-reliability.Rmd")
+  vig <- test_path("..", "..", "vignettes", "axes-reliability-caveats.Rmd")
   if (!file.exists(vig)) {
-    vig <- system.file("doc", "axes-reliability.Rmd", package = "circumplex")
+    vig <- system.file("doc", "axes-reliability-caveats.Rmd", package = "circumplex")
   }
   skip_if(!nzchar(vig) || !file.exists(vig),
           "the vignette source is not readable from either location")
@@ -3145,15 +3149,19 @@ test_that("M89 AC6: a degenerate fitted matrix NAs the corrected SEs and the fou
   # No converged fit is known to reach the degenerate regime, so a degenerate
   # fitted matrix is CONSTRUCTED and injected at the one seam both consumers
   # read (axes_fitted_cov): the population matrix with one item duplicated
-  # (plus a 1e-9 ridge so the smallest eigenvalue is a hair above zero rather
+  # (plus a ridge so the smallest eigenvalue is a hair above zero rather
   # than roundoff-negative), near-singular in the correlation metric the
   # criterion prices since the M89 re-cut -- so BOTH surfaces refuse it --
   # while leaving everything upstream of the two consumers (the fit, the point
-  # estimates, lavaan's own fit measures) untouched.
+  # estimates, lavaan's own fit measures) untouched. The ridge was 1e-9 until
+  # M147: with the certificate the sole conditioning judge that matrix
+  # CERTIFIES (estimate 9.6e-8; the default-tolerance inversion that used to
+  # sentinel it is gone), so the ridge is 1e-14, where the certificate reads
+  # about 7e7 and refuses on every route.
   bad <- sigma
   bad[2L, ] <- bad[1L, ]
   bad[, 2L] <- bad[, 1L]
-  bad <- bad + 1e-9 * diag(nrow(bad))
+  bad <- bad + 1e-14 * diag(nrow(bad))
   local_mocked_bindings(axes_fitted_cov = function(fit) bad)
 
   w <- testthat::capture_warnings(

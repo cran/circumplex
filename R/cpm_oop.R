@@ -27,70 +27,145 @@ new_cpm <- function(results, betas, fit, corfun, matrices, details, call) {
 
 # ---- shared formatting helpers ----------------------------------------------
 
-# One-line fit summary: chi-square(df), RMSEA [90% CI], SRMR, CFI (design sec. 5.4).
+# Fit summary: chi-square(df), RMSEA [90% CI], SRMR, CFI (design sec. 5.4).
+# It is one line when it fits the console width. Otherwise it breaks only
+# after a "; ", so each index stays whole, and continuation lines are indented
+# five spaces to sit under the text after "Fit: " (M164).
 cpm_fit_line <- function(fit, digits = 3) {
-  if (is.na(fit$df) || fit$df < 1) {
-    return(paste0(
-      "Fit: saturated model (df = ", fit$df, "); fit indices undefined.\n"
-    ))
+  text <- if (is.na(fit$df) || fit$df < 1) {
+    paste0("Fit: saturated model (df = ", fit$df, "); fit indices undefined.")
+  } else {
+    paste0(
+      "Fit: \u03c7\u00b2(", fit$df, ") = ", round(fit$chisq, digits),
+      ", p = ", format.pval(fit$pvalue, digits = digits, eps = 1e-4),
+      "; RMSEA = ", round(fit$rmsea, digits),
+      " [", round(fit$rmsea_ci[1], digits), ", ",
+      round(fit$rmsea_ci[2], digits), "]",
+      "; SRMR = ", round(fit$srmr, digits),
+      "; CFI = ", round(fit$cfi, digits)
+    )
   }
-  paste0(
-    "Fit: \u03c7\u00b2(", fit$df, ") = ", round(fit$chisq, digits),
-    ", p = ", format.pval(fit$pvalue, digits = digits, eps = 1e-4),
-    "; RMSEA = ", round(fit$rmsea, digits),
-    " [", round(fit$rmsea_ci[1], digits), ", ",
-    round(fit$rmsea_ci[2], digits), "]",
-    "; SRMR = ", round(fit$srmr, digits),
-    "; CFI = ", round(fit$cfi, digits), "\n"
-  )
+  clauses <- strsplit(text, "; ", fixed = TRUE)[[1]]
+  last <- length(clauses)
+  clauses[-last] <- paste0(clauses[-last], ";")
+  lines <- wrap_prose(clauses, continuation = strrep(" ", 5), atomic = TRUE)
+  paste0(paste(lines, collapse = "\n"), "\n")
 }
 
 # Diagnostic/boundary lines, gathered so print() and summary() agree (design
 # sec. 2.5 / sec. 3.5). Returns a character vector (possibly empty).
 cpm_diagnostic_lines <- function(details) {
+  # Each entry is wrapped here rather than by the caller, so the returned
+  # character vector stays the finished text the callers cat() unchanged.
+  # `keep` names a phrase that must not break across lines: the text is cut
+  # into words, the phrase stays one unit, and the units go to wrap_prose() in
+  # atomic mode, so a break falls only between them (M146).
+  note <- function(..., keep = NULL) {
+    text <- paste0(...)
+    lines <- if (is.null(keep)) {
+      wrap_prose(text, prefix = "  ")
+    } else {
+      glue <- "\001"
+      text <- sub(keep, gsub(" ", glue, keep, fixed = TRUE), text,
+                  fixed = TRUE)
+      units <- strsplit(text, " ", fixed = TRUE)[[1]]
+      wrap_prose(gsub(glue, " ", units, fixed = TRUE), prefix = "  ",
+                 atomic = TRUE)
+    }
+    paste0(paste(lines, collapse = "\n"), "\n")
+  }
   msg <- character(0)
   if (!isTRUE(details$accepted)) {
-    msg <- c(msg, paste0(
-      "  Note: the fit did not meet the convergence acceptance criterion ",
+    msg <- c(msg, note(
+      "Note: the fit did not meet the convergence acceptance criterion ",
       "(gradient norm ", format(details$gradient_norm, digits = 2),
-      "); interpret with caution.\n"
+      "); interpret with caution."
     ))
   }
   if (isTRUE(details$heywood)) {
-    msg <- c(msg, paste0(
-      "  Note: a communality index reached its upper boundary ",
-      "(\u03b6 > 0.995, a Heywood-type solution).\n"
+    msg <- c(msg, note(
+      "Note: a communality index reached its upper boundary ",
+      "(\u03b6 > 0.995, a Heywood-type solution).",
+      keep = "(\u03b6 > 0.995,"
     ))
   }
   if (isTRUE(details$sigma_pathology)) {
-    msg <- c(msg, paste0(
-      "  Note: a fitted variance ratio (\u03c3\u00b2) departs materially from 1 ",
-      "(outside [0.5, 2]);\n  the scaling or model may be misspecified.\n"
+    msg <- c(msg, note(
+      "Note: a fitted variance ratio (\u03c3\u00b2) departs materially from 1 ",
+      "(outside [0.5, 2]); the scaling or model may be misspecified."
     ))
   }
   if (length(details$removed_harmonics) > 0) {
-    msg <- c(msg, paste0(
-      "  Note: harmonic(s) ",
+    msg <- c(msg, note(
+      "Note: harmonic(s) ",
       paste(details$removed_harmonics, collapse = ", "),
-      " were on the zero boundary and removed (df adjusted).\n"
+      " were on the zero boundary and removed (df adjusted)."
     ))
   }
   if (isTRUE(details$multimodal)) {
-    msg <- c(msg, paste0(
-      "  Note: competing near-tied optima were found; the solution may be ",
-      "weakly identified.\n"
+    msg <- c(msg, note(
+      "Note: competing near-tied optima were found; the solution may be ",
+      "weakly identified."
+    ))
+  }
+  # Lower-discrepancy check (D-072): a lower F the extra starts reached. It
+  # is reported, never adopted, so the estimates shown are unchanged.
+  lc <- details$lower_check
+  if (isTRUE(lc$found)) {
+    df_text <- if (!isTRUE(all.equal(lc$df, details$spec$df))) {
+      paste0(" (at df = ", lc$df, ")")
+    } else {
+      ""
+    }
+    # four decimals below 0.1, so a gap just over the 0.01 bar never prints
+    # as 0.010
+    gap_text <- sprintf(if (lc$gap < 0.1) "%.4f" else "%.3f", lc$gap)
+    shape <- if (is.na(lc$order_changed) || is.na(lc$more_wall)) {
+      "Its scale order and communality bounds could not be read. "
+    } else {
+      paste0(
+        if (lc$order_changed) {
+          "It puts the scales in a different order around the circle"
+        } else {
+          "It keeps the scales' order around the circle"
+        },
+        " and has ",
+        if (lc$more_wall == 0) "no" else abs(lc$more_wall),
+        if (lc$more_wall < 0) " fewer" else " more",
+        " communality ", if (abs(lc$more_wall) == 1) "index" else "indices",
+        " at the upper bound. "
+      )
+    }
+    msg <- c(msg, note(
+      "Note: extra starts reached a solution whose \u03c7\u00b2 is lower by ",
+      gap_text, df_text, ". ", shape,
+      "The estimates shown are unchanged; see \"Which solution is ",
+      "reported\" in ?cpm_fit.",
+      keep = if (nzchar(df_text)) trimws(df_text) else NULL
+    ))
+  } else if (isTRUE(lc$checked) &&
+             (!is.na(lc$error) || isTRUE(lc$failed_starts == lc$n_starts))) {
+    # The check could not decide, so its silence would read as "none found".
+    reason <- if (!is.na(lc$error)) {
+      paste0("it stopped with an error: ", lc$error)
+    } else {
+      "every extra start failed"
+    }
+    msg <- c(msg, note(
+      "Note: the check for a lower discrepancy could not finish (", reason,
+      "); see \"Which solution is reported\" in ?cpm_fit."
     ))
   }
   # Bootstrap replicate accounting (design sec. 5.2): surface exclusions.
   if (identical(details$ci_method, "bootstrap") &&
       isTRUE(details$boots_used < details$boots)) {
     n_bad <- details$boots - details$boots_used
-    msg <- c(msg, paste0(
-      "  Note: ", n_bad, " of ", details$boots, " bootstrap resamples were ",
+    msg <- c(msg, note(
+      "Note: ", n_bad, " of ", details$boots, " bootstrap resamples were ",
       "excluded (", details$boots_degenerate, " degenerate, ",
       details$boots_nonconvergent, " non-convergent); the intervals are ",
       "based on ", details$boots_used, " replicates and are conditional on ",
-      "estimability.\n"
+      "estimability."
     ))
   }
   msg
@@ -103,13 +178,33 @@ cpm_round_df <- function(df, digits) {
   df
 }
 
+# The printed copy of the results table: rounded, with shorter headers so the
+# table fits in 77 columns (M133). The CI columns print as lci/uci right after
+# their estimate. The returned object keeps its names (D-056, D-057).
+# Communality is left out of the printed copy: it is Zeta squared, which the
+# table already prints, and with it a free-scaling table with 16-character
+# scale names reached 84 columns (M146). `results$Communality` still holds it.
+cpm_display_results <- function(df, digits) {
+  df$Communality <- NULL
+  out <- cpm_round_df(df, digits)
+  short <- c(
+    Angle_theory = "Theory",
+    Angle_lci = "lci", Angle_uci = "uci",
+    Zeta_lci = "lci", Zeta_uci = "uci"
+  )
+  hit <- names(out) %in% names(short)
+  names(out)[hit] <- short[names(out)[hit]]
+  out
+}
+
 # ---- print ------------------------------------------------------------------
 
 #' Print a circular process model fit
 #'
 #' Compact display of a [cpm_fit()] object: the estimated angles and communality
-#' indices with confidence intervals, a one-line fit summary, and any
-#' boundary/convergence notes.
+#' indices with confidence intervals, a fit summary that wraps after a `;`
+#' when it is wider than the console, and any
+#' boundary/convergence notes and lower-discrepancy note.
 #'
 #' @param x A `circumplex_cpm` object.
 #' @param digits The number of decimal places to display (default = 3).
@@ -127,7 +222,7 @@ print.circumplex_cpm <- function(x, digits = 3, ...) {
     "\nReference scale:  ", d$scales[[d$reference]],
     "\n\n"
   )
-  print(cpm_round_df(x$results, digits), row.names = FALSE)
+  print(cpm_display_results(x$results, digits), row.names = FALSE)
   cat("\n", cpm_fit_line(x$fit, digits), sep = "")
   for (line in cpm_diagnostic_lines(d)) cat(line)
   invisible(x)
@@ -140,15 +235,16 @@ print.circumplex_cpm <- function(x, digits = 3, ...) {
 #' Fuller display of a [cpm_fit()] object: adds the correlation-function weights,
 #' the full set of fit indices, a residual summary (the largest absolute
 #' residual and the pair it belongs to), and all boundary/identification
-#' diagnostics in plain language. When the confidence intervals are analytic,
+#' diagnostics and the lower-discrepancy note in plain language. When the confidence intervals are analytic,
 #' prints a coverage caution calibrated by simulation: unconditionally when the
 #' sample size is modest (N < 2000, where Wald intervals mis-covered for every
-#' configuration studied), and up to N = 50000 when the fitted solution shows a
-#' boundary or weak-identification marker (Heywood communality, removed
-#' harmonic, small correlation-function weight, ill-conditioning, or competing
-#' near-tied optima), the regime where they mis-covered even at large N (see
+#' configuration studied), and from N = 2000 up to but not including N = 50000
+#' when the fitted solution shows a
+#' boundary or weak-identification marker (Heywood communality, boundary
+#' harmonic removed, small correlation-function weight, ill-conditioned
+#' Hessian, or competing near-tied optima), the regime where they mis-covered even at large N (see
 #' [cpm_fit()]). The vignette section *When a fit sits at a boundary*
-#' (`vignette("evaluating-circumplex-structure")`) glosses each marker and
+#' (`vignette("cpm-boundary-fits")`) glosses each marker and
 #' gives the interpretation and next steps when one fires. When the
 #' confidence intervals are bootstrap, any fired markers are instead listed
 #' in a descriptive note at every sample size; the note also states that
@@ -175,7 +271,7 @@ summary.circumplex_cpm <- function(object, digits = 3, ...) {
     "\nConfidence level: ", d$interval,
     "\n\n# Estimated angles and communality indices\n\n"
   )
-  print(cpm_round_df(object$results, digits), row.names = FALSE)
+  print(cpm_display_results(object$results, digits), row.names = FALSE)
 
   cat("\n# Correlation-function weights\n\n")
   print(cpm_round_df(object$betas, digits), row.names = FALSE)
@@ -241,36 +337,43 @@ summary.circumplex_cpm <- function(object, digits = 3, ...) {
 
   if (length(boot_markers) > 0) {
     # Wrap the label sentence at whole-label boundaries only: a marker label
-    # is taught as a unit, so it must never break across lines.
+    # is taught as a unit, so it must never break across lines. Each label is
+    # handed to wrap_prose() as one atomic unit and the opening clause as its
+    # words, so a break falls between words or labels and never inside a
+    # label. (Handed over whole, the 49-column clause overflowed every width
+    # below 51; M146.)
     items <- paste0(boot_markers, ";")
     items[length(items)] <- sub(";$", ".", items[length(items)])
-    lines <- "Note: boundary/weak-identification markers fired:"
-    for (item in items) {
-      cand <- paste(lines[length(lines)], item)
-      if (nchar(cand) <= 70) {
-        lines[length(lines)] <- cand
-      } else {
-        lines <- c(lines, item)
-      }
-    }
-    cat(
-      # The blank separator line is owed only after printed diagnostic lines;
-      # when the note opens the section itself, the header's own "\n\n"
-      # already provides the single blank line every other render shows.
-      if (length(diag_lines) > 0) "\n" else "",
-      paste0("  ", lines, collapse = "\n"), "\n",
-      "  What has been measured about these markers covers analytic ",
-      "intervals\n  only, and not every marker was measured; they are not ",
-      "validated as\n  predictors of the bootstrap intervals shown here ",
-      "(see the vignette\n  section 'When a fit sits at a boundary').\n",
-      sep = ""
+    # The blank separator line is owed only after printed diagnostic lines;
+    # when the note opens the section itself, the header's own "\n\n"
+    # already provides the single blank line every other render shows.
+    if (length(diag_lines) > 0) cat("\n")
+    cat_prose(
+      c(
+        strsplit("Note: boundary/weak-identification markers fired:", " ",
+                 fixed = TRUE)[[1]],
+        items
+      ),
+      prefix = "  ",
+      atomic = TRUE
+    )
+    # The trailing caveat is ordinary prose and wraps at word boundaries.
+    cat_prose(
+      paste0(
+        "What has been measured about these markers covers analytic ",
+        "intervals only, and not every marker was measured; they are not ",
+        "validated as predictors of the bootstrap intervals shown here ",
+        "(see the vignette section 'When a fit sits at a boundary')."
+      ),
+      prefix = "  "
     )
   }
 
   # N-conditional analytic-CI caution (design sec. 5.2), calibrated by the B6
   # coverage oracle: unconditional below cpm_analytic_ci_n_caution;
   # boundary-marker-conditional below cpm_analytic_ci_n_boundary_caution
-  # (see the constants in R/cpm_fit.R for the measured coverage behind both).
+  # (see the constants in R/cpm_fit.R for the measured coverage behind both,
+  # which was measured on fits with a defined analytic standard error).
   # The SAME thresholds apply to the free-scaling family: the M19 coverage
   # oracle measured its theta/zeta/beta coverage regime to be the diag family's
   # (sigma-hat ~= 1 at correlation truths), so the diag thresholds are
@@ -279,23 +382,43 @@ summary.circumplex_cpm <- function(object, digits = 3, ...) {
   # variance ratios carry no interval, so that note is appended for it below.
   if (identical(d$ci_method, "analytic")) {
     if (d$N < cpm_analytic_ci_n_caution) {
-      cat(
-        "\n  Note: analytic (Wald) confidence intervals may materially mis-cover ",
-        "at this sample size\n  (N < ", cpm_analytic_ci_n_caution,
-        "); prefer the bootstrap on the raw-data path when available.\n",
-        sep = ""
+      cat("\n")
+      cat_prose(
+        paste0(
+          "Note: analytic (Wald) confidence intervals may materially ",
+          "mis-cover at this sample size (N < ", cpm_analytic_ci_n_caution,
+          "); prefer the bootstrap on the raw-data path when available."
+        ),
+        prefix = "  "
       )
     } else if (d$N < cpm_analytic_ci_n_boundary_caution) {
       markers <- cpm_boundary_markers(object)
       if (length(markers) > 0) {
-        cat(
-          "\n  Note: this solution is near a parameter boundary or weakly ",
-          "identified\n  (", paste(markers, collapse = "; "), ");\n  ",
-          "analytic (Wald) confidence intervals mis-covered for such fits ",
-          "in validation\n  even at N in the tens of thousands. Interpret ",
-          "them with caution and prefer\n  the bootstrap on the raw-data ",
-          "path when available.\n",
-          sep = ""
+        # A marker label is taught as a unit here too, so it must not break
+        # across lines: the surrounding prose is split into words and each
+        # label (with the punctuation that joins it to its neighbours) is
+        # handed to wrap_prose() whole, as atomic units.
+        labels <- paste0(markers, ";")
+        labels[[length(labels)]] <- paste0(markers[[length(markers)]], ");")
+        labels[[1]] <- paste0("(", labels[[1]])
+        words <- function(s) unlist(strsplit(s, " ", fixed = TRUE))
+        cat("\n")
+        cat_prose(
+          c(
+            words(paste0(
+              "Note: this solution is near a parameter boundary or weakly ",
+              "identified"
+            )),
+            labels,
+            words(paste0(
+              "analytic (Wald) confidence intervals mis-covered for such fits ",
+              "in validation even at N in the tens of thousands. Interpret ",
+              "them with caution and prefer the bootstrap on the raw-data ",
+              "path when available."
+            ))
+          ),
+          prefix = "  ",
+          atomic = TRUE
         )
       }
     }
@@ -304,10 +427,13 @@ summary.circumplex_cpm <- function(object, digits = 3, ...) {
       # diagnostic (D-009); no analytic interval is offered for it, ever. (Its
       # bordered information is also singular below N ~ 2000, so those CIs are
       # often NA -- an independent reason the N < ...n_caution note above holds.)
-      cat(
-        "\n  Note: the free-scaling variance ratios (\u03c3\u00b2) carry no ",
-        "confidence interval.\n",
-        sep = ""
+      cat("\n")
+      cat_prose(
+        paste0(
+          "Note: the free-scaling variance ratios (\u03c3\u00b2) carry no ",
+          "confidence interval."
+        ),
+        prefix = "  "
       )
     }
   }
@@ -329,7 +455,19 @@ summary.circumplex_cpm <- function(object, digits = 3, ...) {
 #' [cpm_fit()], so the gap between a point and its spoke shows how far the
 #' estimated angle departed from the hypothesised one. Where the confidence
 #' intervals are estimable, a wedge spans each item's angle CI (angularly) and
-#' communality CI (radially).
+#' communality CI (radially). An interval of zero width has no area, so it is
+#' drawn as a line instead: along the radius for a zero-width angle CI, along
+#' the arc for a zero-width communality CI, and as a short cap across the
+#' interval when both are zero. The cap has the same drawn length at every
+#' radius except near the centre, where it spans at most a quarter turn and so
+#' is shorter. A scale whose communality CI is zero at both ends has no
+#' visible interval at the centre and is drawn as a point, with a warning.
+#'
+#' The communality axis and its labels are drawn along the midpoint of the
+#' widest gap between spokes that holds no estimated angle (ties go to the
+#' smallest midpoint; a point on a spoke counts as in both gaps next to it).
+#' When every gap holds a point, the axis goes in the widest gap, as
+#' [coord_circumplex()] places it by default.
 #'
 #' @param x A `circumplex_cpm` object from [cpm_fit()].
 #' @param amax A single positive number giving the communality represented by
@@ -372,25 +510,66 @@ plot.circumplex_cpm <- function(x, amax = 1, angle_labels = NULL,
   df$comm_uci <- pmin(pmax(df$Zeta_uci, 0), 1)^2
 
   # A scale is drawn as a point whenever it has a location (cpm angles are
-  # always estimated, so this holds unless a future path yields NA) and as a
-  # wedge only when its CI region is estimable AND names a proper arc (< 360
-  # deg span). A Heywood/weakly-identified fit can leave the CI NA (no region)
-  # or produce a near-full-circle angle CI; such scales render as a point with
-  # no wedge, and we name them rather than let the wedge vanish silently.
+  # always estimated, so this holds unless a future path yields NA) and gets an
+  # interval mark only when its CI region is estimable, names a proper arc
+  # (< 360 deg span), and reaches past the centre. A Heywood/weakly-identified
+  # fit can leave the CI NA (no region), produce a near-full-circle angle CI, or
+  # clamp both zeta bounds to 0; at communality 0 every angle maps to the one
+  # centre point, so no mark there has any length. Such scales render as a point
+  # only, and we name each with its reason rather than let the mark vanish
+  # silently.
   df$Scale <- factor(df$Scale, levels = unique(as.character(df$Scale)))
   span <- ssm_arc_span(df$Angle_lci, df$Angle_uci)
-  drawable <- ssm_has_region(df$comm_lci, df$comm_uci,
-                             df$Angle_lci, df$Angle_uci) &
-    is.finite(span) & span >= 0 & span < 360
+  has_region <- ssm_has_region(df$comm_lci, df$comm_uci,
+                               df$Angle_lci, df$Angle_uci)
+  proper_arc <- is.finite(span) & span >= 0 & span < 360
+  off_centre <- has_region & df$comm_uci > 0
+  drawable <- has_region & proper_arc & off_centre
   pointable <- ssm_has_location(df$comm_est, df$Angle)
   no_wedge <- pointable & !drawable
   if (any(no_wedge)) {
+    reason <- ifelse(
+      !has_region, "inestimable interval",
+      ifelse(!proper_arc, "full-circle angle interval",
+             "communality interval at 0")
+    )
     warning(
-      "Confidence wedge omitted for scale(s) with an inestimable or ",
-      "full-circle interval: ",
-      paste(as.character(df$Scale)[no_wedge], collapse = ", "),
+      "Confidence wedge omitted for scale(s): ",
+      paste(
+        paste0(as.character(df$Scale), " (", reason, ")")[no_wedge],
+        collapse = ", "
+      ),
       "; drawn as a point only.",
       call. = FALSE
+    )
+  }
+
+  # A zero-width interval names no wedge (geom_ssm_arc() drops a zero angle
+  # span, and a zero communality span has no area), so it is drawn as a line
+  # instead: along the radius for a zero-width angle interval, along the arc for
+  # a zero-width communality interval, and as a short cap across the interval's
+  # own location when both widths are zero. The cap's angular extent is chosen
+  # so its drawn length is the same at every radius: `cap_length` is a fraction
+  # of the rim radius, limited to a quarter turn near the centre.
+  angle_zero <- drawable & span == 0
+  comm_zero <- drawable & df$comm_lci == df$comm_uci
+  wedge <- drawable & !angle_zero & !comm_zero
+  marked <- angle_zero | comm_zero
+  marks <- NULL
+  if (any(marked)) {
+    cap_length <- 0.12
+    m <- df[marked, ]
+    m_span <- span[marked]
+    both <- angle_zero[marked] & comm_zero[marked]
+    cap_half <- pmin(
+      cap_length / 2 / (m$comm_lci / amax) * 180 / pi, 45
+    )
+    marks <- data.frame(
+      Scale = m$Scale,
+      x = ifelse(both, m$Angle_lci - cap_half, m$Angle_lci),
+      xend = ifelse(both, m$Angle_lci + cap_half, m$Angle_lci + m_span),
+      y = m$comm_lci,
+      yend = m$comm_uci
     )
   }
 
@@ -406,11 +585,17 @@ plot.circumplex_cpm <- function(x, amax = 1, angle_labels = NULL,
     ggplot2::theme(
       legend.position = if (legend) "right" else "none"
     )
+  # Keep the amplitude axis labels off the plotted points. The canvas coord is
+  # built fresh by ggcircumplex() above, so setting its field changes no other
+  # plot.
+  p$coordinates$r_axis_angle <- ssm_r_axis_angle_clear(
+    angles, df$Angle[pointable]
+  )
 
-  if (any(drawable)) {
+  if (any(wedge)) {
     p <- p +
       geom_ssm_arc(
-        data = df[drawable, ],
+        data = df[wedge, ],
         mapping = ggplot2::aes(
           amplitude_min = .data$comm_lci,
           amplitude_max = .data$comm_uci,
@@ -421,6 +606,27 @@ plot.circumplex_cpm <- function(x, amax = 1, angle_labels = NULL,
         alpha = 0.4,
         color = "grey40",
         linewidth = 0.5
+      )
+  }
+
+  if (!is.null(marks)) {
+    # geom_segment() under the circumplex coord is munched, so an angular
+    # segment follows the arc. The stroke takes the scale's colour so it
+    # matches the fill of the point drawn on top of it.
+    p <- p +
+      ggplot2::geom_segment(
+        data = marks,
+        mapping = ggplot2::aes(
+          x = .data$x, xend = .data$xend, y = .data$y, yend = .data$yend,
+          colour = .data$Scale
+        ),
+        linewidth = 2.5,
+        lineend = "round",
+        show.legend = FALSE,
+        inherit.aes = FALSE
+      ) +
+      ggplot2::scale_colour_brewer(
+        palette = "Set2", limits = levels(df$Scale), guide = "none"
       )
   }
 

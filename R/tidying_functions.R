@@ -9,7 +9,8 @@
 #'   scales.
 #' @param items Required. A character vector containing the column names, or a
 #'   numeric vector containing column indexes, of item variables in `data` to be
-#'   ipsatized.
+#'   ipsatized. They must not select one column twice, hold a number below 1,
+#'   or name a column whose name occurs more than once in `data`.
 #' @param na.rm Optional. A logical that determines whether missing values
 #'   should be ignored during the calculation of the mean during ipsatization
 #'   (default = TRUE).
@@ -39,6 +40,8 @@ ipsatize <- function(data, items, na.rm = TRUE,
   stopifnot(is_flag(append))
 
   if (is.matrix(data)) data <- as.data.frame(data)
+  # A repeated item would count twice in each row's mean
+  check_scales_selection(data, items, "items")
   item_data <- data[items]
   item_names <- colnames(item_data)
   rmean <- rowMeans(item_data, na.rm = na.rm)
@@ -61,7 +64,11 @@ ipsatize <- function(data, items, na.rm = TRUE,
 #'   circumplex scales.
 #' @param items Required. The variable names or column numbers for the variables
 #'   in \code{.data} that contain all the circumplex items from a single
-#'   circumplex measure, in ascending order from item 1 to item N.
+#'   circumplex measure, in ascending order from item 1 to item N. They must
+#'   not select one column twice (the scoring key reads the items by
+#'   position, so a repeat would put a column in another item's place), hold
+#'   a number below 1, or name a column whose name occurs more than once in
+#'   `data`.
 #' @param instrument Required. An instrument object from the package. To see the
 #'   available circumplex instruments, use \code{instruments()}.
 #' @param na.rm Optional. A logical that determines if missing values should be
@@ -95,6 +102,9 @@ score <- function(data, items, instrument, na.rm = TRUE,
   stopifnot(is_flag(append))
 
   if (is.matrix(data)) data <- as.data.frame(data)
+  # The key reads items by position, so a repeated item would put a column in
+  # another item's place (an inserted one shifts every item after it)
+  check_scales_selection(data, items, "items")
   item_data <- data[items]
   n_items <- length(items)
   key <- instrument$Scales
@@ -156,7 +166,9 @@ norm_sample_usable <- function(instrument, sample) {
 #'   scales.
 #' @param scales Required. A character vector containing the column names, or a
 #'   numeric vector containing the column indexes, for the variables (scale
-#'   scores) to be standardized.
+#'   scores) to be standardized. They must not select one column twice, hold a
+#'   number below 1, or name a column whose name occurs more than once in
+#'   `data`.
 #' @param angles Required. A numeric vector containing the angular displacement
 #'   of each circumplex scale included in `scales` (in degrees). Can use the
 #'   `octants()`, `poles()`, or `quadrants()` convenience functions. Each angle
@@ -219,6 +231,7 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
   stopifnot(is_flag(quiet))
 
   if (is.matrix(data)) data <- as.data.frame(data)
+  check_scales_selection(data, scales)
   key <- instrument$Norms[[1]]
   # which() rather than a bare logical index: `key$Sample == NA` is NA rather
   # than FALSE, and indexing a data frame by NA returns a row of NAs instead of
@@ -353,7 +366,10 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
         " available; see norms()."
       )
     }
-    message(msg)
+    # Wrapped to the console width like the package's printed cautions, so a
+    # long sample description does not run off the console or the website's
+    # code box (M164).
+    message(paste(wrap_prose(msg), collapse = "\n"))
   }
 
   out <- if (append) {
@@ -375,7 +391,9 @@ norm_standardize <- function(data, scales, angles = octants(), instrument,
 #'   scales.
 #' @param scales Required. A character vector containing the column names, or a
 #'   numeric vector containing the column indexes, for the variables (scale
-#'   scores) to be standardized.
+#'   scores) to be standardized. They must not select one column twice, hold a
+#'   number below 1, or name a column whose name occurs more than once in
+#'   `data`.
 #' @param na.rm Optional. A logical that determines whether to remove missing
 #'   values from scales when calculating the means and SDs used for
 #'   standardization (default = TRUE).
@@ -405,6 +423,7 @@ self_standardize <- function(data, scales, na.rm = TRUE,
   stopifnot(is_flag(append))
 
   if (is.matrix(data)) data <- as.data.frame(data)
+  check_scales_selection(data, scales)
   scale_data <- data[scales]
   scale_names <- colnames(scale_data)
 

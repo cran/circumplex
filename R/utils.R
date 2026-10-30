@@ -220,6 +220,230 @@ is_null_or_num <- function(x, n = NULL) {
   is.null(x) || is_num(x, n)
 }
 
+# Column selection by `scales` --------------------------------------------
+
+# Refuse a `scales` selection that the caller cannot score correctly, before
+# the caller indexes `data` with it. Three selections are refused: a number
+# that truncates below 1 (zero drops a column and a negative selects by
+# exclusion), a name that occurs more than once in the column names (it
+# resolves to the first such column with no message), and one column selected
+# twice (it would enter the profile at two angles). `data` is what the caller
+# indexes: a data frame, or the matrix that fit_structure() indexes as it is.
+# Names are judged by name and numbers by the position they reach, which
+# seq_len(ncol(data))[scales] gives by R's own truncation rule, so 3 and 3.5
+# reach one column. An NA, an absent name and a number past the last column
+# pass through to the caller's own error. `arg` names the argument in the
+# messages (the `items` argument takes the same rule), and `where` names what
+# `data` is to the user.
+check_scales_selection <- function(data, scales, arg = "scales",
+                                   where = "`data`") {
+  check_scales_positions(scales, arg)
+  data_names <- colnames(data)
+  if (is.null(data_names)) data_names <- rep(NA_character_, ncol(data))
+  if (is.character(scales)) {
+    dup_names <- data_names[!is.na(data_names) & duplicated(data_names)]
+    dup <- scales[!is.na(scales) & scales %in% dup_names]
+    if (length(dup) > 0) {
+      stop("`", arg, "` names a column that occurs more than once in ",
+           where, ": \"", dup[[1]], "\".", call. = FALSE)
+    }
+    keys <- scales[!is.na(scales) & scales %in% data_names]
+  } else {
+    keys <- seq_len(ncol(data))[scales]
+    keys <- keys[!is.na(keys)]
+  }
+  repeated <- anyDuplicated(keys)
+  if (repeated > 0) {
+    col <- keys[[repeated]]
+    label <- if (is.character(col)) {
+      paste0("\"", col, "\"")
+    } else if (is.na(data_names[[col]])) {
+      paste("at position", col)
+    } else {
+      paste0("\"", data_names[[col]], "\"")
+    }
+    stop("`", arg, "` selects the column ", label, " more than once.",
+         call. = FALSE)
+  }
+  invisible(scales)
+}
+
+# The position half of check_scales_selection(), for a caller that must judge
+# positions before it can resolve the columns `scales` reaches.
+check_scales_positions <- function(scales, arg = "scales") {
+  if (is.numeric(scales)) {
+    low <- which(!is.na(scales) & trunc(scales) < 1)
+    if (length(low) > 0) {
+      # 15 digits, so a value just under 1 never prints as 1
+      stop("`", arg, "` holds the position ",
+           format(scales[[low[[1]]]], digits = 15),
+           ", below 1 once truncated to a whole number; select columns by ",
+           "name or by a position of 1 or more.", call. = FALSE)
+    }
+  }
+  invisible(scales)
+}
+
+# Refuse a repeated entry where `scales` labels variables rather than
+# selecting columns of `data`: lavaan variable names, or the rows of a
+# correlation matrix. One variable listed twice would enter the profile at
+# two angles. `what` names the source in the message, and `hint`, when
+# given, is appended to it.
+check_scales_labels <- function(scales, what = "`scales`", hint = NULL) {
+  if (sum(is.na(scales)) > 1) {
+    stop(what, " lists NA more than once.", hint, call. = FALSE)
+  }
+  labels <- scales[!is.na(scales)]
+  repeated <- anyDuplicated(labels)
+  if (repeated > 0) {
+    stop(what, " lists \"", labels[[repeated]], "\" more than once.", hint,
+         call. = FALSE)
+  }
+  invisible(scales)
+}
+
+# Refuse a `measures` entry that carries the name of a scale, for the SEM
+# functions, where lavaan reaches every variable by name. The data would hold
+# two columns with that name, and the syntax would give the one variable
+# lavaan reads two roles: indicator of the scale factors and outside measure.
+# `measures` and `scale_names` are names; NA entries pass through.
+check_measures_not_scales <- function(measures, scale_names) {
+  hit <- measures[!is.na(measures) & measures %in% scale_names]
+  if (length(hit) > 0) {
+    stop("`measures` names \"", hit[[1]], "\", which is the name of one of ",
+         "the scales; each measure must have a name of its own.",
+         call. = FALSE)
+  }
+  invisible(measures)
+}
+
+# Display columns, which is what a console line budget is spent in. Every
+# width comparison below goes through this one function.
+#
+# The cautions carry "²", "ζ" and "ℹ", which take more bytes
+# than characters but occupy one column each, so for the package's own text a
+# character count would give the same answer. Columns are counted because
+# that is the right question to ask of a console, not because these glyphs
+# force it. A double-width character is what tells the two counts apart, and
+# that is what test-wrap-prose.R uses.
+disp_width <- function(x) {
+  nchar(x, type = "width")
+}
+
+# Wrap prose to the reader's console width and return the finished lines.
+#
+# The caller cats what this returns, so one wrapping rule serves every caution
+# and note the package prints, and the rule can be tested without capturing
+# console output. Width defaults to getOption("width"), which is what a reader
+# sets to tell R how wide their console is.
+#
+# `prefix` is placed before the first line and `continuation` before every
+# later line. Both are counted AGAINST the width, never added on top of it, so
+# an indented or labeled block stays inside the budget. A fixed-width label
+# field is expressed as a `prefix` of that width with a `continuation` of the
+# same width in spaces.
+#
+# With `atomic = FALSE`, `x` is prose and a break may fall between any two
+# words. Each ELEMENT of `x` is then a paragraph of its own: elements are never
+# flowed into one another, which is the one property of the strwrap() this
+# replaced that the cautions depend on. Two details differ from strwrap() and
+# are this function's own. `prefix` opens EVERY paragraph, where strwrap()'s
+# `initial` opens only the first line of the whole output. And an empty or
+# whitespace-only element contributes nothing, where strwrap() emits an empty
+# line for it.
+#
+# With `atomic = TRUE`, each element of `x` is instead a unit that must not
+# split: a break falls only between elements, and the whole vector is one
+# paragraph. The bootstrap marker note uses the atomic form, because a marker
+# label is taught as a unit and reads as one name only while it stays on one
+# line. The CPM Heywood note uses it too, so that "(ζ > 0.995," stays whole
+# (see `cpm_diagnostic_lines()`).
+#
+# A single word wider than the room left on a line is placed on its own line
+# rather than split, so that line can exceed the width. Breaking a word would
+# change the words the reader sees, which matters more than the column.
+wrap_prose <- function(x, prefix = "", continuation = prefix,
+                       width = NULL, atomic = FALSE) {
+  stopifnot(
+    is_char(x),
+    is_char(prefix, n = 1),
+    is_char(continuation, n = 1),
+    is_flag(atomic), !is.na(atomic)
+  )
+  # disp_width() counts a tab as 0 columns while a console draws it up to 8
+  # wide, so a tab in a lead would put lines past the width they were counted
+  # in. A tab in `x` is only a word separator and stays legal.
+  stopifnot(
+    "`prefix` must not contain a tab" = !grepl("\t", prefix, fixed = TRUE),
+    "`continuation` must not contain a tab" =
+      !grepl("\t", continuation, fixed = TRUE)
+  )
+  # `width = NULL` means "ask the reader's console". No fallback is needed for
+  # that answer: R refuses to delete the width option or to set it outside
+  # 10...10000, so getOption("width") is always a usable integer. A width the
+  # caller states is validated like every other argument, because a caller
+  # passing 0, -5 or "80" has made a mistake, and silently printing at 80
+  # would hide it (M131 review, O8).
+  if (is.null(width)) width <- getOption("width")
+  # is_scalar_count() accepts Inf, and an infinite width wraps nothing.
+  stopifnot(
+    is_scalar_count(width),
+    "`width` must be finite" = is.finite(width)
+  )
+
+  # Each element of `x` is a paragraph of its own, as in the strwrap() this
+  # replaced, so a caller that hands over several sentences gets several
+  # paragraphs rather than one flowed block (M131 review, O1). In atomic mode
+  # an element is a unit that must not split, not a paragraph, so the whole
+  # vector is one paragraph there.
+  paragraphs <- if (atomic) list(x) else lapply(x, function(p) {
+    unlist(strsplit(p, "[ \t\r\n]+"))
+  })
+
+  out <- character(0)
+  for (pieces in paragraphs) {
+    pieces <- pieces[nzchar(pieces)]
+    if (length(pieces) == 0) next
+
+    bodies <- character(0)
+    current <- pieces[[1]]
+    for (piece in pieces[-1]) {
+      lead <- if (length(bodies) == 0) prefix else continuation
+      room <- max(width - disp_width(lead), 1)
+      candidate <- paste(current, piece)
+      if (disp_width(candidate) <= room) {
+        current <- candidate
+      } else {
+        bodies <- c(bodies, current)
+        current <- piece
+      }
+    }
+    bodies <- c(bodies, current)
+
+    leads <- c(prefix, rep(continuation, length(bodies) - 1))
+    out <- c(out, paste0(leads[seq_along(bodies)], bodies))
+  }
+  out
+}
+
+# The same wrapping, printed. Every caution site that has nothing to add
+# between the lines uses this, so the newline handling is written once.
+cat_prose <- function(x, prefix = "", continuation = prefix,
+                      width = NULL, atomic = FALSE) {
+  lines <- wrap_prose(
+    x,
+    prefix = prefix,
+    continuation = continuation,
+    width = width,
+    atomic = atomic
+  )
+  # cat() appends `sep` after the LAST element too, so this already ends the
+  # final line. A further cat("\n") here would add a blank line after every
+  # caution and change the layout this milestone is meant to preserve.
+  if (length(lines) > 0) cat(lines, sep = "\n")
+  invisible(lines)
+}
+
 # The reader-facing phrase for a stored reference-kind token. One mapping for
 # both surfaces that report a kind -- norms() and norm_standardize()'s
 # disclosure -- so the two cannot drift into describing the same sample

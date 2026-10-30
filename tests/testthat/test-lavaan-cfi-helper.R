@@ -64,3 +64,17 @@ test_that("M107 review: a warning still does not rescue an unusable value", {
   expect_null(lav_cfi_ref(200, 100, 400, 150,
                           f = function(...) { warning("w"); NA_real_ }))
 })
+
+test_that("M168: the corroboration reaches the installed lavaan", {
+  # The CFI comparisons skip when lav_cfi_ref() returns NULL, so a renamed or
+  # removed lav_fit_cfi() leaves them skipping with the suite green; this test
+  # fails instead. It skips on CRAN, so a lavaan release cannot fail the
+  # package's check there through this test. Local devtools::test() and devtools::check() set
+  # NOT_CRAN and run it, and so do the CI jobs that run the suite
+  # (R-CMD-check and test-coverage), because r-lib/actions/setup-r exports
+  # NOT_CRAN=true.
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+  expect_equal(lav_cfi_ref(200, 100, 400, 150),
+               1 - (200 - 100) / (400 - 150))
+})

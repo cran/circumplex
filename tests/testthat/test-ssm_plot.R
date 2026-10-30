@@ -281,3 +281,228 @@ test_that("ssm_plot_circle warns by name and omits an undefined-displacement pro
   expect_true(ggplot2::is_ggplot(p))
   expect_silent(invisible(ggplot2::ggplot_build(p)))
 })
+
+test_that("ssm_plot_circle() puts the amplitude axis in a gap with no point", {
+  skip_on_cran()
+  data("jz2017")
+  res <- ssm_analyze(jz2017, scales = 2:9, measures = c("NARPD", "ASPD"),
+                     boots = 20)
+  axis_angle <- function(res) {
+    p <- suppressWarnings(ssm_plot_circle(res))
+    ggplot2::ggplot_build(p)$layout$coord$r_axis_inside
+  }
+  # A point in the 0-45 gap moves the axis off the default 22.5.
+  res$results$d_est <- c(17.8, 200)
+  res$results$d_lci <- res$results$d_est - 5
+  res$results$d_uci <- res$results$d_est + 5
+  expect_equal(axis_angle(res), 67.5)
+  # Points away from the 0-45 gap keep the default placement.
+  res$results$d_est <- c(100, 200)
+  res$results$d_lci <- res$results$d_est - 5
+  res$results$d_uci <- res$results$d_est + 5
+  expect_equal(axis_angle(res), 22.5)
+})
+
+# --- M142: grid = "cartesian" and angle_labels on the canvas -----------------
+
+# The built theta labels keyed by their break.
+theta_labels <- function(p) {
+  pp <- ggplot2::ggplot_build(p)$layout$panel_params[[1]]
+  br <- pp$theta$get_breaks()
+  lab <- as.character(pp$theta$get_labels())
+  keep <- is.finite(br)
+  stats::setNames(lab[keep], as.character(br[keep]))
+}
+# The rendered theta label text grob: the one whose labels are the theta labels.
+theta_text_grob <- function(p) {
+  want <- unname(theta_labels(p))
+  g <- ggplot2::ggplotGrob(p)
+  panel <- g$grobs[[which(g$layout$name == "panel")]]
+  found <- NULL
+  walk <- function(gr) {
+    if (inherits(gr, "text") && setequal(as.character(gr$label), want)) {
+      found <<- gr
+    }
+    kids <- if (inherits(gr, "gtable")) gr$grobs else gr$children
+    for (k in kids) walk(k)
+  }
+  walk(panel)
+  found
+}
+
+test_that("ggcircumplex() validates grid and angle_labels (AC1, AC3)", {
+  expect_error(ggcircumplex(octants(), grid = "square"), "`grid`", fixed = TRUE)
+  # is_flag() names the argument in stopifnot()'s message (D-005 idiom).
+  expect_error(ggcircumplex(octants(), angle_labels = "yes"), "is_flag(angle_labels)", fixed = TRUE)
+  expect_error(ggcircumplex(octants(), angle_labels = NA), "is.na(angle_labels)", fixed = TRUE)
+  expect_error(ggcircumplex(octants(), angle_labels = c(TRUE, FALSE)), "is_flag(angle_labels)", fixed = TRUE)
+  expect_error(ggcircumplex(octants(), angle_labels = 1), "is_flag(angle_labels)", fixed = TRUE)
+})
+
+test_that("angle_labels = TRUE formats text labels as <label> (<angle>°) (AC3)", {
+  # 0 and 360 both label as 360° (LM = 360); other angles round to the nearest
+  # whole degree.
+  p <- ggcircumplex(
+    c(0, 360, 11.4, 90, 200.6), labels = c("A", "B", "C", "D", "E"),
+    angle_labels = TRUE
+  )
+  lab <- theta_labels(p)
+  expect_equal(
+    unname(lab[c("0", "360", "11.4", "90", "200.6")]),
+    c("A (360°)", "B (360°)", "C (11°)", "D (90°)", "E (201°)")
+  )
+  # Labels resolved from an instrument get the same format.
+  q <- ggcircumplex(instrument = csip, angle_labels = TRUE)
+  expect_equal(
+    unname(theta_labels(q)[as.character(csip$Scales$Angle)]),
+    paste0(csip$Scales$Abbrev, " (", csip$Scales$Angle, "°)")
+  )
+  expect_true("LM (360°)" %in% theta_labels(q))
+  # With no text labels the break already reads as its angle and is left as it
+  # is (implement gate, 2026-09-20).
+  expect_equal(theta_labels(ggcircumplex(octants(), angle_labels = TRUE)),
+               theta_labels(ggcircumplex(octants())))
+  expect_true("90°" %in% theta_labels(ggcircumplex(octants(), angle_labels = TRUE)))
+  # angle_labels = FALSE leaves text labels alone.
+  expect_equal(unname(theta_labels(ggcircumplex(octants(), labels = PANO()))), PANO())
+})
+
+test_that("angle_labels = TRUE rotates each theta label along its radius (AC3)", {
+  skip_on_cran()
+  p <- ggcircumplex(octants(), labels = PANO(), angle_labels = TRUE)
+  txt <- theta_text_grob(p)
+  expect_false(is.null(txt))
+  deg <- as.numeric(sub(".*\\((\\d+)°\\).*", "\\1", as.character(txt$label)))
+  rot <- rep_len(txt$rot, length(deg))
+  # Along the radius: the text angle equals the displacement, up to a half turn
+  # (the guide flips labels that would read upside down).
+  expect_equal((rot - deg) %% 180, rep(0, length(deg)), tolerance = 1e-8)
+  # Without angle_labels the labels keep the theme's angle (0).
+  txt0 <- theta_text_grob(ggcircumplex(octants(), labels = PANO()))
+  expect_false(is.null(txt0))
+  expect_equal(rep_len(txt0$rot, 8) %% 360, rep(0, 8))
+  # With the default degree labels angle_labels = TRUE is a no-op in full:
+  # no rotation and no widened margin, not only an unchanged format.
+  deg_on <- ggcircumplex(octants(), angle_labels = TRUE)
+  deg_off <- ggcircumplex(octants())
+  expect_equal(rep_len(theta_text_grob(deg_on)$rot, 8) %% 360, rep(0, 8))
+  expect_identical(deg_on$theme, deg_off$theme)
+  expect_gt(
+    as.numeric(ggplot2::calc_element("plot.margin", p$theme))[[1]],
+    as.numeric(ggplot2::calc_element("plot.margin", deg_off$theme))[[1]]
+  )
+})
+
+# --- M145: the angle_labels margin is sized per side ------------------------
+
+# The four plot.margin sides in pt, named t/r/b/l (ggplot2's margin order).
+margin_pt <- function(p) {
+  m <- ggplot2::calc_element("plot.margin", ggplot2::complete_theme(p$theme))
+  expect_identical(unique(grid::unitType(m)), "points")
+  stats::setNames(as.numeric(m), c("t", "r", "b", "l"))
+}
+theme_margin_pt <- function(font_size) {
+  m <- ggplot2::calc_element(
+    "plot.margin", ggplot2::complete_theme(theme_circumplex(font_size))
+  )
+  stats::setNames(as.numeric(m), c("t", "r", "b", "l"))
+}
+# The M145 oracle restates the rule in the test; the hard-coded pt values in
+# the test below are the independent check. A drawn label at displacement `a`
+# reaches half the font size per character along its radius, and each side
+# takes the longest projection onto its outward direction (0 = right,
+# 90 = top), or the theme's margin.
+margin_oracle <- function(drawn, a, font_size) {
+  len <- 0.5 * font_size * nchar(drawn)
+  u <- list(t = sin(a * pi / 180), r = cos(a * pi / 180),
+            b = -sin(a * pi / 180), l = -cos(a * pi / 180))
+  reach <- vapply(u, function(ui) max(pmax(0, ui) * len), numeric(1))
+  pmax(theme_margin_pt(font_size), reach[c("t", "r", "b", "l")])
+}
+
+test_that("angle_labels = TRUE sizes each margin side from the labels pointing at it (M145 AC1)", {
+  for (g in c("polar", "cartesian")) {
+    # Octants with PANO, LM at 360. One fact stated independently of the
+    # oracle: at 12 pt, "PA (90°)" (8 characters) sets the top to 48 pt and the
+    # 9-character LM/DE/HI labels set the other sides to 54 pt.
+    p <- ggcircumplex(octants(), labels = PANO(), grid = g, angle_labels = TRUE)
+    expect_equal(margin_pt(p), c(t = 48, r = 54, b = 54, l = 54), tolerance = 1e-10)
+    drawn <- circumplex_angle_labels(PANO(), octants())
+    expect_equal(margin_pt(p), margin_oracle(drawn, octants(), 12), tolerance = 1e-10)
+
+    # Left and right differ: a long label at 180, a short one at 0 (drawn as
+    # 360). Top and bottom keep the theme's margin.
+    lab2 <- c("Warm", "Cold-hearted")
+    q <- ggcircumplex(c(0, 180), labels = lab2, grid = g, angle_labels = TRUE)
+    expect_equal(margin_pt(q), c(t = 6, r = 66, b = 6, l = 114), tolerance = 1e-10)
+    expect_equal(
+      margin_pt(q),
+      margin_oracle(c("Warm (360°)", "Cold-hearted (180°)"), c(0, 180), 12),
+      tolerance = 1e-10
+    )
+
+    # Labels at 90 and 270 only: left and right keep the theme's margin.
+    v <- ggcircumplex(c(90, 270), labels = c("Up", "Down"), grid = g, angle_labels = TRUE)
+    expect_equal(margin_pt(v), c(t = 48, r = 6, b = 66, l = 6), tolerance = 1e-10)
+    expect_equal(margin_pt(v)[c("r", "l")], theme_margin_pt(12)[c("r", "l")])
+
+    # font_size scales both the reach and the theme's floor (10 pt at 20).
+    f <- ggcircumplex(c(0, 180), labels = lab2, grid = g, angle_labels = TRUE,
+                      font_size = 20)
+    expect_equal(margin_pt(f), c(t = 10, r = 110, b = 10, l = 190), tolerance = 1e-10)
+    expect_equal(
+      margin_pt(f),
+      margin_oracle(c("Warm (360°)", "Cold-hearted (180°)"), c(0, 180), 20),
+      tolerance = 1e-10
+    )
+  }
+})
+
+test_that("without angle-labelled text the margin is the theme's (M145 AC2)", {
+  for (g in c("polar", "cartesian")) {
+    off <- ggcircumplex(octants(), labels = PANO(), grid = g, angle_labels = FALSE)
+    deg <- ggcircumplex(octants(), grid = g, angle_labels = TRUE)
+    expect_equal(margin_pt(off), theme_margin_pt(12))
+    expect_equal(margin_pt(deg), theme_margin_pt(12))
+  }
+})
+
+test_that("building an angle-labelled canvas opens no graphics device (M145 review)", {
+  # Reading the theme margin in pt must not go through grid::convertUnit(),
+  # which opens a device (Rplots.pdf in a script) just to build the plot. An
+  # earlier test can leave a device open, which would hide a new one, so the
+  # devices are closed first; that is skipped where a user's plots are open.
+  skip_if(interactive())
+  grDevices::graphics.off()
+  ggcircumplex(octants(), labels = PANO(), angle_labels = TRUE)
+  expect_null(grDevices::dev.list())
+})
+
+test_that("grid = \"cartesian\" turns the theta tick marks on; polar leaves the theme as today (AC3)", {
+  cart <- ggcircumplex(octants(), grid = "cartesian")
+  expect_true(ggplot2::is_theme_element(
+    ggplot2::calc_element("axis.ticks.theta", cart$theme), "line"
+  ))
+  expect_gt(as.numeric(ggplot2::calc_element("axis.ticks.length.theta", cart$theme)), 0)
+  expect_identical(cart$coordinates$grid, "cartesian")
+  polar <- ggcircumplex(octants(), grid = "polar")
+  expect_identical(polar$theme, theme_circumplex(base_size = 12))
+  expect_identical(polar$theme, ggcircumplex(octants())$theme)
+  expect_true(ggplot2::is_theme_element(
+    ggplot2::calc_element("axis.ticks.theta", polar$theme), "blank"
+  ))
+  expect_identical(polar$coordinates$grid, "polar")
+})
+
+test_that("cartesian canvas snapshots (AC2, AC3)", {
+  skip_if_not_installed("vdiffr")
+  skip_on_ci()
+  vdiffr::expect_doppelganger(
+    "ggcircumplex cartesian canvas",
+    ggcircumplex(octants(), labels = PANO(), grid = "cartesian")
+  )
+  vdiffr::expect_doppelganger(
+    "ggcircumplex cartesian angle labels",
+    ggcircumplex(octants(), labels = PANO(), grid = "cartesian", angle_labels = TRUE)
+  )
+})

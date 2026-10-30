@@ -14,7 +14,12 @@ vignette: >
 library(circumplex)
 ```
 
-## 1. Background and Motivation
+**Level:** Introductory. Read "Using Circumplex Instruments" first if your data are item-level responses that still need scoring.
+
+## 1. Overview
+This vignette introduces the Structural Summary Method (SSM) and the functions that run it. Section 2, "Background and Motivation", explains circumplex models, circumplex scales, and the SSM parameters. Section 3, "Example data: jz2017", loads the dataset that the examples use. Section 4, "Mean-based SSM Analysis", runs the SSM on a group's mean scores with `ssm_analyze()`, `ssm_table()`, `ssm_plot_circle()`, and `ssm_plot_curve()`. Section 5, "Correlation-based SSM Analysis", runs it on the correlations between the scales and an external measure. The Wrap-up lists what the page covered and names the next page, and the References list the sources cited.
+
+## 2. Background and Motivation
 
 ### Circumplex models, scales, and data
 Circumplex models are popular within many areas of psychology because they offer a parsimonious account of complex psychological domains, such as emotion and interpersonal functioning. This parsimony is achieved by understanding phenomena in a domain as being a "blend" of two primary dimensions. For instance, circumplex models of emotion typically represent affective phenomena as a blend of *valence* (pleasantness versus unpleasantness) and *arousal* (activity versus passivity), whereas circumplex models of interpersonal functioning typically represent interpersonal phenomena as a blend of *communion* (affiliation versus separation) and *agency* (dominance versus submissiveness). These models are often depicted as circles around the intersection of the two dimensions (see figure). Any given phenomenon can be located within this circular space through reference to the two underlying dimensions (e.g., anger is a blend of unpleasantness and activity).
@@ -23,82 +28,417 @@ Circumplex scales contain multiple subscales that attempt to measure different b
 
 Circumplex data is composed of scores on a set of circumplex scales for one or more participants (e.g., persons or organizations). Such data is usually collected via self-report, informant-report, or observational ratings in order to locate psychological phenomena within the circular space of the circumplex model. For example, a therapist might want to understand the interpersonal problems encountered by an individual patient, a social psychologist might want to understand the emotional experiences of a group of participants during an experiment, and a personality psychologist might want to understand what kind of interpersonal behaviors are associated with a trait (e.g., extraversion).
 
-
-```
-#> Warning: The `label.size` argument of `geom_label()` is deprecated as of ggplot2 3.5.0.
-#> ℹ Please use the `linewidth` argument instead.
-#> This warning is displayed once per session.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-#> generated.
-```
-
-<img src="figures/introduction-to-ssm-analysis-model-1.png" alt="plot of chunk model" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-model-1.svg" alt="plot of chunk model" width="100%" />
 
 
 ### The Structural Summary Method
 The Structural Summary Method (SSM) is a technique for analyzing circumplex data that offers practical and interpretive benefits over alternative techniques. It  consists of fitting a cosine curve to the data, which captures the pattern of correlations among scores associated with a circumplex scale (i.e., mean scores on circumplex scales or correlations between circumplex scales and an external  measure). By plotting a set of example scores below, we can gain a visual intuition that a cosine curve makes sense in this case. First, we can examine the scores with a bar chart ignoring the circular relationship among them.
 
-<img src="figures/introduction-to-ssm-analysis-column-1.png" alt="plot of chunk column" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-column-1.svg" alt="plot of chunk column" width="100%" />
 
 Next, we can leverage the fact that these subscales have specific angular displacements in the circumplex model (and that 0 and 360 degrees are the same) to create a path diagram.
 
-<img src="figures/introduction-to-ssm-analysis-path-1.png" alt="plot of chunk path" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-path-1.svg" alt="plot of chunk path" width="100%" />
 
 This already looks like a cosine curve, and we can finally use the SSM to  estimate the parameters of the curve that best fits the observed data. By plotting it alongside the data, we can get a sense of how well the model fits our example data.
 
-<img src="figures/introduction-to-ssm-analysis-curve-1.png" alt="plot of chunk curve" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-curve-1.svg" alt="plot of chunk curve" width="100%" />
 
 ### Understanding the SSM parameters
 The SSM estimates a cosine curve to the data using the following equation:
 $$S_i = e + a \times \cos(\theta_i - d)$$
 where $S_i$ and $\theta_i$ are the score and angle on scale $i$, respectively, and $e$, $a$, and $d$ are the elevation, amplitude, and displacement parameters, respectively. Before we discuss these parameters, however, we can also estimate the fit of the SSM model. This is essentially how close the cosine curve is to the observed data points. Deviations (in red, below) will lower model fit.
 
-<img src="figures/introduction-to-ssm-analysis-residuals-1.png" alt="plot of chunk residuals" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-residuals-1.svg" alt="plot of chunk residuals" width="100%" />
 
 If fit is less than 0.70, it is considered "unacceptable" and only the elevation parameter should be interpreted. If fit is between 0.70 and 0.80, it is  considered "adequate," and if it is greater than 0.80, it is considered "good." Sometimes SSM model fit is called prototypicality or denoted using $R^2$.
 
 The first SSM parameter is elevation or $e$, which is calculated as the mean of all scores. It is the size of the general factor in the circumplex model and its interpretation varies from scale to scale. For measures of interpersonal problems, it is interpreted as generalized interpersonal distress. When using correlation-based SSM, $|e|\ge.15$ is considered "marked" and $|e|<.15$ is considered "modest."
 
-<img src="VIG1-e.gif" alt="plot of chunk elev" width="100%" />
-
 The second SSM parameter is amplitude or $a$, which is calculated as the difference between the highest point of the curve and the curve's mean. It is interpreted as the distinctiveness or differentiation of a profile: how much it is peaked versus flat. Similar to elevation, when using correlation-based SSM, $a\ge.15$ is considered "marked" and $a<.15$ is considered "modest."
-
-<img src="VIG1-a.gif" alt="plot of chunk ampl" width="100%" />
 
 The final SSM parameter is displacement or $d$, which is calculated as the angle at which the curve reaches its highest point. It is interpreted as the style of the profile. For instance, if $d=90^\circ$ and we are using a circumplex scale that defines 90 degrees as "domineering," then the profile's style is domineering. Displacement is reported on the $[0^\circ, 360^\circ)$ circle; a profile that peaks right at the $0^\circ$/$360^\circ$ boundary may be reported as either value, since both point in the same direction.
 
-<img src="VIG1-d.gif" alt="plot of chunk disp" width="100%" />
+The figure below draws the curve $S = e + a \times \cos(\theta - d)$ for the values you choose. Move a slider to change one parameter while the other two stay fixed. The dashed line marks the elevation, and the arrow from it to the peak marks the amplitude. The triangle under the peak marks the displacement. The points show the curve's value at the angles of the eight scales. When the amplitude is zero, the curve is flat, so it has no peak and the displacement is undefined. Select Reset to return to the starting values.
+
+<div id="ssm-applet"></div>
+
+<script>
+// Interactive SSM curve for the introduction vignette. The reader moves
+// sliders for elevation (e), amplitude (a) and displacement (d), and the plot
+// redraws S(theta) = e + a * cos(theta - d).
+//
+// tools/precompute-vignettes.R writes this file inline into
+// introduction-to-ssm-analysis.Rmd, inside a classic <script> placed after an
+// empty <div id="ssm-applet">. Node loads the same file through the
+// module.exports guard after the pure functions, so tools/check-ssm-applet.mjs
+// checks the functions the page runs, as long as the .Rmd is re-rendered after
+// each edit here (the vignette-precompute staleness check fails until it is).
+//
+// Angles follow the package: degrees, with the pole labelled 360, never 0.
+// So the d slider runs from 5 to 360, and the x axis labels the octants
+// 45, 90, ..., 360.
+//
+// Colors are set by CSS rules on classes, which read the theme variables; the
+// SVG attributes carry the light-theme colors for a viewer without CSS
+// custom properties.
+
+(function () {
+  "use strict";
+
+  var OCTANTS = [45, 90, 135, 180, 225, 270, 315, 360];
+  var DEFAULTS = { e: 0.1, a: 0.3, d: 90 };
+  var SLIDERS = [
+    { key: "e", name: "Elevation (e)", min: -0.5, max: 0.5, step: 0.05 },
+    { key: "a", name: "Amplitude (a)", min: 0, max: 0.5, step: 0.05 },
+    { key: "d", name: "Displacement (d)", min: 5, max: 360, step: 5 }
+  ];
+  var PLOT = {
+    width: 640, height: 320,
+    left: 52, right: 20, top: 16, bottom: 40,
+    ymin: -1, ymax: 1
+  };
+  // An amplitude arrow is drawn without its HEAD-pixel head when the head
+  // would reach below the elevation line; GAP keeps the head clear of the
+  // octant point drawn on the peak.
+  var HEAD = 10;
+  var GAP = 7;
+
+  function curve(theta, e, a, d) {
+    return e + a * Math.cos((theta - d) * Math.PI / 180);
+  }
+
+  // Angles at which the curve peaks. A flat curve (a = 0) has no peak, so
+  // displacement is undefined; a peak on the pole shows at both ends.
+  function peaks(a, d) {
+    if (a === 0) return [];
+    if (d % 360 === 0) return [0, 360];
+    return [d];
+  }
+
+  function xScale(theta) {
+    return PLOT.left + theta / 360 * (PLOT.width - PLOT.left - PLOT.right);
+  }
+
+  function yScale(y) {
+    return PLOT.top + (PLOT.ymax - y) / (PLOT.ymax - PLOT.ymin) *
+      (PLOT.height - PLOT.top - PLOT.bottom);
+  }
+
+  function octantPoints(e, a, d) {
+    return OCTANTS.map(function (theta) {
+      return { theta: theta, y: curve(theta, e, a, d) };
+    });
+  }
+
+  // One vertex per degree from 0 to 360, in pixels rounded to 0.01.
+  function pathData(e, a, d) {
+    var parts = [];
+    for (var theta = 0; theta <= 360; theta++) {
+      parts.push((theta === 0 ? "M" : "L") + xScale(theta).toFixed(2) + " " +
+        yScale(curve(theta, e, a, d)).toFixed(2));
+    }
+    return parts.join(" ");
+  }
+
+  // Two decimals, with no "-0.00".
+  function formatNumber(x) {
+    var r = Math.round(x * 100) / 100;
+    if (r === 0) r = 0;
+    return r.toFixed(2);
+  }
+
+  function formatDisplacement(a, d) {
+    return a === 0 ? "undefined" : String(Math.round(d)) + "°";
+  }
+
+  var api = {
+    OCTANTS: OCTANTS, DEFAULTS: DEFAULTS, SLIDERS: SLIDERS, PLOT: PLOT,
+    curve: curve, peaks: peaks, xScale: xScale, yScale: yScale,
+    octantPoints: octantPoints, pathData: pathData,
+    formatNumber: formatNumber, formatDisplacement: formatDisplacement
+  };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = api;
+  }
+  if (typeof document === "undefined") return;
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var LIGHT = {
+    fg: "#222222", panel: "#ebebeb", grid: "#ffffff", zero: "#767676",
+    curve: "#d40000", mark: "#222222", point: "#ffffff"
+  };
+
+  var CSS = [
+    ".ssm-applet { --ssm-fg: #222222; --ssm-panel: #ebebeb; --ssm-grid: #ffffff;",
+    "  --ssm-zero: #767676; --ssm-curve: #d40000; --ssm-mark: #222222;",
+    "  --ssm-point: #ffffff; margin: 1em 0; color: var(--ssm-fg); }",
+    "[data-bs-theme='dark'] .ssm-applet { --ssm-fg: #dee2e6; --ssm-panel: #2b3035;",
+    "  --ssm-grid: #495057; --ssm-zero: #adb5bd; --ssm-curve: #ff6b6b;",
+    "  --ssm-mark: #f8f9fa; --ssm-point: #212529; }",
+    ".ssm-applet svg { display: block; width: 100%; height: auto; }",
+    ".ssm-applet .ssm-panel { fill: var(--ssm-panel); }",
+    ".ssm-applet .ssm-grid { stroke: var(--ssm-grid); }",
+    ".ssm-applet .ssm-zero { stroke: var(--ssm-zero); }",
+    ".ssm-applet .ssm-curve { stroke: var(--ssm-curve); }",
+    ".ssm-applet .ssm-elevation, .ssm-applet .ssm-amplitude-arrow",
+    "  { stroke: var(--ssm-mark); }",
+    ".ssm-applet .ssm-displacement-marker, .ssm-applet .ssm-arrowhead",
+    "  { fill: var(--ssm-mark); }",
+    ".ssm-applet .ssm-octant-point { fill: var(--ssm-point);",
+    "  stroke: var(--ssm-curve); }",
+    ".ssm-applet .ssm-axis-label { fill: var(--ssm-fg); font-size: 14px; }",
+    ".ssm-applet .ssm-mark-label { fill: var(--ssm-mark); font-size: 15px;",
+    "  font-style: italic; }",
+    ".ssm-applet .ssm-controls { display: grid; gap: 0.4em 0.8em;",
+    "  grid-template-columns: max-content 1fr 5em; align-items: center;",
+    "  margin-top: 0.5em; }",
+    ".ssm-applet .ssm-controls input { width: 100%; }",
+    "@media (max-width: 560px) { .ssm-applet .ssm-controls {",
+    "  grid-template-columns: 1fr 4.5em; }",
+    "  .ssm-applet .ssm-controls label { grid-column: 1 / -1; } }",
+    ".ssm-applet .ssm-controls output { font-variant-numeric: tabular-nums; }",
+    ".ssm-applet button { margin-top: 0.5em; }"
+  ].join("\n");
+
+  function svgEl(name, attrs, parent) {
+    var el = document.createElementNS(SVG_NS, name);
+    for (var key in attrs) el.setAttribute(key, attrs[key]);
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  function htmlEl(name, attrs, parent, text) {
+    var el = document.createElement(name);
+    for (var key in attrs) el.setAttribute(key, attrs[key]);
+    if (text !== undefined) el.textContent = text;
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  function build(root) {
+    var style = document.createElement("style");
+    style.textContent = CSS;
+    document.head.appendChild(style);
+    root.classList.add("ssm-applet");
+
+    var svg = svgEl("svg", {
+      viewBox: "0 0 " + PLOT.width + " " + PLOT.height,
+      role: "img", "class": "ssm-plot"
+    }, root);
+    var defs = svgEl("defs", {}, svg);
+    var head = svgEl("marker", {
+      id: "ssm-arrowhead", viewBox: "0 0 10 10", refX: "9", refY: "5",
+      markerUnits: "userSpaceOnUse", markerWidth: HEAD, markerHeight: HEAD,
+      orient: "auto"
+    }, defs);
+    svgEl("path", {
+      d: "M0 0 L10 5 L0 10 Z", fill: LIGHT.mark, "class": "ssm-arrowhead"
+    }, head);
+
+    var x0 = xScale(0), x1 = xScale(360);
+    var y0 = yScale(PLOT.ymax), y1 = yScale(PLOT.ymin);
+    svgEl("rect", {
+      x: x0, y: y0, width: x1 - x0, height: y1 - y0,
+      fill: LIGHT.panel, "class": "ssm-panel"
+    }, svg);
+
+    [-1, -0.5, 0, 0.5, 1].forEach(function (v) {
+      svgEl("line", {
+        x1: x0, x2: x1, y1: yScale(v), y2: yScale(v),
+        stroke: LIGHT.grid, "stroke-width": 1, "class": "ssm-grid"
+      }, svg);
+      var t = svgEl("text", {
+        x: x0 - 8, y: yScale(v) + 5, "text-anchor": "end", fill: LIGHT.fg,
+        "class": "ssm-axis-label ssm-y-label"
+      }, svg);
+      t.textContent = v.toFixed(1);
+    });
+    OCTANTS.forEach(function (theta) {
+      svgEl("line", {
+        x1: xScale(theta), x2: xScale(theta), y1: y0, y2: y1,
+        stroke: LIGHT.grid, "stroke-width": 1, "class": "ssm-grid"
+      }, svg);
+      var t = svgEl("text", {
+        x: xScale(theta), y: y1 + 22, "text-anchor": "middle", fill: LIGHT.fg,
+        "class": "ssm-axis-label ssm-x-label"
+      }, svg);
+      t.textContent = theta + "°";
+    });
+
+    svgEl("line", {
+      x1: x0, x2: x1, y1: yScale(0), y2: yScale(0),
+      stroke: LIGHT.zero, "stroke-width": 2.5, "class": "ssm-zero"
+    }, svg);
+    var elevation = svgEl("line", {
+      x1: x0, x2: x1, stroke: LIGHT.mark, "stroke-width": 2,
+      "stroke-dasharray": "8 6", "class": "ssm-elevation"
+    }, svg);
+    var path = svgEl("path", {
+      fill: "none", stroke: LIGHT.curve, "stroke-width": 3,
+      "class": "ssm-curve"
+    }, svg);
+    var peakGroup = svgEl("g", { "class": "ssm-peaks" }, svg);
+    var pointGroup = svgEl("g", { "class": "ssm-octant-points" }, svg);
+    var eLabel = svgEl("text", {
+      "text-anchor": "middle", fill: LIGHT.mark,
+      "class": "ssm-mark-label ssm-e-label"
+    }, svg);
+    eLabel.textContent = "e";
+
+    var controls = htmlEl("div", { "class": "ssm-controls" }, root);
+    var sliders = {};
+    var outputs = {};
+    SLIDERS.forEach(function (s) {
+      var id = "ssm-applet-" + s.key;
+      htmlEl("label", { "for": id }, controls, s.name);
+      sliders[s.key] = htmlEl("input", {
+        type: "range", id: id, min: s.min, max: s.max, step: s.step
+      }, controls);
+      // The slider announces its own value text, so the readout stays quiet.
+      outputs[s.key] = htmlEl("output", {
+        "for": id, id: id + "-value", "aria-live": "off"
+      }, controls);
+    });
+    var reset = htmlEl("button", { type: "button", "class": "ssm-reset" }, root,
+      "Reset");
+
+    function values() {
+      return {
+        e: parseFloat(sliders.e.value),
+        a: parseFloat(sliders.a.value),
+        d: parseFloat(sliders.d.value)
+      };
+    }
+
+    function draw() {
+      var v = values();
+      var text = {
+        e: formatNumber(v.e),
+        a: formatNumber(v.a),
+        d: formatDisplacement(v.a, v.d)
+      };
+      var spoken = {
+        e: text.e, a: text.a, d: text.d.replace("°", " degrees")
+      };
+      SLIDERS.forEach(function (s) {
+        outputs[s.key].textContent = text[s.key];
+        sliders[s.key].setAttribute("aria-valuetext", spoken[s.key]);
+      });
+      svg.setAttribute("aria-label", "SSM cosine curve with elevation " +
+        spoken.e + ", amplitude " + spoken.a + " and displacement " + spoken.d);
+
+      var peakAngles = peaks(v.a, v.d);
+      elevation.setAttribute("y1", yScale(v.e));
+      elevation.setAttribute("y2", yScale(v.e));
+      // The e label goes where it is farthest from any peak's arrow.
+      var labelTheta = [345, 15, 180].reduce(function (best, theta) {
+        var gap = function (t) {
+          return Math.min.apply(null, peakAngles.map(function (p) {
+            return Math.abs(t - p);
+          }).concat([360]));
+        };
+        return gap(theta) > gap(best) ? theta : best;
+      });
+      eLabel.setAttribute("x", xScale(labelTheta));
+      eLabel.setAttribute("y", yScale(v.e) - 6);
+      path.setAttribute("d", pathData(v.e, v.a, v.d));
+
+      while (peakGroup.firstChild) peakGroup.removeChild(peakGroup.firstChild);
+      peakAngles.forEach(function (theta) {
+        var px = xScale(theta);
+        var base = yScale(v.e);
+        var top = yScale(v.e + v.a);
+        // The head stops short of the octant point that can sit on the peak.
+        var headed = base - top >= HEAD + GAP;
+        var arrow = {
+          x1: px, x2: px, y1: base, y2: headed ? top + GAP : top,
+          stroke: LIGHT.mark, "stroke-width": 2.5, "stroke-dasharray": "2 4",
+          "class": "ssm-amplitude-arrow"
+        };
+        if (headed) arrow["marker-end"] = "url(#ssm-arrowhead)";
+        svgEl("line", arrow, peakGroup);
+        var nearLeft = px - x0 < 30;
+        var label = svgEl("text", {
+          x: nearLeft ? px + 8 : px - 8,
+          y: (base + top) / 2 + 5,
+          "text-anchor": nearLeft ? "start" : "end", fill: LIGHT.mark,
+          "class": "ssm-mark-label ssm-a-label"
+        }, peakGroup);
+        label.textContent = "a";
+        svgEl("path", {
+          d: "M" + px + " " + (y1 - 1) + " l-7 -12 l14 0 Z",
+          fill: LIGHT.mark, "class": "ssm-displacement-marker"
+        }, peakGroup);
+      });
+
+      while (pointGroup.firstChild) pointGroup.removeChild(pointGroup.firstChild);
+      octantPoints(v.e, v.a, v.d).forEach(function (p) {
+        svgEl("circle", {
+          cx: xScale(p.theta), cy: yScale(p.y), r: 5,
+          fill: LIGHT.point, stroke: LIGHT.curve,
+          "stroke-width": 2.5, "class": "ssm-octant-point"
+        }, pointGroup);
+      });
+    }
+
+    function setDefaults() {
+      sliders.e.value = DEFAULTS.e;
+      sliders.a.value = DEFAULTS.a;
+      sliders.d.value = DEFAULTS.d;
+      draw();
+    }
+
+    Object.keys(sliders).forEach(function (key) {
+      sliders[key].addEventListener("input", draw);
+    });
+    reset.addEventListener("click", setDefaults);
+    setDefaults();
+  }
+
+  var root = document.getElementById("ssm-applet");
+  if (root) build(root);
+})();
+</script>
+
+<noscript>
+<p>The sliders need JavaScript. This static figure shows the curve at an elevation of 0.1, an amplitude of 0.3 and a displacement of 90 degrees.</p>
+
+<img src="figures/introduction-to-ssm-analysis-applet-fallback-1.svg" alt="An SSM cosine curve with elevation 0.1, amplitude 0.3 and displacement 90 degrees. A dashed line marks the elevation, an arrow from it to the peak at 90 degrees marks the amplitude, a triangle under the peak marks the displacement, and points mark the curve at the eight octant angles." width="100%" />
+
+</noscript>
 
 By interpreting these three parameters, we can understand a profile much more parsimoniously than by trying to interpret all eight subscales individually. This approach also leverages the circumplex relationship (i.e., dependency) among subscales. It is also possible to transform the amplitude and displacement parameters into estimates of distance from the x-axis and y-axis, which will be shown in the output discussed below.
 
-## 2. Example data: jz2017
+## 3. Example data: jz2017
 To illustrate the SSM functions, we will use the example dataset `jz2017`, which was provided by Zimmermann & Wright (2017) and reformatted for this package. This dataset includes self-report data from 1166 undergraduate students. Students completed a circumplex measure of interpersonal problems with eight subscales (PA, BC, DE, FG, HI, JK, LM, and NO) and a measure of personality disorder symptoms with ten subscales (PARPD, SCZPD, SZTPD, ASPD, BORPD, HISPD, NARPD, AVPD, DPNPD, and OCPD). More information about these variables can be accessed using the `?jz2017` command in R.
 
 
 ``` r
 data("jz2017")
 head(jz2017)
-#>   Gender   PA   BC   DE   FG   HI   JK   LM   NO PARPD SCZPD SZTPD ASPD BORPD
-#> 1 Female 1.50 1.50 1.25 1.00 2.00 2.50 2.25 2.50     4     3     7    7     8
-#> 2 Female 0.00 0.25 0.00 0.25 1.25 1.75 2.25 2.25     1     0     2    0     1
-#> 3 Female 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00     0     1     0    4     1
-#> 4   Male 2.00 1.75 1.75 2.50 2.00 1.75 2.00 2.50     1     0     0    0     1
-#> 5 Female 0.25 0.50 0.25 0.00 0.00 0.00 0.00 0.00     0     0     0    0     1
-#> 6   Male 1.50 1.75 2.25 1.75 2.00 1.25 2.25 2.50     5     5     7    5     4
-#>   HISPD NARPD AVPD DPNPD OCPD
-#> 1     4     6    3     4    6
-#> 2     2     3    0     1    0
-#> 3     5     4    0     0    1
-#> 4     0     0    0     0    0
-#> 5     0     0    1     0    0
-#> 6     4     7    2     0    3
+#>   Gender   PA   BC   DE   FG   HI   JK   LM   NO PARPD SCZPD SZTPD ASPD
+#> 1 Female 1.50 1.50 1.25 1.00 2.00 2.50 2.25 2.50     4     3     7    7
+#> 2 Female 0.00 0.25 0.00 0.25 1.25 1.75 2.25 2.25     1     0     2    0
+#> 3 Female 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00     0     1     0    4
+#> 4   Male 2.00 1.75 1.75 2.50 2.00 1.75 2.00 2.50     1     0     0    0
+#> 5 Female 0.25 0.50 0.25 0.00 0.00 0.00 0.00 0.00     0     0     0    0
+#> 6   Male 1.50 1.75 2.25 1.75 2.00 1.25 2.25 2.50     5     5     7    5
+#>   BORPD HISPD NARPD AVPD DPNPD OCPD
+#> 1     8     4     6    3     4    6
+#> 2     1     2     3    0     1    0
+#> 3     1     5     4    0     0    1
+#> 4     1     0     0    0     0    0
+#> 5     1     0     0    1     0    0
+#> 6     4     4     7    2     0    3
 ```
 
 The circumplex scales in `jz2017` come from the Inventory of Interpersonal Problems - Short Circumplex (IIP-SC). These scales can be arranged into the following circular model, which is organized around the two primary dimensions of agency (y-axis) and communion (x-axis). Note that the two-letter scale abbreviations and angular values are based in convention. A high score on PA indicates that one has interpersonal problems related to being "domineering" or too high on agency, whereas a high score on DE indicates problems related to being "cold" or too low on communion. Scales that are not directly on the y-axis or x-axis (i.e., BC, FG, JK, and NO) represent blends of agency and communion.
 
-<img src="figures/introduction-to-ssm-analysis-iipsc-1.png" alt="plot of chunk iipsc" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-iipsc-1.svg" alt="plot of chunk iipsc" width="100%" />
 
-## 3. Mean-based SSM Analysis
+## 4. Mean-based SSM Analysis
 
 ### Conducting SSM for a group's mean scores
 To begin, let's say that we want to use the SSM to describe the interpersonal problems of the average individual in the entire dataset. We will use the raw scores contained in `jz2017`, although note that the results may be more interpretable if we standardized the scores first (e.g., using the `norm_standardize()` function as described in the "Using Circumplex Instruments" vignette). 
@@ -205,16 +545,16 @@ Next, let's leverage the fact that we are working within a circumplex space by c
 ssm_plot_circle(results2)
 ```
 
-<img src="figures/introduction-to-ssm-analysis-plot1-1.png" alt="plot of chunk plot1" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-plot1-1.svg" alt="plot of chunk plot1" width="100%" />
 
 
 ``` r
 ssm_plot_curve(results2)
 ```
 
-<img src="figures/introduction-to-ssm-analysis-plot2-1.png" alt="plot of chunk plot2" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-plot2-1.svg" alt="plot of chunk plot2" width="100%" />
 
-## 4. Correlation-based SSM Analysis
+## 5. Correlation-based SSM Analysis
 
 ### Conducting SSM for a group's correlations with an external measure
 Next, let's say that we are interested in analyzing not the mean scores on the circumplex scales but rather their correlations with an external measure. This is sometimes referred to as "projecting" that external measure into the circumplex space. As an example, let's project the NARPD variable, which captures symptoms of narcissistic personality disorder, into the circumplex space defined by the IIP-SC. Based on theory and previous findings, we can expect this measure to be associated with some general interpersonal distress and a style that is generally high in agency.
@@ -293,7 +633,7 @@ From the table, we can see that the model fit is good (>.80) and that the elevat
 ssm_plot_circle(results3)
 ```
 
-<img src="figures/introduction-to-ssm-analysis-plot3-1.png" alt="plot of chunk plot3" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-plot3-1.svg" alt="plot of chunk plot3" width="100%" />
 
 From this figure, it is very easy to see that, consistent with our hypotheses, the displacement for NARPD was associated with high agency and was somewhere between the "domineering" and "vindictive" octants.
 
@@ -302,9 +642,9 @@ From this figure, it is very easy to see that, consistent with our hypotheses, t
 ssm_plot_curve(results3)
 ```
 
-<img src="figures/introduction-to-ssm-analysis-plot4-1.png" alt="plot of chunk plot4" width="100%" />
+<img src="figures/introduction-to-ssm-analysis-plot4-1.svg" alt="plot of chunk plot4" width="100%" />
 
-## 5. Wrap-up
+## Wrap-up
 In this vignette, we learned about circumplex models, scales, and data as well as the Structural Summary Method (SSM) for analyzing such data. We learned about the `circumplex` package and how to use the `ssm_analyze()` function to generate SSM results for a single group's mean scores and for correlations with a single external measure. We learned several shortcuts for making calls to this function easier and then explored the basics of SSM visualization by creating simple tables and circular plots. In the next vignette, "Intermediate SSM Analysis", we will build upon this knowledge to learn how to (1) generalize our analyses to multiple groups and multiple measures, (2) perform contrast analyses to compare groups or measures, and (3) export and make basic changes to tables and figures.
 
 ## References

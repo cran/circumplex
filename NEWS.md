@@ -1,3 +1,195 @@
+# circumplex 2.1.0
+
+## Breaking changes
+
+* Functions that select columns now refuse three selections that gave a wrong
+  result or an unclear error: a column selected twice, a number below 1 (`0`,
+  `0.5`, `-1`), and a name that occurs twice in `data`. This covers `scales`
+  in `ssm_analyze()`, `ssm_analyze_long()`, `ssm_score()`,
+  `ssm_parameters_id()`, `ssm_sem()`, `cpm_fit()`, `fit_structure()` and
+  `norm_standardize()`. It also covers `items` in `score()`, `ipsatize()` and
+  `axes_reliability()`, and `scales` in `self_standardize()`. A single number
+  that reaches a repeated name is still accepted, except by
+  `axes_reliability()`, which also refuses one column under two scales.
+  `occasions` in `ssm_analyze()` must not name a repeated name. Before, a
+  repeat shifted the columns the `score()` key read, or counted an item twice
+  in `ipsatize()`. `ssm_sem_parameters()`, `ssm_sem_syntax()` and the `cormat`
+  path of `cpm_fit()` refuse a label listed twice.
+
+* If numbers in `scales` reach two columns with one name, `ssm_analyze_long()`
+  now names that name. Before, the error spoke of overlapping `occasions`
+  blocks. `ssm_sem_syntax()`, `ssm_sem_parameters()` and the `cormat` path of
+  `cpm_fit()` refuse `NA` listed twice as a label. `ssm_sem()` and
+  `ssm_sem_syntax()` refuse a `measures` entry named as a scale. Given a data
+  frame, `ssm_plot_trajectory()` refuses a `time` column named `xend`, `yend`
+  or `Interpretable`.
+
+## New features
+
+* `cpm_fit()` gains `check_lower = TRUE`, the default, so a converged
+  quasi-circumplex fit with unit scaling now runs extra starts after the fit. If one reaches a
+  discrepancy more than 0.01 lower on the chi-square scale, `print()` and
+  `summary()` note the difference. The note also says whether the lower
+  solution keeps the scales' order. `details$lower_check` records it. The
+  reported estimates, fit indices and intervals do not change. The check does
+  not find every lower discrepancy (see `?cpm_fit`).
+
+* New growth-model helpers. `ssm_growth_data()` stacks the `e`, `x` and `y` of
+  each row of a person-by-time table into a long table. `ssm_growth_formula()`
+  returns the package's joint growth model as formulas for glmmTMB, nlme or
+  brms, and its `print()` shows the fit call. The package still fits nothing.
+  `ssm_trajectory()` takes the fitted fixed effects and their covariance, or
+  posterior draws. It returns the estimate and interval of `e`, `x`, `y`, `a`
+  and `d` at each time and certifies the displacement. Under the same seed,
+  its amplitude and displacement match the growth vignette's former per-wave
+  loop. If the contrast is the default and a `vcov` does not look like a fit
+  to complete balanced data, it warns. `ssm_plot_trajectory()` plots the
+  result, and `rbind()` stacks results. Suggests gains `nlme` and raises
+  `testthat` to (>= 3.1.7). `?ssm_growth_data` and `?ssm_trajectory` list the
+  refusals and cautions.
+
+* `geom_ssm_ellipse()` draws the confidence ellipse of the Cartesian `(x, y)`
+  SSM coordinates. The new generic `ssm_ellipse_data()` computes its input
+  from an `ssm_draws()` object (see `?geom_ssm_ellipse`). "Advanced Circumplex
+  Visualization" draws it beside the wedge, and `GeomSsmEllipse` is exported.
+
+* `coord_circumplex()` and `ggcircumplex()` take a `grid` argument. The
+  default `"polar"` is unchanged. The value `"cartesian"` draws the canvas of
+  Nagy, Etzel and Lüdtke (2019). It has one outer ring and a labelled
+  crosshair (see `?coord_circumplex`). Labels on the 180 and 270 halves are
+  signed, plotmath ones with a leading minus. `ggcircumplex()` also ticks the
+  rim on that grid and gains `angle_labels`, which adds each text label's angle
+  and widens the margin (see `?ggcircumplex`).
+
+* New simulated datasets: `simulated_occasions`, `simulated_growth` and
+  `simulated_growth_origin`.
+
+## Minor improvements and fixes
+
+* A bootstrap refit in `cpm_fit()` that stops with an error no longer stops
+  the call. Such a refit, and one whose gradient or discrepancy is not finite,
+  is excluded and counted in the warning and `details$boots_nonconvergent`. If
+  every refit errors, the bootstrap intervals are `NA`, with a warning.
+
+* `scales(x, items = TRUE)` no longer stops with "subscript out of bounds" on
+  `iip32` and `iip64`, and prints their licence notice. `items()` and
+  `scales(items = TRUE)` wrap long item text to the console width, and
+  `items()` also wraps its prefix and suffix lines.
+
+* `axes_reliability()` no longer refuses a fit as `"unidentified"` because of
+  the default tolerance of `solve()`, which near machine precision fired on
+  some platforms and not on others. The accuracy check judges such a fit,
+  which computes or is refused `"uncertified"`. If its information matrix is
+  nearly singular, a fit the floor admits is now also checked, and it can be
+  refused `"uncertified"`. As a refusal, `"unidentified"` now names only two
+  identical derivative matrices, a derivative matrix equal to the identity,
+  or an exactly singular inversion.
+
+* Printed cautions and notes in `print()` and `summary()` now wrap to
+  `options(width = )`. So do `instruments()`, whose entries lose their leading
+  space, the `print()` heading of `ssm_ci_accuracy()` and the
+  `norm_standardize()` message. Code that matches that message must allow a
+  line break. The `Fit:` line of `cpm_fit()` breaks after a `;`. Tables,
+  column headers, the fit-index and test-statistic lines of `summary()` and
+  section headings do not wrap, and the wrapping changes no words.
+
+* The `cpm_fit()` results table in `print()` and `summary()` drops the
+  Communality column, which equals `Zeta` squared and stays in
+  `results$Communality`. Its headers are now `Theory`, `lci` and `uci`. For
+  scale names of up to 16 characters it prints as one block at width 77. The
+  `results` names do not change.
+
+* `summary()` of an `ssm_ci_accuracy()` result is a third to half as long.
+  One table shows each condition's coverage, certification rate and
+  `Structural` flag. The other columns stay in `coverage` and `guardrail`. The
+  verdicts say the same things, and their dashes become colons, commas or full
+  stops.
+
+* `print()` of a multi-group `ssm_sem()` result shows the invariance verdict as
+  a `Verdict:` line with labelled lines under it. If a comparable fit with no
+  contrast asked for stops below the rung a latent contrast needs, it says that
+  rung was not tested. Rungs rejected above the required one print on an
+  `Also:` line, comparable or not. The stored verdict changes only in wording.
+  The `dcfi` and `cr` columns and the ΔCFI note now print only for a two-group
+  ML fit with a plain CFI. They also need a rung with a `dcfi` value. The .01
+  rule was simulated only for that case. For other fits, including the default
+  `estimator = "MLR"`, the values stay in `invariance`, and
+  `invariance$dcfi_scope` records the scope. Output of `ssm_ci_accuracy()`,
+  `axes_reliability()` and `ssm_sem()`, and the `axes_reliability()`
+  collinearity warning, no longer use `--` as a dash.
+
+* `plot()` of a `cpm_fit()` result draws a zero-width interval as a line or
+  cap, so the reference scale, whose angle is fixed, now shows its communality
+  interval. It warns about a communality interval of 0 at both ends and names
+  the reason for each scale drawn without one. That plot and
+  `ssm_plot_circle()` put the communality or amplitude axis in the widest gap
+  with no point. If every gap holds a point, a label can still cover one. In
+  `ssm_plot_trajectory()`, a segment next to an uninterpretable displacement
+  is dashed, as the legend and the growth vignette show. If another row has a
+  verdict, an `NA` in `certified` is a hollow point.
+
+## Documentation
+
+* `?cpm_fit` has a new section, "Which solution is reported". It also says
+  that the analytic-interval caution in `summary()` prints below N = 2000. If
+  a boundary or weak-identification marker fires, it prints up to but not
+  including 50000. `?axes_reliability` says that an `"uncertified"` refusal's
+  error estimate can depend on the machine. `?ssm_plot_trajectory` now says
+  where each displacement bound is drawn.
+
+* The correlation-matrix example of `cpm_fit()` now says why it warns. Its fit
+  reaches a boundary, with a communality at its upper limit, and its Hessian is
+  also ill-conditioned. The analytic intervals are not usable. The example
+  points to the "CPM Fits at a Boundary" vignette.
+
+* "SEM-Based SSM Analysis", "Axes Reliability" and "Evaluating Circumplex
+  Structure" are split, adding "Latent Group Contrasts", "Axes Reliability
+  Caveats", "CPM Fits at a Boundary", "Confidence Interval Accuracy" and
+  "Structure Tests and Ipsatization". Each vignette has a Level line, an
+  Overview and a Wrap-up. The website's "Articles" menu is built from the
+  articles index and lists every page by level, "Axes Reliability" included.
+  Six vignettes hide the code that simulates data, formats tables or checks
+  internals, and two load the new datasets with `data()`. Output that follows the console width fits 80 columns
+  (`options(width = 77)`). Six vignettes are now in plain English and link the
+  introduction. A "Not yet peer reviewed" notice opens the four pages on the
+  package's unpublished methods. They are "SEM-Based SSM Analysis", "Latent
+  Group Contrasts", "Bayesian SSM Analysis" and "Growth Models on SSM
+  Parameters".
+
+* The "Growth Models on SSM Parameters" vignette is rewritten on the growth
+  helpers, with the model's nlme and brms versions. It prints the variance
+  components and explains the covariance check in `ssm_trajectory()`. It
+  states the measured coverage of the REML intervals and that the package
+  ships no small-sample correction, in place of its lme4 remedies.
+  `?ssm_trajectory` gives the main figures.
+
+* "Advanced Circumplex Visualization" adds a section, "The latent circumplex
+  from a CPM fit", with figures after Nagy, Etzel and Lüdtke (2019). Its
+  occasions figures no longer have tall, narrow panels or axis labels over a
+  point. The first occasions circle figure labels its spokes PA to NO.
+
+* Vignette statements now match the package. "SEM-Based SSM Analysis" says the
+  strict tier frees the factor variances and covariances that the scaled tier
+  fixes. `print()` shows an uncertified displacement with a note. The
+  `fit_structure()` labels are "not clearly supported" and "unsupported". The
+  default `cpm_fit()` model estimates every angle except the reference
+  scale's. "CPM Fits at a Boundary" says which weights the bootstrap misses
+  and why. "Evaluating Circumplex Structure" warns before chunks that print a
+  CPM Hessian warning. "Confidence Interval Accuracy" shows the short
+  `print()` report of `ssm_ci_accuracy()` first and names what the shorter
+  reports show. The SEM latent profile table drops X and Y. "Axes Reliability"
+  explains that `--` marks a missing Nunnally-Bernstein comparison.
+
+* In the "Introduction to SSM Analysis" vignette, an interactive figure
+  replaces the three animated GIFs of elevation, amplitude and displacement.
+  Sliders set the three parameters, and the figure redraws the cosine curve,
+  its marks and its values at the eight octant angles. Readers without
+  JavaScript see a static figure instead. Without the GIFs, the built package
+  is smaller.
+
+* The figures of the pre-computed vignettes are now SVG files instead of PNG
+  images.
+
 # circumplex 2.0.1
 
 ## Minor improvements and fixes

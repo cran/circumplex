@@ -56,6 +56,34 @@
 # which cost the 2.0.1 release its second pre-test rejection, at the third
 # platform-exact failure site this package has hit. This rule is what
 # ends the series, and it is checked at review rather than by any assertion.
+#
+# WHAT RUNS ON CRAN (M149; D-063). Three classes run under CRAN's own check:
+#
+#   - the checks against exact truth and their detector: the five per-anchor
+#     bracket tests, the five per-anchor reference-route tests,
+#     counterexample B's test, the two closed-form oracle tests, and the case
+#     detector. The brackets among them measure this machine's own error
+#     against exact values; the detector compares nothing with exact values
+#     itself, but fails the run when no anchor was priced, so the brackets
+#     cannot all skip or refuse unseen. Together that is how the
+#     certificate UNDER-reporting is caught, and CRAN checks on platforms CI
+#     does not.
+#   - the committed-value checks: the anchor-list test, the rounding-midpoint
+#     margin test and the safety-factor test. None runs the shipped route.
+#   - the contract and harness checks: the disposition vocabulary, the helper
+#     branches, the predicate and warning reading the quotient, the two
+#     sentinel tests, and the condition-inside-the-certificate test.
+#
+# One class skips on CRAN, via skip_on_cran() in each test: the
+# reachable-versus-B discrimination, the admitted-domain sweep, the
+# sample-size independence check, the two planted-perturbation invariants,
+# and (since M150) the `xi1` guard, which compares this machine's `xi1`
+# with the committed copy. None of them checks the estimate against exact
+# truth: they test its response to a planted or known-large error, basic
+# properties of it, or (the guard) an input to it. A failure specific to one
+# CRAN platform there risks a rejection with
+# no exact yardstick to say whether the certificate was wrong. A new test
+# here takes the class its claim belongs to.
 
 
 # ---- the six anchor geometries ----------------------------------------------
@@ -96,6 +124,46 @@ cert_derivs <- function(cs) {
   axes_se_derivs(cs$ang, cs$scale, NULL, z, FALSE)
 }
 
+# Counterexample B's derivative set, as the oracle driver builds it
+# (devel/degeneracy-oracle/exact_oracle.R: one item per scale, no blocks, no
+# zeta1 or zeta2). `fx` is the committed fixture.
+cert_cxb_derivs <- function(fx) {
+  axes_se_derivs(fx$ia, c("A", "B", "C"), NULL, FALSE, FALSE)
+}
+
+# The derivative set with its `xi1` replaced by the case's COMMITTED copy
+# (M150). `xi1` is cos() at the item angles' differences, built on the machine
+# running the test, and the exact values in `cert_frozen` were priced from the
+# oracle machine's doubles of it. A machine whose cos() rounds one entry
+# differently -- the windows-latest job on the M149 pull request did, at all
+# five anchors -- would otherwise price an input the exact values do not
+# describe. Every test that compares against those values therefore prices
+# from this copy, and none skips on `xi1`. That this machine's own `xi1` is
+# still the committed one to within a few ulp is asserted separately, in its
+# own test.
+#
+# The committed field is the upper triangle, diagonal included, in the column
+# order `x[upper.tri(x, diag = TRUE)]` extracts it; the lower triangle is its
+# mirror, as cos() is even. Written into the built matrix with `[<-`, so its
+# dimnames and every other field of `d` stay as the package built them. The
+# pricing reads `xi1` only through `d$mats` (R/axes_corrected_se.R and
+# R/axes_certificate.R), so this is the one copy to replace.
+cert_pinned_derivs <- function(d, id) {
+  x1 <- d$mats$xi1
+  tri <- as.numeric(cert_frozen[[id]]$xi1)
+  p <- nrow(x1)
+  if (length(tri) != p * (p + 1L) / 2L) {
+    stop("cert_pinned_derivs(): case '", id, "' commits ", length(tri),
+         " xi1 entries for a ", p, "-variable matrix", call. = FALSE)
+  }
+  full <- matrix(0, p, p)
+  full[upper.tri(full, diag = TRUE)] <- tri
+  full[lower.tri(full)] <- t(full)[lower.tri(full)]
+  x1[] <- full
+  d$mats$xi1 <- x1
+  d
+}
+
 
 # ---- the exact quadratic forms, and the one precondition left --------------
 #
@@ -124,19 +192,32 @@ cert_derivs <- function(cs) {
 # ever fires off the authoring machine is read from the pull request's CI run,
 # not assumed here.
 #
-# THE DERIVATIVE SET is pinned through `sig` and the exact values together. It
-# is too large to commit entry by entry (27 matrices of 8x8 at the p = 8
-# anchors), but the committed `v`, `v_naive` and `u` were priced from a
-# derivative set the oracle builds from the same closed forms, so a derivative
-# set that drifted here would move this machine's doubles AWAY from them and
-# redden the bracket rather than hide inside it.
+# THE DERIVATIVE SET is pinned through `sig` and the exact values together,
+# and at all six cases through a committed `xi1` (the anchors since M149,
+# counterexample B since M150). Most of the set is too large to commit entry
+# by entry (6 to 12 matrices of up to 9x9 at the anchors) and is 0/1
+# indicators the oracle builds from the same closed forms, so a set that
+# drifted here would move this machine's doubles AWAY from the exact values
+# and redden the bracket rather than hide inside it. `xi1` is the one member
+# built from cos(), and cov2cor() can round a one-ulp cosine change out of
+# `sig`, so its upper triangle is committed beside `sig`. Every test that
+# compares against the exact values prices from that committed copy
+# (cert_pinned_derivs()), so a machine whose cos() differs still prices the
+# input the exact values describe, and no test skips on `xi1`. A separate
+# test asserts that the `xi1` this machine builds is within 4 eps of it.
 #
-# What is still deliberately NOT pinned is the double-double reference route.
-# That route is the artifact under test, and an expectation derived from the
-# artifact under test is blind in the dimension it derives: an earlier draft of
-# the old gate did pin it, and the planted defect that stops the route carrying
-# low-order words then made these cases SKIP instead of redden -- the defect
-# hid inside the precondition meant to protect the comparison.
+# What is still deliberately NOT pinned is the double-double reference route:
+# it is never a PRECONDITION. That route is the artifact under test, and an
+# expectation derived from the artifact under test is blind in the dimension
+# it derives: an earlier draft of the old gate did pin it, and the planted
+# defect that stops the route carrying low-order words then made these cases
+# SKIP instead of redden -- the defect hid inside the precondition meant to
+# protect the comparison. Asserting the route against the committed exact
+# values, failing and never skipping on its output, is a different thing and
+# is done at all six cases. At counterexample B it is in B's own test since
+# M122, and B's matrix is read from committed bytes, so a mismatch there fails
+# rather than skips. At the five anchors it is in cert_dd_vs_exact() since
+# M149, which runs where this machine's matrix matches the committed bytes.
 #
 # This block does NOT replace the kappa fingerprint. kappa is asserted OUTSIDE
 # the precondition, so a builder edit that moved a geometry still REDDENS.
@@ -154,6 +235,18 @@ cert_derivs <- function(cs) {
 # SE errors ran 5.9e-14 (family A at kappa 1e4) to 3.4e-02 (counterexample B).
 
 cert_frozen <- list(
+  cxb = list(
+    sig = c("-0x1.ac70f5bf320e9p-1", "0x1.a2ad9ad37693p-1", "-0x1.ffb4667563093p-1"
+    ),
+    xi1 = c("0x1p+0", "0x1.f3a6975064322p-1", "0x1p+0", "0x1.f0e8bc3840f63p-1",
+    "0x1.c9fca389e73abp-1", "0x1p+0"),
+    v_hi = c("0x1.a27aa6fa81289p+3", "0x1.9033b1b503c27p+3"),
+    v_lo = c("0x1.14a44927d1499p-52", "0x1.6dd7ad9921fd4p-54"),
+    vn_hi = c("0x1.d7e81cc594451p+5", "0x1.bd654f98f5a5bp+5"),
+    vn_lo = c("-0x1.8bc7343b184ebp-49", "0x1.df2138cd8f0a9p-50"),
+    u_hi = "0x1.c70c587f1f6ecp-5",
+    u_lo = "-0x1.af973c7509042p-59"
+  ),
   a4 = list(
     sig = c("0x1.b4d8379580e2p-1", "0x1.ffcb979800d1bp-2", "0x1.b4d8379580e2p-1", 
     "0x1.2bcd8009ffbebp-3", "0x1.ffcb979800d1bp-2", "0x1.b4d8379580e2p-1", 
@@ -164,6 +257,16 @@ cert_frozen <- list(
     "0x1.b4d8379580e2p-1", "0x1.ffcb979800d1bp-2", "0x1.2bcd8009ffbebp-3", 
     "0x0p+0", "0x1.2bcd8009ffbe6p-3", "0x1.ffcb979800d1ap-2", "0x1.b4d8379580e2p-1"
     ),
+    xi1 = c("0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1p+0", "-0x1.6a09e667f3bccp-1", 
+    "0x1.1a62633145c07p-54", "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.a79394c9e8a0ap-53", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", 
+    "-0x1.6a09e667f3bccp-1", "-0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1.a79394c9e8a0ap-53", "0x1.6a09e667f3bcbp-1", "0x1p+0"),
     v_hi = c("0x1.7fb171557665bp-3", "0x1.7fe5cdf0c4d5bp-3"),
     v_lo = c("-0x1.a352bdd9f74f6p-64", "0x1.b53cb2eed0db5p-60"),
     vn_hi = c("0x1.ffcb9978a7aa0p-3", "0x1.ffb16679a59dfp-2"),
@@ -181,6 +284,16 @@ cert_frozen <- list(
     "0x1.b50079a0feb12p-1", "0x1.fffac1e05c131p-2", "0x1.2be920fd7587ep-3", 
     "0x0p+0", "0x1.2be920fd75879p-3", "0x1.fffac1e05c12fp-2", "0x1.b50079a0feb12p-1"
     ),
+    xi1 = c("0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1p+0", "-0x1.6a09e667f3bccp-1", 
+    "0x1.1a62633145c07p-54", "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.a79394c9e8a0ap-53", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", 
+    "-0x1.6a09e667f3bccp-1", "-0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1.a79394c9e8a0ap-53", "0x1.6a09e667f3bcbp-1", "0x1p+0"),
     v_hi = c("0x1.7ff822f445090p-3", "0x1.7ffd60f5ad28bp-3"),
     v_lo = c("-0x1.936d3acc2b778p-60", "-0x1.d0ddf75c29bcep-57"),
     vn_hi = c("0x1.fffac1e52b6ddp-3", "0x1.fff822d8710d2p-2"),
@@ -191,6 +304,9 @@ cert_frozen <- list(
   c4 = list(
     sig = c("0x1.fffd60ecbe7bp-2", "0x0p+0", "0x1.fffd60ecbe7bp-2", "0x1.fffd60ecbe7aep-2", 
     "0x0p+0", "0x1.fffd60ecbe7bp-2"),
+    xi1 = c("0x1p+0", "0x1.1a62633145c07p-54", "0x1p+0", "-0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1p+0", "-0x1.a79394c9e8a0ap-53", "-0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1p+0"),
     v_hi = c("0x1.7ffd60fdec50dp-3", "0x1.800000036f8e8p-3"),
     v_lo = c("0x1.659fc12469cbep-57", "-0x1.d8e8dce3de8afp-57"),
     vn_hi = c("0x1.000000036f930p-2", "0x1.fffd60ee76447p-2"),
@@ -212,6 +328,19 @@ cert_frozen <- list(
     "0x1.e98a8996b5f8ap-3", "-0x1.db2162eb1137p-7", "-0x1.e98a8996b5f86p-4", 
     "-0x1.db2162eb113aap-7", "0x1.e98a8996b5f86p-3", "0x1.f86394ae0e824p-2"
     ),
+    xi1 = c("0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1p+0", "-0x1.6a09e667f3bccp-1", 
+    "0x1.1a62633145c07p-54", "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.a79394c9e8a0ap-53", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", 
+    "-0x1.6a09e667f3bccp-1", "-0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1.a79394c9e8a0ap-53", "0x1.6a09e667f3bcbp-1", "0x1p+0", "0x1p+0", 
+    "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", "-0x1.6a09e667f3bccp-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bcep-1", "-0x1.a79394c9e8a0ap-53", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0"),
     v_hi = c("0x1.eecf3c6f2786bp-4", "0x1.ad14d01e8a4b2p-4", "0x1.dd93c7c70363ep-2"
     ),
     v_lo = c("-0x1.010402a050219p-59", "-0x1.463576282f2f1p-59", "0x1.49f589c2481b9p-59"
@@ -237,6 +366,19 @@ cert_frozen <- list(
     "0x1.e9902d41e6beep-3", "-0x1.db26dc16dcb8p-7", "-0x1.e9902d41e6bebp-4", 
     "-0x1.db26dc16dcbb9p-7", "0x1.e9902d41e6bebp-3", "0x1.f86964229da49p-2"
     ),
+    xi1 = c("0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1p+0", "-0x1.6a09e667f3bccp-1", 
+    "0x1.1a62633145c07p-54", "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "-0x1.a79394c9e8a0ap-53", "-0x1.6a09e667f3bcep-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bccp-1", "0x1.1a62633145c07p-54", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0", "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", 
+    "-0x1.6a09e667f3bccp-1", "-0x1p+0", "-0x1.6a09e667f3bcep-1", 
+    "-0x1.a79394c9e8a0ap-53", "0x1.6a09e667f3bcbp-1", "0x1p+0", "0x1p+0", 
+    "0x1.6a09e667f3bcdp-1", "0x1.1a62633145c07p-54", "-0x1.6a09e667f3bccp-1", 
+    "-0x1p+0", "-0x1.6a09e667f3bcep-1", "-0x1.a79394c9e8a0ap-53", 
+    "0x1.6a09e667f3bcdp-1", "0x1p+0"),
     v_hi = c("0x1.eed0c2cfd9376p-4", "0x1.ad165233741c0p-4", "0x1.dda97a116808fp-2"
     ),
     v_lo = c("-0x1.d0ee322f62ab4p-58", "0x1.e441ae46cfc85p-59", "0x1.2a1c6d337b0e1p-56"
@@ -247,16 +389,6 @@ cert_frozen <- list(
     ),
     u_hi = "0x1.dd66a60c11651p+4",
     u_lo = "0x1.a97ef4aa07aebp-50"
-  ),
-  cxb = list(
-    sig = c("-0x1.ac70f5bf320e9p-1", "0x1.a2ad9ad37693p-1", "-0x1.ffb4667563093p-1"
-    ),
-    v_hi = c("0x1.a27aa6fa81289p+3", "0x1.9033b1b503c27p+3"),
-    v_lo = c("0x1.14a44927d1499p-52", "0x1.6dd7ad9921fd4p-54"),
-    vn_hi = c("0x1.d7e81cc594451p+5", "0x1.bd654f98f5a5bp+5"),
-    vn_lo = c("-0x1.8bc7343b184ebp-49", "0x1.df2138cd8f0a9p-50"),
-    u_hi = "0x1.c70c587f1f6ecp-5",
-    u_lo = "-0x1.af973c7509042p-59"
   )
 )
 
@@ -277,8 +409,10 @@ cert_hex <- function(x) sprintf("%a", as.vector(x))
 # numerator that is itself a rounding artifact. Every quantity committed in
 # this file is nonzero, so nothing reaches it today; the guard is here because
 # the assertion added at counterexample B divides by a committed value on a
-# route where no shipped number exists to sanity-check the result, and a
-# silent NaN there passes an `expect_lt()` as NA rather than reddening.
+# route where no shipped number exists to sanity-check the result. testthat's
+# comparison expectations redden on a NaN (checked at the M148 review), so
+# a NaN never passed silently; the guard exists so the failure names the
+# zero rather than reporting a comparison against NaN.
 cert_rel <- function(hat, hi, lo) {
   if (any(hi + lo == 0)) {
     stop("cert_rel(): the exact value is zero, so there is no relative error ",
@@ -293,7 +427,55 @@ cert_rel <- function(hat, hi, lo) {
 # rather than the first-order e/2 -- the conversion between what is committed
 # above (pre-root quadratic forms) and what users are handed (an SE, and the
 # quotient of two SEs). `n` cancels out of both exactly, so none appears.
-cert_root_rel <- function(e) abs(e / (sqrt(1 + e) + 1))
+#
+# REFUSED BELOW -100% (M148, from the Known-fragilities list). A relative
+# variance error below -1 says the shipped variance is negative, and
+# sqrt(1 + e) is NaN there: the expression returned NaN. testthat's
+# comparison expectations DO redden on NaN (`expect_lt(NaN, 1)` fails,
+# checked at the M148 review), so the old value never passed a bracket; it
+# failed with a message about NaN that named the bracket's site but not the
+# offending input. No committed quantity reaches it, since every shipped
+# variance in this file is positive, so the failure now names the input and
+# stops.
+cert_root_rel <- function(e) {
+  if (any(e < -1)) {
+    stop("cert_root_rel(): relative variance error below -100% (",
+         paste(format(e[e < -1]), collapse = ", "),
+         ") -- the shipped variance is negative, so its root has no ",
+         "relative error", call. = FALSE)
+  }
+  abs(e / (sqrt(1 + e) + 1))
+}
+
+# The measured vector's length against the committed exact array's, asserted
+# as an expectation so a mismatch reddens the case that reached it and names
+# the site (M148). `hi` is the committed array, whose own length cert_shape
+# pins; `hat` is the shipped vector, which nothing else pins.
+cert_pin_length <- function(hat, hi, lbl) {
+  expect_identical(length(hat), length(hi),
+                   label = paste0(lbl, " measured length"),
+                   expected.label = paste0(lbl, " committed length"))
+}
+
+# A certificate returned where the shipped pricing succeeded must be a graded
+# estimate, never the sentinel (M148). Which sentinel exit fired is not
+# recoverable from the value -- that would need a route tag in shipped code
+# -- so the failure says only that the certificate degraded on a priced route.
+# The test is `identical()` against the certificate's own declared constant,
+# not the value coincidence M122 retired in cert_bracket(): a graded estimate
+# equal to the sentinel bit for bit would fail here, never pass silently.
+cert_priced_not_degraded <- function(cert, id) {
+  if (identical(cert, axes_certificate_sentinel())) {
+    testthat::fail(paste0(
+      "the certificate degraded to its sentinel on a priced route at case '",
+      id, "': the shipped pricing succeeded, so a sentinel here is a ",
+      "certificate-side failure (self-test, replay, or pivot), not a refusal"
+    ))
+  } else {
+    testthat::succeed()
+  }
+  invisible(cert)
+}
 
 # The certificate's floor, `safety factor * 2 * eps`, with the factor WRITTEN
 # DOWN rather than read from axes_certificate_safety_factor (M115 AC4). An
@@ -429,27 +611,25 @@ cert_detail <- function(id) {
 # moves four of the five anchors; the four-variable case c4 moves only on
 # cos(0) and cos(pi), both a full half ulp from any boundary.
 #
-# RCOND_BAND -- the interval the information matrix's reciprocal condition
-# estimate occupies at this case, under one-ulp perturbation of the matrix.
-# Where that band CONTAINS .Machine$double.eps, `solve(info)`'s success is a
-# property of the platform's LU roundoff rather than of the matrix, and a
-# refusal is therefore admitted. Where it does not -- every anchor, whose
-# rcond sits decades above eps -- a refusal stays a regression.
-#
-# The band committed for cxb was measured by RR22 over 300 one-ulp neighbours
-# of the fixture (min 1.667e-16, median 2.41e-16, max 3.35e-16), and BOTH ends
-# have since been straddled by real platforms rather than by perturbation
-# alone: 2.6008e-16 on aarch64-apple-darwin23 with reference BLAS, which
-# prices, and 2.0494e-16 on aarch64-unknown-linux-gnu with OpenBLAS 0.3.33,
-# which refuses (both measured 2026-09-05, the second in tools/arm64's
-# container). eps is 2.220446e-16, between the two.
+# WHERE A REFUSAL IS ADMITTED (M147; D-061, D-062). Until M147 a refusal was
+# admitted where a committed `rcond` band straddled eps -- a constant
+# predicate, since eps is the same on every platform R supports, and so
+# equivalent to naming the case (DESIGN.md's retired fragility). The shipped
+# core now inverts under `tol = 0` and refuses "unidentified" only on an
+# EXACT ground; a matrix whose condition estimate sits below eps is routed to
+# the certificate instead. So the one platform-decided refusal left is LAPACK
+# reporting an exact zero pivot, and that is admitted at ANY case -- anchor or
+# counterexample -- on one condition asserted in cert_true_error(): a direct
+# `solve(info, tol = 0)` on the same information matrix raises the
+# exact-singular condition here and now. A refusal without that pivot is a
+# regression in axes_pricing_core().
 cert_admission <- list(
-  a4  = list(origin = "cos-built",       rcond_band = NULL),
-  a5  = list(origin = "cos-built",       rcond_band = NULL),
-  c4  = list(origin = "cos-built",       rcond_band = NULL),
-  b9a = list(origin = "cos-built",       rcond_band = NULL),
-  b9b = list(origin = "cos-built",       rcond_band = NULL),
-  cxb = list(origin = "committed-bytes", rcond_band = c(1.667e-16, 3.35e-16))
+  a4  = list(origin = "cos-built"),
+  a5  = list(origin = "cos-built"),
+  c4  = list(origin = "cos-built"),
+  b9a = list(origin = "cos-built"),
+  b9b = list(origin = "cos-built"),
+  cxb = list(origin = "committed-bytes")
 )
 
 # A matrix this machine builds itself can differ from the committed one
@@ -458,19 +638,111 @@ cert_matrix_is_built <- function(id) {
   identical(cert_admission[[id]]$origin, "cos-built")
 }
 
-# The admission, read off the committed band rather than off the case name:
-# a refusal is admitted exactly where the band straddles this machine's eps.
-cert_refusal_admitted <- function(id) {
-  band <- cert_admission[[id]]$rcond_band
-  !is.null(band) &&
-    band[[1L]] <= .Machine$double.eps &&
-    .Machine$double.eps <= band[[2L]]
+# The information matrix as the core forms it, so the refusal's ground can be
+# re-asked of LAPACK directly. Copied from the core's loop deliberately: the
+# core returns the inverse and the condition estimate, never the matrix.
+cert_info <- function(sigma, d) {
+  si <- solve(sigma)
+  sim <- lapply(d$mats, function(m) si %*% m)
+  q <- length(sim)
+  info <- matrix(0, q, q)
+  for (s in seq_len(q)) for (t in s:q) {
+    info[s, t] <- info[t, s] <- 0.5 * sum(sim[[s]] * t(sim[[t]]))
+  }
+  info
+}
+
+# The distance of a double `hat` from the exact value hi + lo, in units in the
+# last place of `hi`. Below one half, `hat` is the exact value's correctly
+# rounded double. Taken against ulp(hi) directly: this divided the RELATIVE
+# error by 2^-53 until the M122 review (finding 1), which is an ulp count only
+# where the mantissa is exactly 2 -- across the four quantities committed at B
+# one such unit is 1.085 to 1.279 true ulp, so a bound written as half an ulp
+# was really demanding 0.391 to 0.461 of one. `hat - hi` is exact wherever the
+# two are within a factor of two of each other (Sterbenz), which a correctly
+# rounded `hat` always is. Lifted to file scope at M149, which asserts it at
+# the five anchors as well as at counterexample B.
+dd_ulp <- function(hat, hi, lo) {
+  if (any(hi == 0)) {
+    stop("dd_ulp(): the exact value is zero, so it has no last place",
+         call. = FALSE)
+  }
+  abs((hat - hi) - lo) / 2^(floor(log2(abs(hi))) - 52)
+}
+
+# The reference route against the committed exact values at one anchor (M149;
+# RR22 rec 11), called from that anchor's own test_that() below.
+#
+# WHAT IS ASSERTED, AND WHY IT IS NOT A PRECONDITION. The head of this file
+# records a decision not to PIN the double-double route -- not to use it as a
+# gate that skips, which is how a planted defect in the route once hid. This
+# is the other thing: the route asserted against truth derived elsewhere,
+# failing and never skipping on the route's own output. Its bound is half a
+# unit in the last place of the exact value, the correctly rounded double.
+# A route carrying about 106 bits is expected to deliver that wherever the
+# exact value is not within the route's error of a rounding midpoint, but
+# that error is not proven here. The test below ("... sits clear of a
+# rounding midpoint") asserts from committed values alone that no exact
+# value is within a STATED bound on that error, so the bound is a property
+# of the committed matrices and not a measurement of the machine running
+# it -- to the extent the three unproven premises that test names hold.
+# axes_dd_pricing() is R-level `+`, `-`, `*` and `/` on doubles, touching
+# neither BLAS nor LAPACK, so given the same inputs it is the same
+# arithmetic on every IEEE platform.
+#
+# THE TWO INPUTS. The route reads the derivative set as well as the matrix.
+# The caller passes the derivative set from cert_pinned_derivs(), so its `xi1`
+# is the committed copy the exact values were priced from, whatever this
+# machine's cos() builds (M150). Until M150 this test skipped where this
+# machine's `xi1` differed, and the windows-latest job on the M149 pull
+# request, 2026-09-22, built it differently at all five anchors, so there the
+# check ran at none of them. The matrix is still this machine's: `sig` is
+# compared bit for bit, and a mismatch skips, naming the matrix.
+#
+# IT NEVER CALLS cert_record(). The case's disposition belongs to its bracket
+# test, which records it (`priced`, `refused`, or `skipped` where `sig`
+# differs). cert_record() overwrites, and these tests run after the bracket
+# tests, so a `skipped` written here would erase the bracket test's record.
+cert_dd_vs_exact <- function(id, sigma, d, fz) {
+  if (!identical(sigma[upper.tri(sigma)], as.numeric(fz$sig))) {
+    testthat::skip(paste0(
+      "this machine does not build the matrix at case '", id, "' bit for ",
+      "bit, so the exact quadratic forms committed for that matrix are not a ",
+      "yardstick for this one"
+    ))
+  }
+  ref <- axes_dd_pricing(sigma, d)
+  if (!is.list(ref)) {
+    testthat::fail(paste0(
+      "axes_dd_pricing() returned no quadratic forms at case '", id, "' -- ",
+      "the reference route cannot produce values at a committed anchor"
+    ))
+    return(invisible(NULL))
+  }
+  fields <- list(
+    v = list(ref$v, fz$v_hi, fz$v_lo),
+    v_naive = list(ref$v_naive, fz$vn_hi, fz$vn_lo),
+    u = list(ref$u, fz$u_hi, fz$u_lo)
+  )
+  for (nm in names(fields)) {
+    f <- fields[[nm]]
+    hat <- dd_to_double(f[[1L]])
+    cert_pin_length(hat, f[[2L]], paste0(id, " dd ", nm))
+    expect_lt(max(dd_ulp(hat, as.numeric(f[[2L]]), as.numeric(f[[3L]]))),
+              0.5, label = paste0(id, " dd-vs-exact ", nm, " (ulp)"))
+  }
+  invisible(NULL)
 }
 
 # THIS MACHINE's own relative error at one case, against the committed exact
 # values. Returns NULL only where the shipped pricing refused, having already
 # failed; skips where this machine builds a different matrix.
 cert_true_error <- function(id, sigma, d) {
+  # The refusal branch reads the direct solve()'s message in English:
+  # LAPACK's exact-singular message is translated under a non-English
+  # LANGUAGE (measured: German), and a translated message would call a
+  # genuine zero pivot a regression (M147 review).
+  testthat::local_reproducible_output(lang = "en")
   fz <- cert_frozen[[id]]
   # THE MATRIX CHECK COMES FIRST, before the shipped pricing is even called.
   # The refusal branch below calls a refusal a regression, and that conclusion
@@ -515,41 +787,50 @@ cert_true_error <- function(id, sigma, d) {
   v <- axes_v_pricing(sigma, d)
   u <- axes_u_pricing(sigma, d)
   # A REFUSAL from the shipped pricing IS A ROUTE, not a failure to reproduce
-  # -- but only where the case's committed conditioning band says the platform
-  # decides it (M122; D-055). At the five anchors that band is absent: their
-  # information matrices sit decades clear of eps, they price on every platform
-  # measured, and a refusal there is a regression in axes_pricing_core() which
-  # this fail() is what catches. At counterexample B the band straddles eps,
-  # measured on two real platforms in both directions, so a refusal is one of
-  # the two outcomes the matrix admits and the caller asserts it exhaustively.
+  # -- on exactly one ground (M147). The core inverts under `tol = 0` and the
+  # certificate judges conditioning, so the only platform-decided refusal
+  # left is an exact zero pivot in LAPACK's LU, which blocked kernels can
+  # produce or not on the same matrix. It is admitted at any case, and its
+  # identity is asserted here rather than left to the caller: "unidentified"
+  # from BOTH pricings, and a direct `solve(info, tol = 0)` on the same
+  # information matrix raising the exact-singular condition on this machine.
+  # "singular" would mean solve(sigma) itself failed (rcond(sigma) is
+  # 1.39e-7 at B, five decades inside double range); "indefinite" lives
+  # downstream of both functions called here; a refusal with no zero pivot
+  # is the old conditioning gate come back. Each fails, and so does a refusal
+  # from only one of the two pricings.
   #
   # Either way NULL comes back, and the recorded disposition is what tells the
   # caller which of the two it was; the certificate returns its sentinel at a
   # refusal, which reddens a bracket applied to it.
   if (is.character(v) || is.character(u)) {
     literals <- paste(Filter(is.character, list(v, u)), collapse = ", ")
-    if (!cert_refusal_admitted(id)) {
+    direct <- tryCatch(solve(cert_info(sigma, d), tol = 0),
+                       error = function(e) e)
+    if (!inherits(direct, "error") ||
+        !grepl("exactly singular", conditionMessage(direct))) {
       cert_record(id, cert_disp[["refused"]], literals)
       testthat::fail(paste0(
         "the shipped pricing REFUSES at case '", id, "' (", literals,
-        ") -- no conditioning band is committed for this case, so this is a ",
-        "regression, not a platform difference"
+        ") with no exact zero pivot in solve(info, tol = 0) -- a regression, ",
+        "not a platform difference"
       ))
       return(NULL)
     }
-    # THE REFUSAL'S IDENTITY, asserted here rather than left to the caller:
-    # the admission is for the LU gate giving up on a matrix whose condition
-    # straddles eps, which surfaces as "unidentified" from the acov inversion.
-    # "singular" would mean solve(sigma) itself failed -- rcond(sigma) is
-    # 1.39e-7 at B, five decades inside double range, so that is a regression;
-    # "indefinite" lives downstream of both functions called here, so it would
-    # mean a wiring change. Either fails, and so does a refusal from only one
-    # of the two.
     expect_identical(v, "unidentified", label = paste0(id, " v pricing"))
     expect_identical(u, "unidentified", label = paste0(id, " u pricing"))
     cert_record(id, cert_disp[["refused"]], literals)
     return(NULL)
   }
+  # THE MEASURED SIDE'S LENGTH IS PINNED BEFORE EACH COMPARISON (M148, from
+  # the Known-fragilities list). cert_shape pins the COMMITTED arrays'
+  # lengths, and cert_rel() is elementwise: a shipped vector one component
+  # short would be recycled against the committed pair and every entry
+  # compared with the wrong exact value, with no failure anywhere. The pin
+  # is on the measured side, since that is the side nothing else asserts.
+  cert_pin_length(v$corrected, fz$v_hi, paste0(id, " corrected"))
+  cert_pin_length(v$naive, fz$vn_hi, paste0(id, " naive"))
+  cert_pin_length(u, fz$u_hi, paste0(id, " u"))
   dv <- cert_rel(v$corrected, as.numeric(fz$v_hi), as.numeric(fz$v_lo))
   dn <- cert_rel(v$naive, as.numeric(fz$vn_hi), as.numeric(fz$vn_lo))
   du <- cert_rel(u, as.numeric(fz$u_hi), as.numeric(fz$u_lo))
@@ -619,10 +900,11 @@ cert_bracket <- function(est, true_rel, lbl, at_floor = est <= cert_floor) {
 
 
 test_that("AC3: the anchor case list is not empty", {
-  skip_on_cran()
-  # Without this, emptying cert_anchors() would take every bracket assertion in
-  # this file with it -- the per-case tests below are GENERATED from that list,
-  # and a loop over nothing generates nothing and reports PASS. The count is
+  # CRAN-live since M149 (D-063): the CRAN-live brackets below are generated
+  # from the list this pins. Without this, emptying cert_anchors() would take
+  # every bracket assertion in this file with it -- the per-case tests below
+  # are GENERATED from that list, and a loop over nothing generates nothing
+  # and reports PASS. The count is
   # written down rather than derived from the list it is checking.
   expect_length(cert_anchors(), 5L)
   expect_identical(vapply(cert_anchors(), `[[`, "", "id"),
@@ -649,6 +931,16 @@ test_that("AC3: the anchor case list is not empty", {
     expect_length(fz$u_hi, 1L)
     expect_length(fz$u_lo, 1L)
   }
+  # ... and each case carries its `xi1` upper triangle, diagonal included (the
+  # anchors since M149, counterexample B since M150). Every case is priced
+  # from that committed copy, not from the one this machine builds, so a
+  # regeneration pasted in without it, or truncated, fails here by name
+  # rather than in the helper that rebuilds the matrix from it.
+  for (id in names(cert_shape)) {
+    p <- cert_shape[[id]][[1L]]
+    expect_identical(length(cert_frozen[[id]]$xi1), (p * (p + 1L)) %/% 2L,
+                     label = paste0(id, " xi1 length"))
+  }
 
   # ... and each case's MATRIX is the size the table above says (M116). The
   # `p` column was checked only against `cert_frozen`'s own committed arrays
@@ -670,6 +962,84 @@ test_that("AC3: the anchor case list is not empty", {
 })
 
 
+test_that("every anchor's exact value sits clear of a rounding midpoint by more than a stated bound on the reference route's error", {
+  # WHY cert_dd_vs_exact()'s half-ulp bound is not a frozen measurement (M149).
+  # A committed `hi` is the exact value's correctly rounded double and `lo`
+  # the remainder, so dd_ulp() of a returned double is below one half exactly
+  # when that double IS `hi` -- when the route's own error did not carry its
+  # result across the midpoint between `hi` and a neighbour. That holds
+  # wherever the exact value's distance from the midpoint, 1/2 - |lo|/ulp(hi),
+  # exceeds the route's error. Both sides are asserted here from committed
+  # values alone: `hi`, `lo`, and each anchor's `scale` and `kappa` literals.
+  # Nothing is priced, and no built matrix enters an assertion:
+  # cert_anchors() builds each anchor's matrix, but only its `scale` and
+  # `kappa` literals are read here. So this runs identically on every
+  # machine.
+  #
+  # THE ROUTE'S ERROR BOUND IS STATED, NOT PROVEN. Its basis is the anchor's
+  # conditioning: the bound the degeneracy floor rests on is p * kappa^2 * eps
+  # for the double route's relative error in the corrected SE, with a factor
+  # of 10 allowed for that bound undershooting the true error (see
+  # `?axes_reliability` on the floor's `1e-5`). Taken over here, that gives
+  # 2 * 10 * p * kappa^2 * 2^-104 as a relative error: the double-double unit
+  # roundoff 2^-104 in place of eps, and a factor of 2 because `v` is a
+  # squared SE, whose relative error is about twice the SE's.
+  #
+  # THREE PREMISES OF THAT BASIS ARE UNPROVEN (M149 review, AC2 amendment):
+  #   1. that the floor's p * kappa^2 * eps bound with its factor 10 holds at
+  #      all -- its form is a scaling argument and its factor 10 a
+  #      calibration MEASURED on the double route's corrected SE, neither
+  #      proven (R/axes_corrected_se.R, the floor's derivation). The
+  #      calibration covers kappa below the floors that target sets (7.5e4
+  #      at p = 8, 7.1e4 at p = 9), and a5 (1e5) and b9b (2.874e5) sit above
+  #      theirs, so at those two the factor 10 is extrapolated;
+  #   2. that it carries to the double-double route with 2^-104 in place of
+  #      eps -- nothing here analyses the double-double pipeline's own error;
+  #   3. that it applies to `v_naive` and `u`, with the factor 2 for the
+  #      squared SE covering all three. For `u` the factor 10 is already
+  #      exceeded elsewhere, though the stated bound is not: at
+  #      counterexample B (p = 3, kappa 6.65e6) the double route's measured
+  #      `cval` relative error of 3.4e-1, recorded in R/axes_corrected_se.R,
+  #      is about 11.5 times p * kappa^2 * 2^-52. `u` is cval's numerator,
+  #      so its relative error matches cval's only to first order. The
+  #      factor 10 alone does not cover that ratio; only the product 20
+  #      does, by a factor of 1.7, and its extra 2 was argued for the
+  #      squared SE `v`, not for `u`, whose error that source says is driven
+  #      by df rather than by kappa.
+  # If a premise fails, this test still asserts the stated margin, but the
+  # half-ulp assertion in cert_dd_vs_exact() then rests on the route being
+  # far more accurate than half an ulp, which the measured errors below
+  # show on one machine and do not establish. A relative error r is at most
+  # r * 2^53 units in the last place of `hi`, since |hi| is below 2^53 of
+  # those units. Hence the bound in ulps is 20 * p * kappa^2 * 2^-51. `kappa`
+  # is each anchor's committed fingerprint, pinned against the built matrix to
+  # 1e-3 relative, so it enters inflated by that tolerance. For orientation
+  # only (no assertion reads these): on 2026-09-22, on macOS arm64, the
+  # route's own unrounded deviation from the exact values ran 1.3e-15 to
+  # 2.5e-9 ulp across the five anchors, against bounds of 7.1e-6 to 6.6e-3.
+  #
+  # Where `hi` is a power of two the neighbour below is half as far away and
+  # the margin formula changes; no committed `hi` is one, and that is asserted
+  # rather than handled, so a regeneration that produced one fails here.
+  ispow2 <- function(x) abs(x) == 2^floor(log2(abs(x)))
+  for (cs in cert_anchors()) {
+    fz <- cert_frozen[[cs$id]]
+    p <- length(cs$scale)
+    bound <- 20 * p * (cs$kappa * (1 + 1e-3))^2 * 2^-51
+    for (pr in list(c("v_hi", "v_lo"), c("vn_hi", "vn_lo"),
+                    c("u_hi", "u_lo"))) {
+      hi <- as.numeric(fz[[pr[[1L]]]])
+      lo <- as.numeric(fz[[pr[[2L]]]])
+      lbl <- paste0(cs$id, " ", pr[[1L]])
+      expect_false(any(ispow2(hi)), label = paste0(lbl, " is a power of two"))
+      margin <- 0.5 - abs(lo) / 2^(floor(log2(abs(hi))) - 52)
+      expect_gt(min(margin), bound,
+                label = paste0(lbl, " midpoint margin (ulp)"))
+    }
+  }
+})
+
+
 # One test PER CASE, deliberately: `skip()` abandons the whole `test_that()` it
 # fires in, so a single loop would let one non-reproducing case take the other
 # four with it -- and the criterion's "a skip on some platform is expected"
@@ -678,7 +1048,9 @@ for (cert_case in cert_anchors()) {
   test_that(paste0("AC2: the estimate brackets THIS machine's own error -- ",
                    cert_case$lbl), {
     cs <- cert_case
-    d <- cert_derivs(cs)
+    # The committed `xi1`, so the shipped pricing and the certificate price
+    # the input the exact values describe (M150; see cert_pinned_derivs()).
+    d <- cert_pinned_derivs(cert_derivs(cs), cs$id)
     # OUTSIDE the precondition: a builder edit that moved this geometry must
     # redden here, never skip, because then the exact values committed above
     # would be describing a matrix this file no longer builds.
@@ -695,6 +1067,59 @@ for (cert_case in cert_anchors()) {
 }
 
 
+# THE ANCHORS' REFERENCE ROUTE AGAINST EXACT TRUTH (M149; RR22 rec 11), one
+# test per anchor for the reason given above the bracket tests. Counterexample
+# B asserts the route in its own test (identity with the committed `hi` for
+# `v` and `v_naive`, an absolute bound for `u`). These tests never call the
+# shipped pricing, so they run whatever that pricing returns on this machine.
+for (cert_case in cert_anchors()) {
+  test_that(paste0("the reference route lands within half an ulp of the ",
+                   "exact values -- ", cert_case$lbl), {
+    cs <- cert_case
+    cert_dd_vs_exact(cs$id, cs$r, cert_pinned_derivs(cert_derivs(cs), cs$id),
+                     cert_frozen[[cs$id]])
+  })
+}
+
+
+# THE COMMITTED `xi1` IS STILL THE ONE THE PACKAGE BUILDS (M150). The tests
+# above price every case from the committed copy (cert_pinned_derivs()), so
+# none of them would notice an edit to the `xi1` builder (the cos() term in
+# axes_se_derivs()): they would go on pricing the old input. This test
+# compares the two directly, full matrices entry by entry, so the mirrored
+# lower triangle is checked too. The tolerance is 4 * eps absolute: the
+# entries are cosines in [-1, 1], where a libm one ulp away differs by at
+# most eps. How far the windows-latest job on the M149 pull request was off
+# was not recorded, only that its `xi1` differed.
+#
+# Skipped on CRAN (D-063): it checks nothing against exact truth, and a libm
+# further off than this tolerance on a CRAN platform is a platform fact, not
+# a defect in the certificate. CI runs it, which is where a builder edit
+# lands first.
+test_that("each case's xi1 as this machine builds it is within 4 eps of the committed copy", {
+  skip_on_cran()
+  fx <- readRDS(test_path("fixtures", "rb18-counterexample-b.rds"))
+  built <- c(
+    lapply(stats::setNames(cert_anchors(), vapply(cert_anchors(), `[[`, "",
+                                                   "id")),
+           cert_derivs),
+    list(cxb = cert_cxb_derivs(fx))
+  )
+  expect_identical(sort(names(built)), sort(names(cert_frozen)))
+  for (id in names(built)) {
+    x1 <- built[[id]]$mats$xi1
+    p <- nrow(x1)
+    expect_identical(length(cert_frozen[[id]]$xi1), (p * (p + 1L)) %/% 2L,
+                     label = paste0(id, " xi1 length"))
+    if (length(cert_frozen[[id]]$xi1) != (p * (p + 1L)) %/% 2L) next
+    pinned <- cert_pinned_derivs(built[[id]], id)$mats$xi1
+    expect_lte(max(abs(x1 - pinned)), 4 * .Machine$double.eps,
+               label = paste0(id, " xi1: largest distance from the ",
+                              "committed copy"))
+  }
+})
+
+
 test_that("AC2/AC3: counterexample B is refused on every route, and bracketed where it prices", {
   # The one committed matrix on which the shipped corrected SEs are measurably
   # wrong (3.413e-02 on the machine that froze the figures) while the pre-M89
@@ -708,14 +1133,21 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
   # one machine: `solve(info)`'s outcome here is decided by the platform's LU
   # roundoff -- rcond(info) is 2.6008e-16 on macOS/arm64 with reference BLAS
   # and 2.0494e-16 on linux-arm64 with OpenBLAS, straddling eps = 2.220446e-16
-  # -- so the shipped pricing prices on the first and refuses on the second,
+  # -- so the shipped pricing priced on the first and refused on the second,
   # and CRAN's linux-arm64 pre-test rejected 2.0.1 on exactly the fail() this
-  # file used to raise there. The claim is now: B is refused `uncertified` on
-  # EVERY route, the route taken is one of the two the committed conditioning
-  # band admits, and where a value exists the certificate brackets it. Both
-  # branches assert; neither can be empty.
+  # file used to raise there. Since M147 the core inverts under `tol = 0`
+  # and the certificate judges conditioning, so B prices wherever LAPACK's LU
+  # finds no exact zero pivot, and a refusal is admitted only AS that pivot
+  # (asserted in cert_true_error()). The claim is: B is refused `uncertified`
+  # on EVERY route, the route taken is one of those two, and where a value
+  # exists the certificate brackets it. Both branches assert; neither can be
+  # empty.
   fx <- readRDS(test_path("fixtures", "rb18-counterexample-b.rds"))
-  d <- axes_se_derivs(fx$ia, c("A", "B", "C"), NULL, FALSE, FALSE)
+  # The committed `xi1`, as at the five anchors (M150): B's matrix is read
+  # from committed bytes, and now so is the one cos()-built input its exact
+  # values depend on, so every route below is given the same input on every
+  # machine.
+  d <- cert_pinned_derivs(cert_cxb_derivs(fx), "cxb")
 
   # ---- outside both routes -------------------------------------------------
   #
@@ -748,16 +1180,30 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
   # route. That decision is about using it as a PRECONDITION -- a gate that
   # skips, which is how a planted defect in the route once hid -- and not
   # about asserting it against truth derived elsewhere; the two closed-form
-  # oracle tests below already do exactly that.
+  # oracle tests below already do exactly that, and so does
+  # cert_dd_vs_exact() at the five anchors (M149).
   #
   # TWO BOUNDS, because the two quantities fail differently.
   #
-  # `v` and `v_naive`: the bound is HALF a unit in the last place of the exact
-  # value, which is to say the reference route must deliver that value's
-  # correctly rounded double. Measured 2026-09-05 by `dd_ulp()` below,
-  # bit-identical on aarch64-apple-darwin23 and on
-  # aarch64-unknown-linux-gnu/OpenBLAS: 0.135 and 0.045 ulp for `v`, 0.387 and
-  # 0.234 for `v_naive`.
+  # `v` and `v_naive`: the route rounded to double must BE the committed `hi`,
+  # the exact value's correctly rounded double (M150). Until M150 this was
+  # `dd_ulp() < 0.5`, which means the same thing only where `hi` is not a
+  # power of two; identity needs no such premise. The distances `dd_ulp()`
+  # measured on 2026-09-05, on aarch64-apple-darwin23 and on
+  # aarch64-unknown-linux-gnu/OpenBLAS, were 0.135 and 0.045 ulp for `v` and
+  # 0.387 and 0.234 for `v_naive`. Those are |lo|/ulp(hi), the exact value's
+  # own distance from `hi`, so the route already returned `hi` there.
+  #
+  # WHY IDENTITY HOLDS HERE, which is not the anchors' reason. At the anchors
+  # the margin test asserts that each exact value sits farther from a rounding
+  # midpoint than a stated bound on the route's error. At B that bound, with
+  # p = 3 and kappa 6.65e6, is about 1.2 ulp, while `v_naive`'s first
+  # component sits 0.113 ulp from its midpoint, so no margin covers B.
+  # Identity rests instead on the inputs and the arithmetic: B's matrix and its
+  # `xi1` are both committed bytes (the latter since M150), and
+  # axes_dd_pricing() is R-level `+`, `-`, `*` and `/` on doubles, the same
+  # IEEE arithmetic on every platform. So every machine computes the same
+  # doubles as the machine that measured them.
   #
   # `u`: at B it is a difference of two quantities of size about one that
   # comes out 0.0555, so a rounding of either operand is amplified by about
@@ -768,25 +1214,12 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
   # 6.1 ulp, a figure with no derivation behind it.
   fz <- cert_frozen$cxb
   ref <- axes_dd_pricing(fx$S, d)
-  # ONE UNIT IN THE LAST PLACE OF `hi`, which is what "ulp" has to mean here.
-  # This divided the RELATIVE error by 2^-53 until the M122 review (finding 1),
-  # which is an ulp count only where the mantissa is exactly 2: across the four
-  # quantities committed at B one such unit is 1.085 to 1.279 true ulp, so a
-  # bound written as half an ulp was really demanding 0.391 to 0.461 of one.
-  # Taken against ulp(hi) directly, the bound means what it says.
-  dd_ulp <- function(hat, hi, lo) {
-    if (any(hi == 0)) {
-      stop("dd_ulp(): the exact value is zero, so it has no last place",
-           call. = FALSE)
-    }
-    abs((hat - hi) - lo) / 2^(floor(log2(abs(hi))) - 52)
-  }
-  expect_lt(max(dd_ulp(dd_to_double(ref$v),
-                       as.numeric(fz$v_hi), as.numeric(fz$v_lo))), 0.5,
-            label = "cxb dd-vs-exact v (ulp)")
-  expect_lt(max(dd_ulp(dd_to_double(ref$v_naive),
-                       as.numeric(fz$vn_hi), as.numeric(fz$vn_lo))), 0.5,
-            label = "cxb dd-vs-exact v_naive (ulp)")
+  # as.numeric() drops any names, which identical() would otherwise compare.
+  expect_identical(as.numeric(dd_to_double(ref$v)), as.numeric(fz$v_hi),
+                   label = "cxb dd-vs-exact v, rounded to double")
+  expect_identical(as.numeric(dd_to_double(ref$v_naive)),
+                   as.numeric(fz$vn_hi),
+                   label = "cxb dd-vs-exact v_naive, rounded to double")
   expect_lt(abs((dd_to_double(ref$u) - as.numeric(fz$u_hi)) -
                   as.numeric(fz$u_lo)), 2^-53,
             label = "cxb dd-vs-exact u (absolute)")
@@ -807,7 +1240,8 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
 
   if (identical(disp, cert_disp[["refused"]])) {
     # THE REFUSING ROUTE. cert_true_error() has already asserted the refusal's
-    # identity ("unidentified" from both `v` and `u`). What is left is the
+    # identity ("unidentified" from both `v` and `u`, on an exact zero pivot
+    # in solve(info, tol = 0)). What is left is the
     # contract that follows from it: the certificate degrades to its sentinel
     # -- D-051's promise, asserted here for the first time at a matrix that
     # reaches it naturally rather than through a planted duplicate derivative
@@ -816,8 +1250,19 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
     expect_identical(axes_degeneracy_refusal(fx$S, d)$reason, "uncertified")
 
   } else if (identical(disp, cert_disp[["priced"]])) {
-    # THE PRICED ROUTE, unchanged: the three brackets, and the wrongness
-    # itself asserted rather than described.
+    # THE PRICED ROUTE: the three brackets, and the wrongness itself
+    # asserted rather than described. FIRST, that there is a certificate to
+    # bracket (M148, from the Known-fragilities list). The shipped pricing
+    # succeeded here, but the certificate has sentinel exits of its own --
+    # the dd self-test, a non-finite or nonpositive replayed form, a
+    # dd_solve() with no pivot -- and the sentinel (1, 1, 1) is a number the
+    # brackets below can read as a generous estimate. Planted here on
+    # 2026-09-21 (a self-test returning FALSE), the `se` bracket passed the
+    # sentinel and the other two happened to fail it, on the sizes this
+    # machine's errors take (cval's true error 4.9, above the sentinel's 1;
+    # the ratio's ceiling-scaled true error 0.09, below it): which brackets
+    # catch it is a platform fact, and the failure below is not.
+    cert_priced_not_degraded(cert, "cxb")
     cert_bracket(cert$se, true_rel$se, "cxb se")
     cert_bracket(cert$cval, true_rel$cval, "cxb cval")
     cert_bracket(cert$fiml_ratio, true_rel$ratio, "cxb fiml_ratio")
@@ -833,6 +1278,15 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
     expect_gt(true_rel$se, axes_degeneracy_delta_star)
     expect_gt(true_rel$cval, axes_degeneracy_delta_star)
 
+    # ... and the predicate users depend on refuses here too, with the same
+    # literal as on the refusing route (M149). The worst-of assertion above
+    # the branches says the certificate reads past the target; this says what
+    # the user is told. `?axes_reliability` cites this matrix as one measured
+    # case where the estimate printed beside the refusal differed between two
+    # machines while both refused it. The two branches of this test back the
+    # refusal half on whichever route this machine takes.
+    expect_identical(axes_degeneracy_refusal(fx$S, d)$reason, "uncertified")
+
   } else {
     # Neither route: cert_true_error() has already failed (the matrix no
     # longer matches its committed bytes). Say which state this was, so the
@@ -847,8 +1301,10 @@ test_that("AC2/AC3: counterexample B is refused on every route, and bracketed wh
 
 
 test_that("AC1: every case reached an admitted disposition, and the anchors were priced", {
-  # THE DETECTOR (M118, rewritten at M122). Every bracket assertion above runs
-  # only for a case cert_true_error() actually priced; a case whose anchor
+  # THE DETECTOR (M118, rewritten at M122). Every bracket assertion above
+  # (the five per-anchor reference-route tests are not brackets and record
+  # nothing) runs only for a case cert_true_error() actually priced; a case
+  # whose anchor
   # matrix this machine builds differently skips instead, and each skip
   # abandons only its own test_that(). So a machine on which all of them skip
   # reports skips and zero failures -- a green file with nothing measured
@@ -972,6 +1428,34 @@ test_that("AC7: the two harness helpers select their branches on a stated condit
   expect_error(cert_rel(c(1, 2), c(1, 0), c(0, 0)), "the exact value is zero")
   # ... and an ordinary quantity still divides.
   expect_equal(cert_rel(2 + 2^-51, 2, 0), 2^-52)
+
+  # cert_root_rel(): below -100% the expression returned NaN (M148). The
+  # failure names the input; -1 itself is admitted (a root of zero, relative
+  # error one), and a vector fails on its offending element alone.
+  expect_error(cert_root_rel(-1.5), "below -100%.*-1\\.5")
+  expect_error(cert_root_rel(c(0.5, -2)), "below -100%.*-2")
+  expect_equal(cert_root_rel(-1), 1)
+  expect_equal(cert_root_rel(3), 1)
+  expect_equal(cert_root_rel(c(0, 3)), c(0, 1))
+
+  # cert_pin_length(): the measured side one short reddens, and names the
+  # site (M148).
+  expect_condition(cert_pin_length(1, c(1, 2), "probe"),
+                   class = "expectation_failure",
+                   regexp = "probe measured length")
+  expect_no_condition(cert_pin_length(c(1, 2), c(1, 2), "probe"),
+                      class = "expectation_failure")
+
+  # cert_priced_not_degraded(): the sentinel reddens and says the
+  # certificate degraded on a priced route; a graded estimate passes (M148).
+  expect_condition(cert_priced_not_degraded(list(se = 1, cval = 1,
+                                                 fiml_ratio = 1), "probe"),
+                   class = "expectation_failure",
+                   regexp = "degraded to its sentinel on a priced route")
+  expect_no_condition(cert_priced_not_degraded(list(se = 1e-3, cval = 1e-3,
+                                                    fiml_ratio = 1e-3),
+                                               "probe"),
+                      class = "expectation_failure")
 })
 
 
@@ -1107,10 +1591,13 @@ test_that("the sentinel is returned where there is nothing to certify", {
   d <- axes_se_derivs(as.numeric(octants()), as.character(1:8), NULL,
                       FALSE, FALSE)
   r <- m106_family_a(2.4e-4, 1L)
-  # A derivative set with a duplicated matrix makes the information matrix
-  # exactly rank-deficient, which is where the shipped route gives up.
+  # A derivative set with a duplicated COMPONENT matrix is refused on an exact
+  # structural ground before any inversion (M147): xi2 planted over xi1. Until
+  # M147 the plant sat in the last item-error slot, where the default-tolerance
+  # inversion refused it; the core now inverts under tol = 0 and compares only
+  # the component matrices, so a plant there would be priced.
   d_dup <- d
-  d_dup$mats[[length(d_dup$mats)]] <- d_dup$mats[[1L]]
+  d_dup$mats[[2L]] <- d_dup$mats[[1L]]
   expect_identical(axes_v_pricing(r, d_dup), "unidentified")
   expect_identical(axes_accuracy_certificate(r, d_dup),
                    list(se = 1, cval = 1, fiml_ratio = 1))
@@ -1183,6 +1670,48 @@ test_that("the estimate tracks a planted perturbation of the shipped values", {
     expect_lte(cert$se, (f * delta / 2 + base$se) * (1 + delta) + slack)
     expect_gte(cert$cval, (f * delta - base$cval) * (1 - delta) - slack)
     expect_lte(cert$cval, (f * delta + base$cval) * (1 + delta) + slack)
+  }
+})
+
+
+test_that("the quotient's estimate tracks a planted perturbation of the naive arm", {
+  skip_on_cran()
+  # The same sensitivity invariant, extended to the field the layer above
+  # never reached (M148, from the Known-fragilities list): `fiml_ratio` is
+  # priced on the quotient corrected / naive, and the plant above lands on
+  # the corrected arm alone, so a certificate that ignored the denominator
+  # would have passed it. Here the NAIVE arm is multiplied by (1 + delta) and
+  # the quotient's estimate must respond, while `se`, priced on the corrected
+  # arm alone, must not move at all.
+  cs <- cert_anchors()[[1L]]
+  d <- cert_derivs(cs)
+  real_v <- axes_v_pricing
+  base <- axes_accuracy_certificate(cs$r, d)
+  for (delta in c(1e-10, 1e-8, 1e-4, 1e-2)) {
+    testthat::local_mocked_bindings(
+      axes_v_pricing = function(sigma, dd) {
+        out <- real_v(sigma, dd)
+        out$naive <- out$naive * (1 + delta)
+        out
+      },
+      .package = "circumplex"
+    )
+    cert <- axes_accuracy_certificate(cs$r, d)
+    f <- 10
+    slack <- f * .Machine$double.eps
+    # With e0 the quotient's error already present, the planted quotient's
+    # relative error is |e0 - delta| / (1 + delta): the 1/(1 + delta) is the
+    # denominator's own factor, exact rather than a first-order cross term,
+    # and `base$fiml_ratio` is at least f*|e0|/2, so it bounds |e0| from
+    # above in both directions.
+    expect_gte(cert$fiml_ratio,
+               (f * delta / 2 - base$fiml_ratio) / (1 + delta) - slack)
+    expect_lte(cert$fiml_ratio,
+               (f * delta / 2 + base$fiml_ratio) / (1 + delta) + slack)
+    # The plant is on the denominator only: the SE estimate reads the
+    # corrected arm and is bit-identical to the unperturbed certificate's.
+    expect_identical(cert$se, base$se)
+    expect_identical(cert$cval, base$cval)
   }
 })
 
